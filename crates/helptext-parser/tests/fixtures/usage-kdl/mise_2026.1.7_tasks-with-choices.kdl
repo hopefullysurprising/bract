@@ -1,0 +1,40 @@
+cmd aws:ecr_create_repository help="Create an AWS ECR repository for a new image" {
+    arg <repo_name>
+}
+cmd backstage:generate_mise_docs help="Generates Mise command docs in MD and prepares it for Backstage"
+cmd build_push_and_deploy_to_local help="It builds a new Docker image for the package, pushes it to AWS ECR and deploys it to local cluster" {
+    arg <package> {
+        choices backstage vectorise-everything vector-search-api know-how-ui postgres
+    }
+}
+cmd claude help="It runs Claude Code and configures for use in this particular project" {
+    arg "[claude_license]" required=#false default=personal {
+        choices personal company
+    }
+}
+cmd code_puml_build_and_install help=""
+cmd data_model:generate_migration_for_draft help="Creates or replaces a migration SQL for the changes in the latest data model draft"
+cmd data_model:make_draft_schema_target help="Computes and prints copy-paste-ready changes for promoting the current draft schema to target"
+cmd data_model:produce_draft help="Creates or replaces the draft of the updated data model"
+cmd devspace:deploy_backstage help="It builds a new version of Backstage code locally and deploys it to the local cluster with Devspace"
+cmd devspace:purge help="It purges all the custom Devspace deployments from the local cluster and restores it to the factory settings"
+cmd docker:build_and_publish_to_ecr help="Build a new image, push it to AWS ECR and update the tag in Kluctl" {
+    arg <package> {
+        choices backstage vectorise-everything know-how-ui postgres
+    }
+}
+cmd docker:cleanup help="Cleans unused Docker data to free space"
+cmd docker:disk_usage help="Prints docker disk usage information"
+cmd keycloak:generate-signing-key help="Generate RSA key pair for Keycloak JWT signing"
+cmd keycloak:show-private-key-base64 help="Show base64-encoded private key for use in secrets"
+cmd keycloak:sync-jwks-from-keycloak help="Fetch kid from Keycloak and update JWKS to match"
+cmd kluctl:deploy help="Update local cluster to the latest manifests with Kluctl"
+cmd kluctl:diff help="Get the difference between the local cluster state and the latest text manifests with Kluctl"
+cmd kluctl:update_image_tag_to_latest help="Gets the latest image tag and deploys it to local environment" {
+    arg <package> {
+        choices backstage vectorise-everything know-how-ui postgres
+    }
+}
+cmd plantuml:parse help="Parses a diagram and outputs structured JSON" {
+    arg <diagram_path>
+}
