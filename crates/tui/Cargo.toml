@@ -1,0 +1,9 @@
+[package]
+name = "the-sdk-tui"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+
+[dependencies]
+ratatui = "0.30.0"
+tui-tree-widget = "0.24.0"

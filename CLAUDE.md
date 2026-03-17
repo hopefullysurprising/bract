@@ -59,6 +59,7 @@ Adapters (parsers), tool discovery, manifest resolution, and the TUI are separat
 
 Cargo workspace with crates in `crates/`. Current crates:
 - `helptext-parser` — parses CLI documentation text into `usage-lib` Spec types. Library + binary (stdin-pipeable).
+- `tui` — TUI launcher application using Ratatui + tui-tree-widget. View-stack architecture (like mobile navigation controllers).
 
 ## Coding conventions
 
@@ -66,6 +67,8 @@ Cargo workspace with crates in `crates/`. Current crates:
 - No unnecessary dependencies — prefer `Debug` output over adding `serde_json` until serialisation is actually needed
 - Re-export consumed third-party types (e.g. `usage-lib` types) so downstream crates don't need direct dependencies
 - Prefer existing community tools/standards over custom implementations
+- Separate concerns by layer: app-level actions vs component-level actions — don't leak widget navigation into the app
+- Prefer reusable community widgets over building custom components, even if the fit isn't perfect
 
 ## Testing conventions
 
@@ -74,7 +77,22 @@ Cargo workspace with crates in `crates/`. Current crates:
 - Shared test helpers in `tests/common/mod.rs`
 - Format-specific tests in `tests/<format>_test.rs`, general tests in `tests/parse_test.rs`
 - Tests should be practical — validate what matters for the TUI (descriptions, args, choices), not exhaustive field checking
+- Don't test third-party library behaviour (e.g. error handling in usage-lib) — only test our own logic
 - New parser work follows TDD: create fixture first, write failing test, implement parser
+
+## TUI architecture
+
+- View-stack navigation: `App` manages a `Vec<Box<dyn View>>`, pushing/popping views like a mobile navigation controller
+- Each view owns its state, rendering, and key handling — the app only handles app-level actions (Quit) and delegates the rest
+- Tree navigation uses `tui-tree-widget` (0.24) — generic over any identifier type, unlimited depth
+- Data model (`data/`) must stay free of Ratatui types — UI conversion happens in the view layer
+- `crossterm` is re-exported by Ratatui — no direct dependency needed
+
+## Known gotchas
+
+- `tui-tree-widget`: `TreeState::select_first()` only works after first render. Use `select(vec![id])` to pre-select before rendering.
+- `tui-tree-widget`: Both `Tree::new()` and `TreeItem::new()` return `Result` (duplicate identifier check). Handle errors, don't `unwrap()` on dynamic data.
+- Styled text on highlighted rows: ensure foreground colors contrast with `highlight_style` background, or text becomes invisible.
 
 ## Useful commands
 
