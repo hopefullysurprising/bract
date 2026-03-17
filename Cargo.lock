@@ -1846,6 +1846,7 @@ dependencies = [
 name = "the-sdk-tui"
 version = "0.1.0"
 dependencies = [
+ "helptext-parser",
  "ratatui",
  "tui-tree-widget",
 ]

@@ -2,17 +2,16 @@ use ratatui::crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
 
 use crate::event::{self as app_event, Action};
-use crate::ui::browse::BrowseView;
 use crate::ui::View;
 
-pub struct App<'a> {
-    view_stack: Vec<Box<dyn View + 'a>>,
+pub struct App {
+    view_stack: Vec<Box<dyn View>>,
 }
 
-impl<'a> App<'a> {
-    pub fn new(browse: BrowseView<'a>) -> Self {
+impl App {
+    pub fn new(initial_view: Box<dyn View>) -> Self {
         Self {
-            view_stack: vec![Box::new(browse)],
+            view_stack: vec![initial_view],
         }
     }
 
