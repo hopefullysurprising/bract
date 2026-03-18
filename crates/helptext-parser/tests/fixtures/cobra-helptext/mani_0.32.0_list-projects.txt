@@ -1,0 +1,44 @@
+List projects.
+
+Usage:
+  mani list projects [projects] [flags]
+
+Aliases:
+  projects, project, proj, pr
+
+Examples:
+  # List all projects
+  mani list projects
+
+  # List projects by name
+  mani list projects <project>
+
+  # List projects by tags
+  mani list projects --tags <tag>
+
+  # List projects by paths
+  mani list projects --paths <path>
+
+	# List projects matching a tag expression
+	mani run <task> --tags-expr '<tag-1> || <tag-2>'
+
+Flags:
+  -a, --all                select all projects (default true)
+  -k, --cwd                select current working directory
+      --headers strings    specify columns to display [project, path, relpath, description, url, tag, worktree] (default [project,tag,description])
+  -h, --help               help for projects
+  -d, --paths strings      select projects by paths
+  -t, --tags strings       select projects by tags
+  -E, --tags-expr string   select projects by tags expression
+  -T, --target string      select projects by target name
+      --tree               display output in tree format
+
+Global Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -o, --output string        set output format [table|markdown|html] (default "table")
+      --theme string         set theme (default "default")
+  -u, --user-config string   specify user config
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

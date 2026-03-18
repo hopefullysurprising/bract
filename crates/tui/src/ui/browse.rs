@@ -73,12 +73,17 @@ impl View for BrowseView {
 fn build_items(tools: &[Tool]) -> Result<Vec<TreeItem<'static, String>>, std::io::Error> {
     tools.iter().map(|tool| {
         let children = build_command_items(&tool.commands)?;
-        TreeItem::new(
-            tool.id.clone(),
-            Span::styled(tool.name.clone(), Style::new().fg(Color::Cyan).bold()),
-            children,
-        )
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+        let text = if tool.description.is_empty() {
+            Line::from(Span::styled(tool.name.clone(), Style::new().fg(Color::Cyan).bold()))
+        } else {
+            Line::from(vec![
+                Span::styled(tool.name.clone(), Style::new().fg(Color::Cyan).bold()),
+                Span::raw("  "),
+                Span::styled(tool.description.clone(), Style::new().fg(Color::Gray)),
+            ])
+        };
+        TreeItem::new(tool.id.clone(), text, children)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
     }).collect()
 }
 

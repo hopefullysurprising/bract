@@ -1848,6 +1848,8 @@ version = "0.1.0"
 dependencies = [
  "helptext-parser",
  "ratatui",
+ "serde",
+ "serde_json",
  "tui-tree-widget",
 ]
 

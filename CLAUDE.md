@@ -58,7 +58,7 @@ Adapters (parsers), tool discovery, manifest resolution, and the TUI are separat
 ## Project structure
 
 Cargo workspace with crates in `crates/`. Current crates:
-- `helptext-parser` — parses CLI documentation text into `usage-lib` Spec types. Library + binary (stdin-pipeable).
+- `helptext-parser` — parses CLI help output from various framework-specific formats into `usage-lib` Spec types. Library + binary (stdin-pipeable).
 - `tui` — TUI launcher application using Ratatui + tui-tree-widget. View-stack architecture (like mobile navigation controllers).
 
 ## Coding conventions
@@ -68,6 +68,8 @@ Cargo workspace with crates in `crates/`. Current crates:
 - Re-export consumed third-party types (e.g. `usage-lib` types) so downstream crates don't need direct dependencies
 - Prefer existing community tools/standards over custom implementations
 - Separate concerns by layer: app-level actions vs component-level actions — don't leak widget navigation into the app
+- Keep `main.rs` thin — domain logic (assembly, discovery) belongs in the data layer, not in the entry point
+- Separate generic abstractions from specific implementations into different modules (e.g. `Source` trait in `mod.rs`, `MiseTasksSource` in its own file)
 - Prefer reusable community widgets over building custom components, even if the fit isn't perfect
 
 ## Testing conventions
@@ -87,6 +89,19 @@ Cargo workspace with crates in `crates/`. Current crates:
 - Tree navigation uses `tui-tree-widget` (0.24) — generic over any identifier type, unlimited depth
 - Data model (`data/`) must stay free of Ratatui types — UI conversion happens in the view layer
 - `crossterm` is re-exported by Ratatui — no direct dependency needed
+
+## Tool discovery
+
+- Mise tools are discovered via `mise ls --json`, filtered to `active: true`
+- Tool-to-framework mapping is static (e.g. `mani → CobraHelptext`) — no auto-detection heuristic
+- Each recognised tool becomes a separate `Source` instance — Mise is only the discovery mechanism
+- Help invocation is wrapped via `mise exec -- <tool> --help` to ensure correct tool version
+- Subcommand trees are built eagerly via recursive `--help` parsing during discovery (not lazy-loaded)
+- `usage-lib` builder pattern (`SpecFlagBuilder`, `SpecCommandBuilder`, `SpecArgBuilder`) is used for programmatic `Spec` construction in parsers
+
+## Critical rules
+
+- **Never assume tool interfaces.** Always capture real CLI output (help text, JSON responses, etc.) before writing parsers, fixtures, or integration code. If a tool is not available in the current environment, ask the user to provide the output. Fabricating or guessing interface details is unacceptable.
 
 ## Known gotchas
 

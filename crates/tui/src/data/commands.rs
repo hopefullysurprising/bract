@@ -1,6 +1,7 @@
 pub struct Tool {
     pub id: String,
     pub name: String,
+    pub description: String,
     pub commands: Vec<Command>,
 }
 

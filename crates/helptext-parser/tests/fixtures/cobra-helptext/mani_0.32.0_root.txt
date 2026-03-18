@@ -1,0 +1,30 @@
+repositories manager and task runner
+
+Usage:
+  mani [command]
+
+Available Commands:
+  check       Validate config
+  completion  Generate completion script
+  describe    Describe projects and tasks
+  edit        Open up mani config file
+  exec        Execute arbitrary commands
+  gen         Generate man page
+  help        Help about any command
+  init        Initialize a mani repository
+  list        List projects, tasks and tags
+  run         Run tasks
+  sync        Clone repositories and update .gitignore
+  tui         TUI
+
+Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -h, --help                 help for mani
+  -u, --user-config string   specify user config
+  -v, --version              version for mani
+
+Use "mani [command] --help" for more information about a command.
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

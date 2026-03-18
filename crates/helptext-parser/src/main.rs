@@ -4,15 +4,16 @@ use std::io::Read;
 fn main() {
     let format = match std::env::args().nth(1).as_deref() {
         Some("usage-kdl") => InputFormat::UsageKdl,
+        Some("cobra-helptext") => InputFormat::CobraHelptext,
         Some(other) => {
             eprintln!("unknown format: {other}");
-            eprintln!("supported formats: usage-kdl");
+            eprintln!("supported formats: usage-kdl, cobra-helptext");
             std::process::exit(1);
         }
         None => {
             eprintln!("usage: helptext-parser <format>");
             eprintln!("reads content from stdin");
-            eprintln!("supported formats: usage-kdl");
+            eprintln!("supported formats: usage-kdl, cobra-helptext");
             std::process::exit(1);
         }
     };

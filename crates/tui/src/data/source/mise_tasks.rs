@@ -4,7 +4,7 @@ use helptext_parser::{InputFormat, Spec};
 
 use crate::data::commands::Command;
 
-use super::Source;
+use super::{DiscoveryResult, Source};
 
 pub struct MiseTasksSource;
 
@@ -17,7 +17,7 @@ impl Source for MiseTasksSource {
         "Mise Tasks"
     }
 
-    fn discover(&self) -> Result<Vec<Command>, Box<dyn std::error::Error>> {
+    fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>> {
         let output = std::process::Command::new("mise")
             .args(["tasks", "--usage"])
             .output()?;
@@ -30,7 +30,10 @@ impl Source for MiseTasksSource {
         let content = String::from_utf8(output.stdout)?;
         let spec = helptext_parser::parse(InputFormat::UsageKdl, &content)?;
 
-        Ok(commands_from_spec(&spec, "mise"))
+        Ok(DiscoveryResult {
+            description: String::new(),
+            commands: commands_from_spec(&spec, "mise"),
+        })
     }
 }
 
