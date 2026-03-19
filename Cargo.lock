@@ -90,6 +90,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bract"
+version = "0.1.0"
+dependencies = [
+ "helptext-parser",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "tui-tree-widget",
+]
+
+[[package]]
 name = "bstr"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1840,17 +1851,6 @@ dependencies = [
  "wezterm-dynamic",
  "wezterm-input-types",
  "winapi",
-]
-
-[[package]]
-name = "the-sdk-tui"
-version = "0.1.0"
-dependencies = [
- "helptext-parser",
- "ratatui",
- "serde",
- "serde_json",
- "tui-tree-widget",
 ]
 
 [[package]]

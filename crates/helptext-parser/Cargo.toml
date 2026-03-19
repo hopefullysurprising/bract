@@ -7,3 +7,6 @@ license = "GPL-3.0-only"
 [dependencies]
 usage-lib = "3.0.0"
 thiserror = "2"
+
+[package.metadata.dist]
+dist = false

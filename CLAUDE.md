@@ -1,4 +1,4 @@
-# Dev Ecosystem Launcher — Vision & Principles
+# Bract — Vision & Principles
 
 ## What is this?
 
@@ -59,7 +59,7 @@ Adapters (parsers), tool discovery, manifest resolution, and the TUI are separat
 
 Cargo workspace with crates in `crates/`. Current crates:
 - `helptext-parser` — parses CLI help output from various framework-specific formats into `usage-lib` Spec types. Library + binary (stdin-pipeable).
-- `tui` — TUI launcher application using Ratatui + tui-tree-widget. View-stack architecture (like mobile navigation controllers).
+- `tui` — Bract TUI application using Ratatui + tui-tree-widget. View-stack architecture (like mobile navigation controllers).
 
 ## Coding conventions
 
