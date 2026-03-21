@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::data::commands::Command;
 
-use super::{DiscoveryResult, Source};
+use super::{convert_args, convert_flags, DiscoveryResult, Source};
 
 #[derive(Deserialize)]
 struct MiseToolVersion {
@@ -87,29 +87,33 @@ impl MiseToolSource {
         Ok(helptext_parser::parse(self.format, &content)?)
     }
 
-    fn resolve_tree(&self, id_prefix: &str, subcommand_path: &[&str]) -> Vec<Command> {
-        let spec = match self.run_help(subcommand_path) {
-            Ok(s) => s,
-            Err(_) => return vec![],
+    fn resolve_command(&self, id: &str, name: &str, description: &str, subcommand_path: &[&str]) -> Command {
+        let (flags, args, subcommands) = match self.run_help(subcommand_path) {
+            Ok(spec) => {
+                let children = spec.cmd.subcommands.iter().map(|(child_name, child_cmd)| {
+                    let child_id = format!("{id}/{child_name}");
+                    let mut child_path = subcommand_path.to_vec();
+                    child_path.push(child_name.as_str());
+                    self.resolve_command(
+                        &child_id,
+                        child_name,
+                        child_cmd.help.as_deref().unwrap_or_default(),
+                        &child_path,
+                    )
+                }).collect();
+                (convert_flags(&spec.cmd.flags), convert_args(&spec.cmd.args), children)
+            }
+            Err(_) => (vec![], vec![], vec![]),
         };
 
-        spec.cmd
-            .subcommands
-            .iter()
-            .map(|(name, cmd)| {
-                let id = format!("{id_prefix}/{name}");
-                let mut child_path = subcommand_path.to_vec();
-                child_path.push(name.as_str());
-                let subcommands = self.resolve_tree(&id, &child_path);
-
-                Command {
-                    id,
-                    name: name.clone(),
-                    description: cmd.help.as_deref().unwrap_or_default().to_string(),
-                    subcommands,
-                }
-            })
-            .collect()
+        Command {
+            id: id.to_string(),
+            name: name.to_string(),
+            description: description.to_string(),
+            flags,
+            args,
+            subcommands,
+        }
     }
 }
 
@@ -122,36 +126,43 @@ impl Source for MiseToolSource {
         &self.name
     }
 
+    fn tool_bin(&self) -> &str {
+        &self.binary
+    }
+
     fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>> {
         let spec = match self.run_help(&[]) {
             Ok(s) => s,
             Err(_) => {
                 return Ok(DiscoveryResult {
                     description: "failed to get help".to_string(),
+                    flags: vec![],
+                    args: vec![],
                     commands: vec![],
                 });
             }
         };
 
         let description = spec.cmd.help.clone().unwrap_or_default();
+        let flags = convert_flags(&spec.cmd.flags);
+        let args = convert_args(&spec.cmd.args);
         let commands = spec.cmd
             .subcommands
             .iter()
             .map(|(name, cmd)| {
-                let id = format!("{}/{name}", self.binary);
-                let subcommands = self.resolve_tree(&id, &[name.as_str()]);
-
-                Command {
-                    id,
-                    name: name.clone(),
-                    description: cmd.help.as_deref().unwrap_or_default().to_string(),
-                    subcommands,
-                }
+                self.resolve_command(
+                    &format!("{}/{name}", self.binary),
+                    name,
+                    cmd.help.as_deref().unwrap_or_default(),
+                    &[name.as_str()],
+                )
             })
             .collect();
 
         Ok(DiscoveryResult {
             description,
+            flags,
+            args,
             commands,
         })
     }

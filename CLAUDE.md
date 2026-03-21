@@ -89,6 +89,9 @@ Cargo workspace with crates in `crates/`. Current crates:
 - Tree navigation uses `tui-tree-widget` (0.24) — generic over any identifier type, unlimited depth
 - Data model (`data/`) must stay free of Ratatui types — UI conversion happens in the view layer
 - `crossterm` is re-exported by Ratatui — no direct dependency needed
+- `View::handle_key()` returns `Option<ViewAction>` — `Some(Consumed)` prevents app-level key handling (critical for text inputs where `q` types a character, not quits), `None` falls through to app
+- Form views receive an ancestor `Vec<Command>` (leaf → root) and render flag/arg sections per hierarchy level — this is framework-agnostic, not tied to Cobra's global flags concept
+- In-app types (`Flag`, `Arg`, `FlagKind`) live in the data layer; conversion from parser types (`SpecFlag`, `SpecArg`) happens at the source boundary — never leak parser types into the UI
 
 ## Tool discovery
 
@@ -108,6 +111,8 @@ Cargo workspace with crates in `crates/`. Current crates:
 - `tui-tree-widget`: `TreeState::select_first()` only works after first render. Use `select(vec![id])` to pre-select before rendering.
 - `tui-tree-widget`: Both `Tree::new()` and `TreeItem::new()` return `Result` (duplicate identifier check). Handle errors, don't `unwrap()` on dynamic data.
 - Styled text on highlighted rows: ensure foreground colors contrast with `highlight_style` background, or text becomes invisible.
+- Cobra parser: blank lines in Flags/GlobalFlags sections transition to `Section::Done` — without this, trailer text (e.g. `Use "tool [command] --help"`) gets misparsed as flags
+- Cobra parser: positional args are extracted from the usage line (`<required>`, `[optional]`), not from flag definitions — reserved tokens (`flags`, `command`) are filtered out
 
 ## Useful commands
 

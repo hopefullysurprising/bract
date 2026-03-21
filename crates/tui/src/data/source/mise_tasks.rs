@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
-use helptext_parser::{InputFormat, Spec};
+use helptext_parser::{InputFormat, Spec, SpecCommand};
 
 use crate::data::commands::Command;
 
-use super::{DiscoveryResult, Source};
+use super::{convert_args, convert_flags, DiscoveryResult, Source};
 
 pub struct MiseTasksSource;
 
@@ -15,6 +15,14 @@ impl Source for MiseTasksSource {
 
     fn tool_name(&self) -> &str {
         "Mise Tasks"
+    }
+
+    fn tool_bin(&self) -> &str {
+        "mise run"
+    }
+
+    fn tool_path_separator(&self) -> &str {
+        ":"
     }
 
     fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>> {
@@ -32,36 +40,40 @@ impl Source for MiseTasksSource {
 
         Ok(DiscoveryResult {
             description: String::new(),
+            flags: vec![],
+            args: vec![],
             commands: commands_from_spec(&spec, "mise"),
         })
     }
 }
 
 fn commands_from_spec(spec: &Spec, tool_id: &str) -> Vec<Command> {
-    let entries: Vec<(&str, &str)> = spec
+    let entries: Vec<(&str, &SpecCommand)> = spec
         .cmd
         .subcommands
         .iter()
-        .map(|(name, cmd)| (name.as_str(), cmd.help.as_deref().unwrap_or_default()))
+        .map(|(name, cmd)| (name.as_str(), cmd))
         .collect();
 
     build_hierarchy(tool_id, &entries)
 }
 
-fn build_hierarchy(prefix: &str, entries: &[(&str, &str)]) -> Vec<Command> {
+fn build_hierarchy(prefix: &str, entries: &[(&str, &SpecCommand)]) -> Vec<Command> {
     let mut commands = Vec::new();
-    let mut groups: BTreeMap<&str, Vec<(&str, &str)>> = BTreeMap::new();
+    let mut groups: BTreeMap<&str, Vec<(&str, &SpecCommand)>> = BTreeMap::new();
 
-    for &(name, help) in entries {
+    for &(name, spec_cmd) in entries {
         match name.split_once(':') {
             Some((group, rest)) => {
-                groups.entry(group).or_default().push((rest, help));
+                groups.entry(group).or_default().push((rest, spec_cmd));
             }
             None => {
                 commands.push(Command {
                     id: format!("{prefix}:{name}"),
                     name: name.to_string(),
-                    description: help.to_string(),
+                    description: spec_cmd.help.as_deref().unwrap_or_default().to_string(),
+                    flags: convert_flags(&spec_cmd.flags),
+                    args: convert_args(&spec_cmd.args),
                     subcommands: vec![],
                 });
             }
@@ -75,6 +87,8 @@ fn build_hierarchy(prefix: &str, entries: &[(&str, &str)]) -> Vec<Command> {
             id: group_prefix,
             name: group.to_string(),
             description: String::new(),
+            flags: vec![],
+            args: vec![],
             subcommands,
         });
     }

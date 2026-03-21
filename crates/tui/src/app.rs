@@ -2,7 +2,7 @@ use ratatui::crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
 
 use crate::event::{self as app_event, Action};
-use crate::ui::View;
+use crate::ui::{View, ViewAction};
 
 pub struct App {
     view_stack: Vec<Box<dyn View>>,
@@ -27,16 +27,25 @@ impl App {
                 if key.kind != KeyEventKind::Press {
                     continue;
                 }
+
+                if let Some(view) = self.view_stack.last_mut() {
+                    if let Some(action) = view.handle_key(key) {
+                        match action {
+                            ViewAction::Push(new_view) => {
+                                self.view_stack.push(new_view);
+                            }
+                            ViewAction::Consumed => {}
+                        }
+                        continue;
+                    }
+                }
+
                 if let Some(Action::Quit) = app_event::map_key(key.code) {
                     if self.view_stack.len() > 1 {
                         self.view_stack.pop();
                     } else {
                         return Ok(());
                     }
-                    continue;
-                }
-                if let Some(view) = self.view_stack.last_mut() {
-                    view.handle_key(key.code);
                 }
             }
         }

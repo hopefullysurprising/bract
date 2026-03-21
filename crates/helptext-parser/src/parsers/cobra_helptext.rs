@@ -10,6 +10,7 @@ enum Section {
     Commands,
     Flags,
     GlobalFlags,
+    Done,
 }
 
 fn detect_section(line: &str) -> Option<Section> {
@@ -99,6 +100,29 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
     Some(built)
 }
 
+fn parse_usage_args(usage_line: &str) -> Vec<SpecArg> {
+    const RESERVED: &[&str] = &["flags", "command"];
+
+    usage_line
+        .split_whitespace()
+        .filter_map(|token| {
+            let (name, required) = if let Some(inner) = token.strip_prefix('<').and_then(|s| s.strip_suffix('>')) {
+                (inner, true)
+            } else if let Some(inner) = token.strip_prefix('[').and_then(|s| s.strip_suffix(']')) {
+                (inner, false)
+            } else {
+                return None;
+            };
+            if RESERVED.contains(&name.to_lowercase().as_str()) {
+                return None;
+            }
+            let mut arg = SpecArg::builder().name(name.to_string()).build();
+            arg.required = required;
+            Some(arg)
+        })
+        .collect()
+}
+
 fn split_flag_and_description(line: &str) -> (String, Option<String>) {
     let bytes = line.as_bytes();
     let mut i = 0;
@@ -172,16 +196,21 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
                 }
             }
             Section::Flags => {
-                if let Some(flag) = parse_flag_line(line) {
+                if line.trim().is_empty() {
+                    section = Section::Done;
+                } else if let Some(flag) = parse_flag_line(line) {
                     flags.push(flag);
                 }
             }
             Section::GlobalFlags => {
-                if let Some(mut flag) = parse_flag_line(line) {
+                if line.trim().is_empty() {
+                    section = Section::Done;
+                } else if let Some(mut flag) = parse_flag_line(line) {
                     flag.global = true;
                     global_flags.push(flag);
                 }
             }
+            Section::Done => {}
         }
     }
 
@@ -206,6 +235,8 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
         .unwrap_or("")
         .to_string();
 
+    let args = parse_usage_args(&usage_line);
+
     if !aliases.is_empty() {
         aliases.remove(0);
     }
@@ -223,6 +254,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
     }
     cmd_builder = cmd_builder.aliases(aliases);
     cmd_builder = cmd_builder.flags(all_flags);
+    cmd_builder = cmd_builder.args(args);
     cmd_builder = cmd_builder.subcommands(subcommands);
 
     let mut spec = Spec::default();
