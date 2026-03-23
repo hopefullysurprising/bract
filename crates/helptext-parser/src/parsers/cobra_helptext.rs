@@ -59,7 +59,8 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
     if let Some(help) = &help_text {
         if let Some(start) = help.rfind("(default ") {
             if let Some(end) = help[start..].find(')') {
-                let val = &help[start + 9..start + end];
+                let val = help[start + 9..start + end]
+                    .trim_matches('"');
                 default.push(val.to_string());
             }
         }

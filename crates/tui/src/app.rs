@@ -2,10 +2,15 @@ use ratatui::crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
 
 use crate::event::{self as app_event, Action};
-use crate::ui::{View, ViewAction};
+use crate::ui::{RunSpec, View, ViewAction};
 
 pub struct App {
     view_stack: Vec<Box<dyn View>>,
+}
+
+pub enum AppResult {
+    Exit,
+    Run(RunSpec),
 }
 
 impl App {
@@ -15,7 +20,7 @@ impl App {
         }
     }
 
-    pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<AppResult, Box<dyn std::error::Error>> {
         loop {
             terminal.draw(|frame| {
                 if let Some(view) = self.view_stack.last_mut() {
@@ -34,6 +39,9 @@ impl App {
                             ViewAction::Push(new_view) => {
                                 self.view_stack.push(new_view);
                             }
+                            ViewAction::Run(spec) => {
+                                return Ok(AppResult::Run(spec));
+                            }
                             ViewAction::Consumed => {}
                         }
                         continue;
@@ -44,7 +52,7 @@ impl App {
                     if self.view_stack.len() > 1 {
                         self.view_stack.pop();
                     } else {
-                        return Ok(());
+                        return Ok(AppResult::Exit);
                     }
                 }
             }

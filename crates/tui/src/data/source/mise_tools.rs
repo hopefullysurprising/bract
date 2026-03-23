@@ -126,8 +126,8 @@ impl Source for MiseToolSource {
         &self.name
     }
 
-    fn tool_bin(&self) -> &str {
-        &self.binary
+    fn tool_bin(&self) -> Vec<String> {
+        vec![self.binary.clone()]
     }
 
     fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>> {

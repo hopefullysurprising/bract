@@ -2,7 +2,7 @@
 pub struct Tool {
     pub id: String,
     pub name: String,
-    pub bin: String,
+    pub bin: Vec<String>,
     pub path_separator: String,
     pub description: String,
     pub flags: Vec<Flag>,

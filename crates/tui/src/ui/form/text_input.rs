@@ -2,7 +2,7 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 
-use super::field::{self, FormField};
+use super::field::{self, FieldValue, FormField};
 
 pub struct TextInput {
     pub name: String,
@@ -79,5 +79,9 @@ impl FormField for TextInput {
             KeyCode::End => self.cursor = self.chars.len(),
             _ => {}
         }
+    }
+
+    fn value(&self) -> FieldValue {
+        FieldValue::Text(self.chars.iter().collect())
     }
 }

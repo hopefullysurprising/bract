@@ -17,7 +17,7 @@ pub struct DiscoveryResult {
 pub trait Source {
     fn tool_id(&self) -> &str;
     fn tool_name(&self) -> &str;
-    fn tool_bin(&self) -> &str;
+    fn tool_bin(&self) -> Vec<String>;
     fn tool_path_separator(&self) -> &str { " " }
     fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>>;
 }
@@ -32,7 +32,7 @@ pub fn assemble_tools(sources: Vec<Box<dyn Source>>) -> Result<Vec<Tool>, Box<dy
             .or_insert_with(|| Tool {
                 id: source.tool_id().to_string(),
                 name: source.tool_name().to_string(),
-                bin: source.tool_bin().to_string(),
+                bin: source.tool_bin(),
                 path_separator: source.tool_path_separator().to_string(),
                 description: String::new(),
                 flags: vec![],

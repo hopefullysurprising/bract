@@ -2,9 +2,15 @@ use ratatui::crossterm::event::KeyEvent;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
+pub enum FieldValue {
+    Text(String),
+    Bool(bool),
+}
+
 pub trait FormField {
     fn render_lines(&self, focused: bool, width: u16) -> Vec<Line<'_>>;
     fn handle_key(&mut self, key: KeyEvent);
+    fn value(&self) -> FieldValue;
 }
 
 pub fn label_line(name: &str, focused: bool) -> Line<'static> {

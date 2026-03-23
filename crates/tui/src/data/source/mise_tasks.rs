@@ -17,8 +17,8 @@ impl Source for MiseTasksSource {
         "Mise Tasks"
     }
 
-    fn tool_bin(&self) -> &str {
-        "mise run"
+    fn tool_bin(&self) -> Vec<String> {
+        vec!["mise".into(), "run".into()]
     }
 
     fn tool_path_separator(&self) -> &str {

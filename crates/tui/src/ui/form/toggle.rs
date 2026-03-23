@@ -2,7 +2,7 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 
-use super::field::{self, FormField};
+use super::field::{self, FieldValue, FormField};
 
 pub struct Toggle {
     pub name: String,
@@ -40,5 +40,9 @@ impl FormField for Toggle {
         if key.code == KeyCode::Char(' ') || key.code == KeyCode::Enter {
             self.value = !self.value;
         }
+    }
+
+    fn value(&self) -> FieldValue {
+        FieldValue::Bool(self.value)
     }
 }

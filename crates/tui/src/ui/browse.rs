@@ -12,7 +12,7 @@ use super::{View, ViewAction};
 use crate::data::commands::{Command, Tool};
 
 struct ToolMeta {
-    bin: String,
+    bin: Vec<String>,
     path_separator: String,
 }
 
@@ -98,7 +98,8 @@ impl View for BrowseView {
                         if cmd.subcommands.is_empty() {
                             let tool_id = selected.first().unwrap();
                             let meta = self.tool_meta.get(tool_id);
-                            let bin = meta.map(|m| m.bin.as_str()).unwrap_or("");
+                            let empty_bin = vec![];
+                            let bin = meta.map(|m| &m.bin).unwrap_or(&empty_bin);
                             let sep = meta.map(|m| m.path_separator.as_str()).unwrap_or(" ");
                             let ancestors: Vec<Command> = selected.iter()
                                 .filter_map(|ancestor_id| self.commands.get(ancestor_id))

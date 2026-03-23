@@ -2,27 +2,35 @@ mod field;
 mod text_input;
 mod toggle;
 
-use ratatui::crossterm::event::{KeyCode, KeyEvent};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, BorderType, Padding, Paragraph};
 use ratatui::Frame;
 
-use field::FormField;
+use field::{FieldValue, FormField};
 use text_input::TextInput;
 use toggle::Toggle;
 
-use super::{View, ViewAction};
+use super::{RunSpec, View, ViewAction};
 use crate::data::commands::{Command, FlagKind};
+
+enum FieldMeta {
+    Arg,
+    BoolFlag { long: Option<String>, short: Option<char> },
+    ValueFlag { long: Option<String>, short: Option<char> },
+}
 
 struct FormSection {
     label: String,
-    fields: Vec<Box<dyn FormField>>,
+    fields: Vec<(FieldMeta, Box<dyn FormField>)>,
 }
 
 pub struct FormView {
     title: String,
+    bin: Vec<String>,
+    command_path: Vec<String>,
     description: String,
     sections: Vec<FormSection>,
     total_fields: usize,
@@ -31,16 +39,17 @@ pub struct FormView {
 }
 
 impl FormView {
-    pub fn new(ancestors: Vec<Command>, bin: &str, path_separator: &str) -> Self {
-        let command_path = ancestors.iter()
+    pub fn new(ancestors: Vec<Command>, bin: &[String], path_separator: &str) -> Self {
+        let command_names: Vec<String> = ancestors.iter()
             .skip(1)
-            .map(|c| c.name.as_str())
-            .collect::<Vec<_>>()
-            .join(path_separator);
-        let title = if command_path.is_empty() {
-            bin.to_string()
+            .map(|c| c.name.clone())
+            .collect();
+        let display_bin = bin.join(" ");
+        let display_path = command_names.join(path_separator);
+        let title = if display_path.is_empty() {
+            display_bin
         } else {
-            format!("{bin} {command_path}")
+            format!("{display_bin} {display_path}")
         };
 
         let description = ancestors.last()
@@ -64,6 +73,8 @@ impl FormView {
 
         Self {
             title,
+            bin: bin.to_vec(),
+            command_path: command_names,
             description,
             sections,
             total_fields,
@@ -88,11 +99,41 @@ impl FormView {
         let mut remaining = self.focused;
         for section in &mut self.sections {
             if remaining < section.fields.len() {
-                return Some(&mut section.fields[remaining]);
+                return Some(&mut section.fields[remaining].1);
             }
             remaining -= section.fields.len();
         }
         None
+    }
+
+    fn build_run_spec(&self) -> RunSpec {
+        let mut args = self.command_path.clone();
+        let mut positional = Vec::new();
+
+        for section in &self.sections {
+            for (meta, field) in &section.fields {
+                match (meta, field.value()) {
+                    (FieldMeta::Arg, FieldValue::Text(v)) if !v.is_empty() => {
+                        positional.push(v);
+                    }
+                    (FieldMeta::BoolFlag { long, short }, FieldValue::Bool(true)) => {
+                        args.push(flag_token(long, short));
+                    }
+                    (FieldMeta::ValueFlag { long, short }, FieldValue::Text(v)) if !v.is_empty() => {
+                        args.push(flag_token(long, short));
+                        args.push(v);
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        args.extend(positional);
+
+        RunSpec {
+            bin: self.bin.clone(),
+            args,
+        }
     }
 }
 
@@ -136,7 +177,7 @@ impl View for FormView {
                 lines.push(Line::raw(""));
             }
 
-            for field in &section.fields {
+            for (_meta, field) in &section.fields {
                 let focused = global_field_index == self.focused;
                 if focused {
                     focused_line_start = lines.len() as u16;
@@ -175,6 +216,10 @@ impl View for FormView {
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<ViewAction> {
+        if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
+            return Some(ViewAction::Run(self.build_run_spec()));
+        }
+
         match key.code {
             KeyCode::Esc => None,
             KeyCode::Tab => {
@@ -204,47 +249,72 @@ fn centered_area(area: Rect, max_width: u16) -> Rect {
     }
 }
 
-fn build_fields(command: &Command) -> Vec<Box<dyn FormField>> {
-    let mut fields: Vec<Box<dyn FormField>> = Vec::new();
+fn build_fields(command: &Command) -> Vec<(FieldMeta, Box<dyn FormField>)> {
+    let mut fields: Vec<(FieldMeta, Box<dyn FormField>)> = Vec::new();
 
     for arg in &command.args {
         let chars: Vec<char> = arg.default.chars().collect();
         let cursor = chars.len();
-        fields.push(Box::new(TextInput {
-            name: if arg.required {
-                format!("<{}>", arg.name)
-            } else {
-                format!("[{}]", arg.name)
-            },
-            help: arg.description.clone(),
-            chars,
-            cursor,
-        }));
+        fields.push((
+            FieldMeta::Arg,
+            Box::new(TextInput {
+                name: if arg.required {
+                    format!("<{}>", arg.name)
+                } else {
+                    format!("[{}]", arg.name)
+                },
+                help: arg.description.clone(),
+                chars,
+                cursor,
+            }),
+        ));
     }
 
     for flag in &command.flags {
         match &flag.kind {
             FlagKind::Boolean => {
-                fields.push(Box::new(Toggle {
-                    name: flag.name.clone(),
-                    help: flag.description.clone(),
-                    value: false,
-                }));
+                fields.push((
+                    FieldMeta::BoolFlag {
+                        long: flag.long.clone(),
+                        short: flag.short,
+                    },
+                    Box::new(Toggle {
+                        name: flag.name.clone(),
+                        help: flag.description.clone(),
+                        value: false,
+                    }),
+                ));
             }
             FlagKind::Value { default, .. } => {
                 let chars: Vec<char> = default.chars().collect();
                 let cursor = chars.len();
-                fields.push(Box::new(TextInput {
-                    name: flag.name.clone(),
-                    help: flag.description.clone(),
-                    chars,
-                    cursor,
-                }));
+                fields.push((
+                    FieldMeta::ValueFlag {
+                        long: flag.long.clone(),
+                        short: flag.short,
+                    },
+                    Box::new(TextInput {
+                        name: flag.name.clone(),
+                        help: flag.description.clone(),
+                        chars,
+                        cursor,
+                    }),
+                ));
             }
         }
     }
 
     fields
+}
+
+fn flag_token(long: &Option<String>, short: &Option<char>) -> String {
+    if let Some(l) = long {
+        format!("--{l}")
+    } else if let Some(s) = short {
+        format!("-{s}")
+    } else {
+        String::new()
+    }
 }
 
 fn section_header(label: &str, width: u16) -> Line<'static> {
@@ -267,6 +337,12 @@ fn footer(width: u16) -> Paragraph<'static> {
     Paragraph::new(vec![
         separator_line(width),
         Line::from(vec![
+            Span::styled(
+                "^r",
+                Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" run", Style::new().fg(Color::DarkGray)),
+            Span::styled("  ·  ", Style::new().fg(Color::DarkGray)),
             Span::styled(
                 "↹",
                 Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
