@@ -1,35 +1,67 @@
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
 use helptext_parser::InputFormat;
 use serde::Deserialize;
 
 use crate::data::commands::Command;
 
+use super::go_buildinfo;
 use super::{convert_args, convert_flags, DiscoveryResult, Source};
 
 #[derive(Deserialize)]
 struct MiseToolVersion {
-    #[allow(dead_code)]
     version: String,
     #[allow(dead_code)]
     install_path: String,
     active: bool,
 }
 
-fn classify_tool(tool_name: &str) -> Option<InputFormat> {
-    let binary = tool_name.rsplit('/').last().unwrap_or(tool_name);
-    match binary {
-        "mani" => Some(InputFormat::CobraHelptext),
-        _ => None,
+fn classify_binary(binary_path: &Path) -> Option<InputFormat> {
+    let deps = go_buildinfo::read_deps(binary_path)?;
+    if deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
+        return Some(InputFormat::CobraHelptext);
     }
+    None
 }
 
-fn binary_name(tool_key: &str) -> &str {
-    tool_key.rsplit('/').last().unwrap_or(tool_key)
+fn resolve_bin_paths(tool_key: &str, version: &str) -> Option<PathBuf> {
+    let tool_version = format!("{tool_key}@{version}");
+    let output = std::process::Command::new("mise")
+        .args(["bin-paths", &tool_version])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    stdout.lines().next().map(PathBuf::from)
 }
 
-fn display_name(binary: &str) -> String {
-    binary.to_string()
+#[cfg(unix)]
+fn is_executable(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    path.metadata()
+        .map(|m| m.permissions().mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(unix))]
+fn is_executable(path: &Path) -> bool {
+    path.extension()
+        .map(|ext| ext == "exe")
+        .unwrap_or(false)
+}
+
+fn list_executables(dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return vec![];
+    };
+    entries
+        .flatten()
+        .filter(|e| e.path().is_file() && is_executable(&e.path()))
+        .map(|e| e.path())
+        .collect()
 }
 
 pub fn discover_sources() -> Vec<Box<dyn Source>> {
@@ -50,15 +82,26 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
     tools
         .into_iter()
         .filter(|(_, versions)| versions.iter().any(|v| v.active))
-        .filter_map(|(key, _)| {
-            let format = classify_tool(&key)?;
-            let binary = binary_name(&key).to_string();
-            Some(Box::new(MiseToolSource {
-                binary: binary.clone(),
-                name: display_name(&binary),
-                format,
-            }) as Box<dyn Source>)
+        .flat_map(|(key, versions)| {
+            let active = versions.into_iter().find(|v| v.active)?;
+            let bin_dir = resolve_bin_paths(&key, &active.version)?;
+            let executables = list_executables(&bin_dir);
+
+            let sources: Vec<Box<dyn Source>> = executables
+                .into_iter()
+                .filter_map(|binary_path| {
+                    let binary = binary_path.file_name()?.to_str()?.to_string();
+                    let format = classify_binary(&binary_path)?;
+                    Some(Box::new(MiseToolSource {
+                        binary: binary.clone(),
+                        name: binary,
+                        format,
+                    }) as Box<dyn Source>)
+                })
+                .collect();
+            Some(sources)
         })
+        .flatten()
         .collect()
 }
 

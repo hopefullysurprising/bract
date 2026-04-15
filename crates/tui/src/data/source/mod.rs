@@ -1,3 +1,4 @@
+mod go_buildinfo;
 pub mod mise_tasks;
 pub mod mise_tools;
 
