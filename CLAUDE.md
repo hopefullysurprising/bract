@@ -96,7 +96,9 @@ Cargo workspace with crates in `crates/`. Current crates:
 ## Tool discovery
 
 - Mise tools are discovered via `mise ls --json`, filtered to `active: true`
-- Tool-to-framework mapping is static (e.g. `mani → CobraHelptext`) — no auto-detection heuristic
+- Binary paths are resolved via `mise bin-paths TOOL@VERSION` — never derive binary names from tool keys (e.g. `aqua:smallstep/cli` → binary is `step`, not `cli`)
+- Framework detection uses Go buildinfo introspection (`go_buildinfo.rs`): parse the `__go_buildinfo` / `.go.buildinfo` section from the binary, extract module dependencies, match against known frameworks (e.g. `github.com/spf13/cobra` → `CobraHelptext`)
+- Classification pipeline: `mise ls` → `mise bin-paths` → scan dir for executables → `classify_binary()` per executable → create `Source` per match
 - Each recognised tool becomes a separate `Source` instance — Mise is only the discovery mechanism
 - Help invocation is wrapped via `mise exec -- <tool> --help` to ensure correct tool version
 - Subcommand trees are built eagerly via recursive `--help` parsing during discovery (not lazy-loaded)
@@ -113,8 +115,12 @@ Cargo workspace with crates in `crates/`. Current crates:
 - Styled text on highlighted rows: ensure foreground colors contrast with `highlight_style` background, or text becomes invisible.
 - Cobra parser: blank lines in Flags/GlobalFlags sections transition to `Section::Done` — without this, trailer text (e.g. `Use "tool [command] --help"`) gets misparsed as flags
 - Cobra parser: positional args are extracted from the usage line (`<required>`, `[optional]`), not from flag definitions — reserved tokens (`flags`, `command`) are filtered out
+- Go buildinfo: the mod_info blob contains 16-byte binary sentinels (start/end) that are NOT valid UTF-8 — strip them before converting to `str`
+- Go buildinfo: only supports the inline format (`flagsVersionInl`, Go ≥1.18) — pre-1.18 binaries use pointer-based format which requires virtual address resolution
+- `goblin` Mach-O: `segment.sections()` returns `Result<Vec<(Section, SectionData)>>` — use `.ok()?` not `?` inside `Option`-returning functions
 
 ## Useful commands
 
 - `mise tasks --usage` — get Usage KDL spec for mise tasks (not `mise usage` which exports the entire mise CLI)
 - `cat file.kdl | cargo run -- usage-kdl` — pipe content into the helptext-parser binary
+- `mise bin-paths TOOL@VERSION` — get resolved bin directory for a specific tool (handles all backend-specific path resolution)
