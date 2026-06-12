@@ -31,6 +31,7 @@ pub struct FormView {
     title: String,
     bin: Vec<String>,
     command_path: Vec<String>,
+    path_separator: String,
     description: String,
     sections: Vec<FormSection>,
     total_fields: usize,
@@ -75,6 +76,7 @@ impl FormView {
             title,
             bin: bin.to_vec(),
             command_path: command_names,
+            path_separator: path_separator.to_string(),
             description,
             sections,
             total_fields,
@@ -106,8 +108,38 @@ impl FormView {
         None
     }
 
-    fn build_run_spec(&self) -> RunSpec {
-        let mut args = self.command_path.clone();
+    pub fn set_field(&mut self, name: &str, value: &str) -> bool {
+        for section in &mut self.sections {
+            for (_meta, field) in &mut section.fields {
+                if field.name() == name {
+                    return field.set_text(value);
+                }
+            }
+        }
+        false
+    }
+
+    pub fn toggle_field(&mut self, name: &str) -> bool {
+        for section in &mut self.sections {
+            for (_meta, field) in &mut section.fields {
+                if field.name() == name {
+                    return field.toggle();
+                }
+            }
+        }
+        false
+    }
+
+    pub fn run_spec(&self) -> RunSpec {
+        // mise joins task segments into one token (`eiq:analyse`); cobra keeps them
+        // as separate argv tokens (`list projects`). Joining on the tool's separator
+        // and re-splitting on whitespace yields the right argv for both.
+        let mut args: Vec<String> = self
+            .command_path
+            .join(&self.path_separator)
+            .split_whitespace()
+            .map(String::from)
+            .collect();
         let mut positional = Vec::new();
 
         for section in &self.sections {
@@ -138,6 +170,10 @@ impl FormView {
 }
 
 impl View for FormView {
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
     fn render(&mut self, frame: &mut Frame) {
         let area = centered_area(frame.area(), 72);
 
@@ -217,7 +253,7 @@ impl View for FormView {
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<ViewAction> {
         if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
-            return Some(ViewAction::Run(self.build_run_spec()));
+            return Some(ViewAction::Run(self.run_spec()));
         }
 
         match key.code {

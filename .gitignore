@@ -1,3 +1,8 @@
 target
 .vscode
 .claude
+.DS_Store
+
+# insta: pending (unreviewed) snapshots — accepted ones (*.snap) are committed
+*.snap.new
+*.pending-snap

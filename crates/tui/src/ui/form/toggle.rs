@@ -11,6 +11,15 @@ pub struct Toggle {
 }
 
 impl FormField for Toggle {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn toggle(&mut self) -> bool {
+        self.value = !self.value;
+        true
+    }
+
     fn render_lines(&self, focused: bool, width: u16) -> Vec<Line<'_>> {
         let mut label = field::label_line(&self.name, focused);
 

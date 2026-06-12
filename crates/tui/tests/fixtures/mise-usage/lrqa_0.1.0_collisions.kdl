@@ -1,0 +1,24 @@
+cmd eiq:analyse help="Run EiQ Analyse locally (single origin on :8080 via HAProxy)" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd eiq:analyse:be:lint help="BE: Rubocop" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd eiq:analyse:be:test help="BE: parallel_rspec across workers" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd eiq:analyse:be:test:cov help="BE: parallel_rspec with SimpleCov on" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd eiq:analyse:ci help="Mirror the full Azure pipeline locally" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd eiq:analyse:ci:fast help="Fast variant: skips coverage" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd mani:sync help="Daily id-keyed diff of mani.yaml vs ADO" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd mani:sync:adopt help="ONE-TIME: stamp the ADO repo GUID onto every entry" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}

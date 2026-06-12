@@ -1,0 +1,7 @@
+[tasks.install]
+description = "Build + install bract to ~/.cargo/bin (uses Cargo.lock)"
+run = "cargo install --path crates/tui --locked --force"
+
+[tasks.test]
+description = "Run the workspace test suite"
+run = "cargo test"
