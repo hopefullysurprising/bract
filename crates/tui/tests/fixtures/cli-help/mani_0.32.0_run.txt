@@ -1,0 +1,60 @@
+Run tasks.
+
+The tasks are specified in a mani.yaml file along with the projects you can target.
+
+Usage:
+  mani run <task>
+
+Examples:
+  # Execute task for all projects
+  mani run <task> --all
+
+  # Execute a task in parallel with a maximum of 8 concurrent processes
+  mani run <task> --projects <project> --parallel --forks 8
+
+  # Execute task for a specific projects
+  mani run <task> --projects <project>
+
+  # Execute a task for projects with specific tags
+  mani run <task> --tags <tag>
+
+  # Execute a task for projects matching specific paths
+  mani run <task> --paths <path>
+
+  # Execute a task for all projects matching a tag expression
+  mani run <task> --tags-expr 'active || git' <tag>
+
+  # Execute a task with environment variables from shell
+  mani run <task> key=value
+
+Flags:
+  -a, --all                   select all projects
+  -k, --cwd                   select current working directory
+      --describe              display task information
+      --dry-run               display the task without execution
+  -e, --edit                  edit task
+  -f, --forks uint32          maximum number of concurrent processes (default 4)
+  -h, --help                  help for run
+      --ignore-errors         continue execution despite errors
+      --ignore-non-existing   skip non-existing projects
+      --omit-empty-columns    hide empty columns in table output
+      --omit-empty-rows       hide empty rows in table output
+  -o, --output string         set output format [stream|table|markdown|html]
+      --parallel              execute tasks in parallel across projects
+  -d, --paths strings         select projects by path
+  -p, --projects strings      select projects by name
+  -s, --silent                hide progress output during task execution
+  -J, --spec string           set spec
+  -t, --tags strings          select projects by tag
+  -E, --tags-expr string      select projects by tags expression
+  -T, --target string         select projects by target name
+      --theme string          set theme
+      --tty                   replace current process
+
+Global Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -u, --user-config string   specify user config
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

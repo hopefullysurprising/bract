@@ -18,6 +18,11 @@ pub struct Command {
     pub flags: Vec<Flag>,
     pub args: Vec<Arg>,
     pub subcommands: Vec<Command>,
+    /// Whether this node maps to an actually-invokable command. Leaves are always
+    /// runnable; a branch is runnable when it is both a command and a parent of
+    /// others (e.g. a mise task `app:check` alongside `app:check:be`). Synthetic
+    /// namespace groups (`app`, `be`) are not runnable — they only organise children.
+    pub runnable: bool,
 }
 
 #[derive(Clone)]

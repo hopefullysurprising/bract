@@ -1,0 +1,49 @@
+Clone repositories and update .gitignore file.
+For repositories requiring authentication, disable parallel cloning to enter
+credentials for each repository individually.
+
+Usage:
+  mani sync [flags]
+
+Aliases:
+  sync, clone
+
+Examples:
+  # Clone repositories one at a time
+  mani sync
+
+  # Clone repositories in parallel
+  mani sync --parallel
+
+  # Disable updating .gitignore file
+  mani sync --sync-gitignore=false
+
+  # Sync project remotes. This will modify the projects .git state
+  mani sync --sync-remotes
+
+  # Clone repositories even if project sync field is set to false
+  mani sync --ignore-sync-state
+
+  # Display sync status
+  mani sync --status
+
+Flags:
+  -f, --forks uint32                maximum number of concurrent processes (default 4)
+  -h, --help                        help for sync
+      --ignore-sync-state           sync project even if the project's sync field is set to false
+  -p, --parallel                    clone projects in parallel
+  -d, --paths strings               clone projects by path
+  -w, --remove-orphaned-worktrees   remove git worktrees not in config
+  -s, --status                      display status only
+  -g, --sync-gitignore              sync gitignore (default true)
+  -r, --sync-remotes                update git remote state
+  -t, --tags strings                clone projects by tags
+  -E, --tags-expr string            clone projects by tag expression
+
+Global Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -u, --user-config string   specify user config
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

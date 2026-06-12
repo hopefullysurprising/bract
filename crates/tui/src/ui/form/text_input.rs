@@ -12,6 +12,16 @@ pub struct TextInput {
 }
 
 impl FormField for TextInput {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn set_text(&mut self, value: &str) -> bool {
+        self.chars = value.chars().collect();
+        self.cursor = self.chars.len();
+        true
+    }
+
     fn render_lines(&self, focused: bool, _width: u16) -> Vec<Line<'_>> {
         let mut lines = vec![field::label_line(&self.name, focused)];
 

@@ -1,5 +1,8 @@
-use ratatui::crossterm::event::{self, Event, KeyEventKind};
-use ratatui::DefaultTerminal;
+use std::io;
+
+use ratatui::backend::Backend;
+use ratatui::crossterm::event::{Event, KeyEventKind};
+use ratatui::Terminal;
 
 use crate::event::{self as app_event, Action};
 use crate::ui::{RunSpec, View, ViewAction};
@@ -20,41 +23,67 @@ impl App {
         }
     }
 
-    pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<AppResult, Box<dyn std::error::Error>> {
+    pub fn current_view_mut(&mut self) -> Option<&mut dyn View> {
+        self.view_stack.last_mut().map(|v| v.as_mut())
+    }
+
+    pub fn render<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<(), B::Error> {
+        terminal.draw(|frame| {
+            if let Some(view) = self.view_stack.last_mut() {
+                view.render(frame);
+            }
+        })?;
+        Ok(())
+    }
+
+    pub fn tick(&mut self, event: Event) -> Option<AppResult> {
+        let Event::Key(key) = event else {
+            return None;
+        };
+        if key.kind != KeyEventKind::Press {
+            return None;
+        }
+
+        if let Some(view) = self.view_stack.last_mut() {
+            if let Some(action) = view.handle_key(key) {
+                match action {
+                    ViewAction::Push(new_view) => {
+                        self.view_stack.push(new_view);
+                        return None;
+                    }
+                    ViewAction::Run(spec) => return Some(AppResult::Run(spec)),
+                    ViewAction::Consumed => return None,
+                }
+            }
+        }
+
+        if let Some(Action::Quit) = app_event::map_key(key.code) {
+            if self.view_stack.len() > 1 {
+                self.view_stack.pop();
+                None
+            } else {
+                Some(AppResult::Exit)
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn run<B, E>(
+        mut self,
+        terminal: &mut Terminal<B>,
+        mut events: E,
+    ) -> Result<AppResult, Box<dyn std::error::Error>>
+    where
+        B: Backend,
+        B::Error: std::error::Error + 'static,
+        E: FnMut() -> io::Result<Event>,
+    {
         loop {
-            terminal.draw(|frame| {
-                if let Some(view) = self.view_stack.last_mut() {
-                    view.render(frame);
-                }
-            })?;
-
-            if let Event::Key(key) = event::read()? {
-                if key.kind != KeyEventKind::Press {
-                    continue;
-                }
-
-                if let Some(view) = self.view_stack.last_mut() {
-                    if let Some(action) = view.handle_key(key) {
-                        match action {
-                            ViewAction::Push(new_view) => {
-                                self.view_stack.push(new_view);
-                            }
-                            ViewAction::Run(spec) => {
-                                return Ok(AppResult::Run(spec));
-                            }
-                            ViewAction::Consumed => {}
-                        }
-                        continue;
-                    }
-                }
-
-                if let Some(Action::Quit) = app_event::map_key(key.code) {
-                    if self.view_stack.len() > 1 {
-                        self.view_stack.pop();
-                    } else {
-                        return Ok(AppResult::Exit);
-                    }
-                }
+            self.render(terminal).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+            let ev = events()?;
+            if let Some(result) = self.tick(ev) {
+                return Ok(result);
             }
         }
     }

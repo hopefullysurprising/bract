@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
+use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, Padding};
+use ratatui::widgets::{Block, BorderType, Padding, Paragraph};
 use ratatui::Frame;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
@@ -16,11 +17,19 @@ struct ToolMeta {
     path_separator: String,
 }
 
+#[derive(Clone)]
+struct NavNode {
+    name: String,
+    id: String,
+    children: Vec<NavNode>,
+}
+
 pub struct BrowseView {
     tree_state: TreeState<String>,
     items: Vec<TreeItem<'static, String>>,
     commands: HashMap<String, Command>,
     tool_meta: HashMap<String, ToolMeta>,
+    nav: Vec<NavNode>,
 }
 
 impl BrowseView {
@@ -33,6 +42,7 @@ impl BrowseView {
                 path_separator: t.path_separator.clone(),
             })
         }).collect();
+        let nav = build_nav(tools);
 
         let mut tree_state = TreeState::default();
         if let Some(first) = items.first() {
@@ -44,15 +54,61 @@ impl BrowseView {
             items,
             commands,
             tool_meta,
+            nav,
         })
+    }
+
+    fn selected_command(&self) -> Option<&Command> {
+        self.commands.get(self.tree_state.selected().last()?)
+    }
+
+    fn footer(&self) -> Paragraph<'static> {
+        let key = Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+        let label = Style::new().fg(Color::DarkGray);
+        let sep = || Span::styled("  ·  ", label);
+
+        let selected = self.selected_command();
+        let runnable = selected.is_some_and(|c| c.runnable);
+        let has_children = selected.is_some_and(|c| !c.subcommands.is_empty());
+
+        let mut spans = vec![Span::styled(" ↵", key)];
+        spans.push(Span::styled(if runnable { " run" } else { " expand" }, label));
+        if runnable && has_children {
+            spans.push(sep());
+            spans.push(Span::styled("→", key));
+            spans.push(Span::styled(" expand", label));
+        }
+        spans.push(sep());
+        spans.push(Span::styled("q", key));
+        spans.push(Span::styled(" quit", label));
+
+        Paragraph::new(Line::from(spans))
+    }
+
+    pub fn select_command(&mut self, path: &[&str]) -> bool {
+        let Some(id_path) = resolve_nav_path(&self.nav, path) else {
+            return false;
+        };
+        for depth in 1..id_path.len() {
+            self.tree_state.open(id_path[..depth].to_vec());
+        }
+        self.tree_state.select(id_path);
+        true
     }
 }
 
 impl View for BrowseView {
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
     fn render(&mut self, frame: &mut Frame) {
         let Ok(tree) = Tree::new(&self.items) else {
             return;
         };
+
+        let [tree_area, footer_area] =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(frame.area());
 
         let tree = tree
             .block(
@@ -66,7 +122,8 @@ impl View for BrowseView {
             .node_closed_symbol("▶ ")
             .node_open_symbol("▼ ");
 
-        frame.render_stateful_widget(tree, frame.area(), &mut self.tree_state);
+        frame.render_stateful_widget(tree, tree_area, &mut self.tree_state);
+        frame.render_widget(self.footer(), footer_area);
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<ViewAction> {
@@ -95,7 +152,7 @@ impl View for BrowseView {
                 let selected = self.tree_state.selected().to_vec();
                 if let Some(id) = selected.last() {
                     if let Some(cmd) = self.commands.get(id) {
-                        if cmd.subcommands.is_empty() {
+                        if cmd.subcommands.is_empty() || cmd.runnable {
                             let tool_id = selected.first().unwrap();
                             let meta = self.tool_meta.get(tool_id);
                             let empty_bin = vec![];
@@ -127,6 +184,41 @@ impl View for BrowseView {
     }
 }
 
+fn build_nav(tools: &[Tool]) -> Vec<NavNode> {
+    tools
+        .iter()
+        .map(|t| NavNode {
+            name: t.name.clone(),
+            id: t.id.clone(),
+            children: build_nav_commands(&t.commands),
+        })
+        .collect()
+}
+
+fn build_nav_commands(cmds: &[Command]) -> Vec<NavNode> {
+    cmds.iter()
+        .map(|c| NavNode {
+            name: c.name.clone(),
+            id: c.id.clone(),
+            children: build_nav_commands(&c.subcommands),
+        })
+        .collect()
+}
+
+fn resolve_nav_path(nav: &[NavNode], path: &[&str]) -> Option<Vec<String>> {
+    if path.is_empty() {
+        return None;
+    }
+    let head = nav.iter().find(|n| n.name == path[0])?;
+    let mut result = vec![head.id.clone()];
+    if path.len() == 1 {
+        return Some(result);
+    }
+    let tail = resolve_nav_path(&head.children, &path[1..])?;
+    result.extend(tail);
+    Some(result)
+}
+
 fn build_command_map(tools: &[Tool]) -> HashMap<String, Command> {
     let mut map = HashMap::new();
     for tool in tools {
@@ -137,6 +229,7 @@ fn build_command_map(tools: &[Tool]) -> HashMap<String, Command> {
             flags: tool.flags.clone(),
             args: tool.args.clone(),
             subcommands: vec![],
+            runnable: false,
         });
         collect_commands(&tool.commands, &mut map);
     }

@@ -23,6 +23,14 @@ pub trait Source {
     fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>>;
 }
 
+pub trait HelpProvider {
+    fn fetch_help(
+        &self,
+        binary: &str,
+        subcommand_path: &[&str],
+    ) -> Result<String, Box<dyn std::error::Error>>;
+}
+
 pub fn assemble_tools(sources: Vec<Box<dyn Source>>) -> Result<Vec<Tool>, Box<dyn std::error::Error>> {
     let mut tool_map: BTreeMap<String, Tool> = BTreeMap::new();
 

@@ -8,9 +8,16 @@ pub enum FieldValue {
 }
 
 pub trait FormField {
+    fn name(&self) -> &str;
     fn render_lines(&self, focused: bool, width: u16) -> Vec<Line<'_>>;
     fn handle_key(&mut self, key: KeyEvent);
     fn value(&self) -> FieldValue;
+    fn set_text(&mut self, _value: &str) -> bool {
+        false
+    }
+    fn toggle(&mut self) -> bool {
+        false
+    }
 }
 
 pub fn label_line(name: &str, focused: bool) -> Line<'static> {

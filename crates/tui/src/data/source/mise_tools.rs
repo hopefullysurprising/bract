@@ -7,7 +7,30 @@ use serde::Deserialize;
 use crate::data::commands::Command;
 
 use super::go_buildinfo;
-use super::{convert_args, convert_flags, DiscoveryResult, Source};
+use super::{convert_args, convert_flags, DiscoveryResult, HelpProvider, Source};
+
+pub struct MiseHelpProvider;
+
+impl HelpProvider for MiseHelpProvider {
+    fn fetch_help(
+        &self,
+        binary: &str,
+        subcommand_path: &[&str],
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let mut args = vec!["exec", "--", binary];
+        args.extend_from_slice(subcommand_path);
+        args.push("--help");
+
+        let output = std::process::Command::new("mise").args(&args).output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("help failed: {stderr}").into());
+        }
+
+        Ok(String::from_utf8(output.stdout)?)
+    }
+}
 
 #[derive(Deserialize)]
 struct MiseToolVersion {
@@ -92,11 +115,12 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                 .filter_map(|binary_path| {
                     let binary = binary_path.file_name()?.to_str()?.to_string();
                     let format = classify_binary(&binary_path)?;
-                    Some(Box::new(MiseToolSource {
-                        binary: binary.clone(),
-                        name: binary,
+                    Some(Box::new(MiseToolSource::new(
+                        binary.clone(),
+                        binary,
                         format,
-                    }) as Box<dyn Source>)
+                        Box::new(MiseHelpProvider),
+                    )) as Box<dyn Source>)
                 })
                 .collect();
             Some(sources)
@@ -105,28 +129,25 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
         .collect()
 }
 
-struct MiseToolSource {
+pub struct MiseToolSource {
     binary: String,
     name: String,
     format: InputFormat,
+    help_provider: Box<dyn HelpProvider>,
 }
 
 impl MiseToolSource {
+    pub fn new(
+        binary: String,
+        name: String,
+        format: InputFormat,
+        help_provider: Box<dyn HelpProvider>,
+    ) -> Self {
+        Self { binary, name, format, help_provider }
+    }
+
     fn run_help(&self, subcommand_path: &[&str]) -> Result<helptext_parser::Spec, Box<dyn std::error::Error>> {
-        let mut args = vec!["exec", "--", self.binary.as_str()];
-        args.extend_from_slice(subcommand_path);
-        args.push("--help");
-
-        let output = std::process::Command::new("mise")
-            .args(&args)
-            .output()?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("help failed: {stderr}").into());
-        }
-
-        let content = String::from_utf8(output.stdout)?;
+        let content = self.help_provider.fetch_help(&self.binary, subcommand_path)?;
         Ok(helptext_parser::parse(self.format, &content)?)
     }
 
@@ -156,6 +177,7 @@ impl MiseToolSource {
             flags,
             args,
             subcommands,
+            runnable: true,
         }
     }
 }
