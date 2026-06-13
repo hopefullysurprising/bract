@@ -159,3 +159,51 @@ fn mani_0_32_0_exec_keeps_its_command_positional() {
     assert!(command.is_some(), "the <command> positional must be exposed");
     assert!(command.unwrap().required, "<command> is required");
 }
+
+// --- Famous Cobra CLIs, verified against their real --help --------------------
+// These lock support for the most-starred Cobra CLIs, including their template
+// quirks: kubectl groups commands under Title-case headers ("Deploy Commands:"),
+// rclone uses a lowercase header ("Available commands:").
+
+fn cobra(fixture: &str) -> helptext_parser::Spec {
+    common::parse_fixture(InputFormat::CobraHelptext, "cobra-helptext", fixture)
+}
+
+#[test]
+fn kubectl_1_36_2_grouped_template_parses() {
+    let spec = cobra("kubectl_1.36.2_root.txt");
+    for cmd in ["create", "get", "run", "delete", "apply"] {
+        assert!(spec.cmd.subcommands.contains_key(cmd), "kubectl has `{cmd}`");
+    }
+    // A subcommand group recurses too.
+    let create = cobra("kubectl_1.36.2_create.txt");
+    assert!(create.cmd.subcommands.contains_key("deployment"), "kubectl create has `deployment`");
+}
+
+#[test]
+fn helm_4_2_1_parses() {
+    let spec = cobra("helm_4.2.1_root.txt");
+    for cmd in ["install", "upgrade", "repo", "list"] {
+        assert!(spec.cmd.subcommands.contains_key(cmd), "helm has `{cmd}`");
+    }
+}
+
+#[test]
+fn hugo_0_163_1_parses() {
+    let spec = cobra("hugo_0.163.1_root.txt");
+    for cmd in ["new", "server", "build", "mod"] {
+        assert!(spec.cmd.subcommands.contains_key(cmd), "hugo has `{cmd}`");
+    }
+}
+
+#[test]
+fn rclone_1_74_3_lowercase_template_parses() {
+    let spec = cobra("rclone_1.74.3_root.txt");
+    for cmd in ["copy", "sync", "mount", "ls"] {
+        assert!(spec.cmd.subcommands.contains_key(cmd), "rclone has `{cmd}`");
+    }
+    // A leaf carries its flags.
+    let copy = cobra("rclone_1.74.3_copy.txt");
+    assert!(copy.cmd.subcommands.is_empty(), "rclone copy is a leaf");
+    assert!(!copy.cmd.flags.is_empty(), "rclone copy exposes flags");
+}

@@ -14,34 +14,44 @@ enum Section {
 }
 
 fn detect_section(line: &str) -> Option<Section> {
-    let trimmed = line.trim_end();
-    match trimmed {
-        "Usage:" => return Some(Section::Usage),
-        "Aliases:" => return Some(Section::Aliases),
-        "Examples:" => return Some(Section::Examples),
-        "Available Commands:" | "Additional Commands:" => return Some(Section::Commands),
-        "Flags:" => return Some(Section::Flags),
-        "Global Flags:" => return Some(Section::GlobalFlags),
-        _ => {}
-    }
-
-    // Some Cobra tools ship a custom uppercase template (notably `gh`): section
-    // headers sit at column 0 in all-caps, and command groups are named ending in
-    // "COMMANDS" (CORE/GENERAL/TARGETED/ADDITIONAL/ALIAS …). Prose sections
-    // (ARGUMENTS, HELP TOPICS, LEARN MORE …) are skipped.
+    // Section headers sit at column 0; indented lines are entries/continuations.
     if line.starts_with(char::is_whitespace) {
         return None;
     }
-    match trimmed {
-        "USAGE" => Some(Section::Usage),
-        "FLAGS" => Some(Section::Flags),
-        "INHERITED FLAGS" | "GLOBAL FLAGS" => Some(Section::GlobalFlags),
-        "HELP TOPICS" | "ARGUMENTS" | "EXAMPLES" | "LEARN MORE" | "ENVIRONMENT VARIABLES" => {
-            Some(Section::Done)
-        }
-        s if s.ends_with(" COMMANDS") => Some(Section::Commands),
+    // Match case-insensitively so the many Cobra template dialects all parse:
+    // standard ("Available Commands:", "Flags:"), gh's uppercase ("CORE COMMANDS",
+    // "USAGE"), kubectl's grouped Title Case ("Deploy Commands:"), and rclone's
+    // lowercase ("Available commands:").
+    let header = line.trim_end().to_ascii_lowercase();
+    match header.as_str() {
+        "usage:" | "usage" => Some(Section::Usage),
+        "aliases:" | "aliases" => Some(Section::Aliases),
+        "examples:" | "examples" => Some(Section::Examples),
+        "flags:" | "flags" | "options:" | "options" => Some(Section::Flags),
+        "global flags:" | "global flags" | "inherited flags" => Some(Section::GlobalFlags),
+        "help topics" | "arguments" | "learn more" | "environment variables" => Some(Section::Done),
+        // Grouped flag sections (rclone: "Flags for … (flag group Copy):",
+        // "Important flags useful for most commands (flag group Important):").
+        // Checked before the command rule so a header that merely *mentions*
+        // "commands" in prose isn't mistaken for a command group.
+        s if s.starts_with("flags ") || s.contains("(flag group") => Some(Section::Flags),
+        // Any header naming a command group: "Available Commands:", "CORE COMMANDS",
+        // and kubectl's grouped "Basic Commands (Beginner):" / "Deploy Commands:".
+        s if is_command_header(s) => Some(Section::Commands),
         _ => None,
     }
+}
+
+/// Whether a (lowercased, column-0) header names a command group — it ends in the
+/// word "commands", allowing a trailing `:` and/or a parenthetical qualifier such
+/// as kubectl's `Basic Commands (Beginner):`.
+fn is_command_header(header: &str) -> bool {
+    let base = header.strip_suffix(':').unwrap_or(header).trim_end();
+    let base = match base.rfind('(') {
+        Some(open) if base.ends_with(')') => base[..open].trim_end(),
+        _ => base,
+    };
+    base.ends_with("commands")
 }
 
 fn parse_flag_line(line: &str) -> Option<SpecFlag> {
@@ -123,8 +133,11 @@ fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
     // generic subcommand placeholders (`mani [command]`, `gh <command> <subcommand>`)
     // *only* on commands that have subcommands — on a leaf, `<command>` is a real
     // positional (e.g. `mani exec <command>`), so we must keep it.
-    let reserved: &[&str] =
-        if has_subcommands { &["flags", "command", "subcommand"] } else { &["flags"] };
+    let reserved: &[&str] = if has_subcommands {
+        &["flags", "options", "command", "subcommand"]
+    } else {
+        &["flags", "options"]
+    };
 
     usage_line
         .split_whitespace()

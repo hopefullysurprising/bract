@@ -18,14 +18,16 @@ pub fn read_deps(binary_path: &Path) -> Option<Vec<GoDep>> {
 fn find_buildinfo_section(data: &[u8]) -> Option<&[u8]> {
     let object = Object::parse(data).ok()?;
     match object {
-        Object::Mach(goblin::mach::Mach::Binary(mach)) => {
-            for segment in &mach.segments {
-                for (section, _) in segment.sections().ok()? {
-                    if section.name().ok() == Some("__go_buildinfo") {
-                        let offset = section.offset as usize;
-                        let size = section.size as usize;
-                        return data.get(offset..offset + size);
-                    }
+        Object::Mach(goblin::mach::Mach::Binary(mach)) => macho_buildinfo(data, &mach, 0),
+        // Universal (fat) binaries — common for macOS-distributed Go CLIs such as
+        // hugo — hold one Mach-O per architecture. Search each at its slice offset.
+        Object::Mach(goblin::mach::Mach::Fat(fat)) => {
+            for arch in fat.arches().ok()? {
+                let base = arch.offset as usize;
+                if let Ok(mach) = goblin::mach::MachO::parse(data, base)
+                    && let Some(section) = macho_buildinfo(data, &mach, base)
+                {
+                    return Some(section);
                 }
             }
             None
@@ -54,6 +56,26 @@ fn find_buildinfo_section(data: &[u8]) -> Option<&[u8]> {
         }
         _ => None,
     }
+}
+
+/// Find the `__go_buildinfo` section within one Mach-O. `base` is the Mach-O's
+/// offset inside `data` (0 for a thin binary, the arch slice offset within a fat
+/// binary), since section offsets are relative to the Mach-O.
+fn macho_buildinfo<'a>(
+    data: &'a [u8],
+    mach: &goblin::mach::MachO,
+    base: usize,
+) -> Option<&'a [u8]> {
+    for segment in &mach.segments {
+        for (section, _) in segment.sections().ok()? {
+            if section.name().ok() == Some("__go_buildinfo") {
+                let offset = base + section.offset as usize;
+                let size = section.size as usize;
+                return data.get(offset..offset + size);
+            }
+        }
+    }
+    None
 }
 
 fn parse_buildinfo(section: &[u8]) -> Option<Vec<GoDep>> {
@@ -160,6 +182,18 @@ mod tests {
             return;
         }
         let deps = read_deps(&path).expect("should parse buildinfo");
+        assert!(has_dep(&deps, "github.com/spf13/cobra"));
+    }
+
+    // hugo ships as a Mach-O universal (fat) binary; buildinfo must be read from
+    // the per-architecture Mach-O slice, not the fat wrapper.
+    #[test]
+    fn detects_cobra_in_universal_binary() {
+        let path = mise_install_path("hugo/latest/Payload/hugo");
+        if !path.exists() {
+            return;
+        }
+        let deps = read_deps(&path).expect("should parse fat-binary buildinfo");
         assert!(has_dep(&deps, "github.com/spf13/cobra"));
     }
 

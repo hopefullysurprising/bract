@@ -64,13 +64,18 @@ Icons: `▸` group · `◆` command that is also a group · `•` runnable comma
 - **Lazy Miller columns** over your toolchain — a subtree's `--help` is fetched
   only when you open it, on a background thread, so startup is instant even for
   a CLI as large as `az`.
-- **Parsers per framework, not per tool.** One Cobra parser covers `gh`, `mani`,
-  and any Cobra CLI; a Knack parser covers Azure CLI (`az`). New frameworks are
-  added once and light up every tool built on them.
+- **Parsers per framework, not per tool.** One [Cobra](https://github.com/spf13/cobra)
+  parser covers any Cobra CLI; a [Knack](https://github.com/microsoft/knack) parser
+  covers Azure CLI. New frameworks are added once and light up every tool built on them.
 - **mise is the backbone** for tool versions, task definitions, and environment.
 
-Supported today: mise tasks, any [Cobra](https://github.com/spf13/cobra) CLI,
-and [Knack](https://github.com/microsoft/knack) / Azure CLI.
+## Works with
+
+Any CLI built on a supported framework — plus mise's own tasks. Verified end-to-end
+against the real `--help` of:
+
+- **Cobra** — `kubectl`, `helm`, `hugo`, `rclone`, `gh`, and [hundreds more](https://github.com/spf13/cobra/blob/main/site/content/projects_using_cobra.md).
+- **Knack** — `az` (Azure CLI).
 
 ## License
 
