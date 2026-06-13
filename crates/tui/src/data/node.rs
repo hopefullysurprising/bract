@@ -33,8 +33,6 @@ pub struct Node {
     pub kind: NodeKind,
     /// Whether selecting this node can open a run form (a real invokable command).
     pub runnable: bool,
-    /// A short status badge such as "Preview" or "Experimental", if any.
-    pub badge: Option<String>,
     pub flags: Vec<Flag>,
     pub args: Vec<Arg>,
     /// Which tool this node belongs to (used to route lazy loads to its source).
@@ -47,13 +45,6 @@ pub struct Node {
 impl Node {
     pub fn is_expandable(&self) -> bool {
         !matches!(self.kind, NodeKind::Leaf)
-    }
-
-    pub fn loaded_children(&self) -> Option<&[Node]> {
-        match &self.children {
-            Children::Loaded(c) => Some(c),
-            _ => None,
-        }
     }
 }
 

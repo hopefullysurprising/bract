@@ -44,7 +44,7 @@ impl FormView {
     /// being run (leaf last). Each level contributes a labelled section of its
     /// own flags/args — so flags defined on a parent command accumulate alongside
     /// the leaf's, the way they did before lazy loading.
-    pub fn new(ancestors: &[Node], bin: &[String], path_separator: &str) -> Self {
+    pub fn new(ancestors: &[&Node], bin: &[String], path_separator: &str) -> Self {
         let leaf = ancestors.last();
         let command_names = leaf.map(|n| n.command_path.clone()).unwrap_or_default();
         let display_bin = bin.join(" ");
@@ -290,7 +290,7 @@ fn centered_area(area: Rect, max_width: u16) -> Rect {
 /// label (empty for the leaf) and the node whose flags/args fill it. Shared by
 /// the run form and the browser's detail card so the two never diverge on which
 /// parameters a command exposes.
-pub fn param_levels(ancestors: &[Node]) -> Vec<(String, &Node)> {
+pub fn param_levels<'a>(ancestors: &[&'a Node]) -> Vec<(String, &'a Node)> {
     let leaf_index = ancestors.len().saturating_sub(1);
     ancestors
         .iter()
@@ -299,7 +299,7 @@ pub fn param_levels(ancestors: &[Node]) -> Vec<(String, &Node)> {
         .filter(|(_, node)| !node.args.is_empty() || !node.flags.is_empty())
         .map(|(i, node)| {
             let label = if i == leaf_index { String::new() } else { node.name.clone() };
-            (label, node)
+            (label, *node)
         })
         .collect()
 }

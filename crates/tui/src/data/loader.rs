@@ -101,6 +101,19 @@ fn worker(
 }
 
 fn enqueue(high: &mut VecDeque<LoadRequest>, low: &mut VecDeque<LoadRequest>, req: LoadRequest) {
+    // Dedup by node id, and promote: a High request for a node already queued at
+    // Low jumps it to the front queue rather than fetching it twice. This is how a
+    // focus (High) overtakes the speculative-peek (Low) backlog for the same node.
+    if high.iter().any(|r| r.node_id == req.node_id) {
+        return;
+    }
+    if let Some(pos) = low.iter().position(|r| r.node_id == req.node_id) {
+        if matches!(req.priority, Priority::High) {
+            low.remove(pos);
+            high.push_back(req);
+        }
+        return;
+    }
     match req.priority {
         Priority::High => high.push_back(req),
         Priority::Low => low.push_back(req),

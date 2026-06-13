@@ -201,6 +201,26 @@ impl Session {
         self.tick_key(KeyCode::Down);
     }
 
+    pub fn press_enter(&mut self) {
+        self.tick_key(KeyCode::Enter);
+    }
+
+    pub fn press_run_key(&mut self) {
+        self.tick_key(KeyCode::Char('r'));
+    }
+
+    pub fn active_depth(&mut self) -> usize {
+        self.miller().depth()
+    }
+
+    /// Whether a run form is currently on top of the view stack.
+    pub fn on_form(&mut self) -> bool {
+        self.app
+            .current_view_mut()
+            .map(|v| v.as_any_mut().downcast_mut::<FormView>().is_some())
+            .unwrap_or(false)
+    }
+
     /// Open the run form for the focused command (the `r` key works for both
     /// leaves and runnable branches).
     pub fn open_run_form(&mut self) {

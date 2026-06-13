@@ -154,6 +154,34 @@ fn cobra_leaf_is_runnable() {
     assert!(session.focused_runnable());
 }
 
+// --- Review hardening: never run a node whose help hasn't loaded --------------
+// Pressing `r` on a node still being resolved must not open a form with empty/
+// wrong parameters; it should kick off the load instead.
+#[test]
+fn run_key_on_unloaded_node_does_not_open_form() {
+    let mut session = Session::new(vec![mani_source()], 100, 30);
+    session.navigate(&["mani", "describe"]); // describe loaded & focused
+    session.press_down(); // move to a sibling that move_selection did NOT load
+    assert!(!session.focused_loaded(), "the passed-over sibling isn't loaded yet");
+
+    session.press_run_key();
+    assert!(!session.on_form(), "running an unloaded node must not open a form");
+}
+
+// --- Review hardening: a filter that matches nothing acts on no hidden node ----
+#[test]
+fn enter_on_empty_filter_does_not_act_on_hidden_node() {
+    let mut session = Session::new(vec![az_source()], 100, 30);
+    session.navigate(&["az", "account"]); // active column = az subgroups
+    let depth = session.active_depth();
+
+    session.filter("zzz-no-such-command");
+    session.press_enter(); // selection is hidden — must be a no-op
+
+    assert!(!session.on_form(), "Enter on an empty filter must not run a hidden node");
+    assert_eq!(session.active_depth(), depth, "Enter on an empty filter must not descend");
+}
+
 // --- Positional arguments on leaf commands are fillable and reach the command --
 
 #[test]

@@ -167,7 +167,6 @@ impl HelpToolSource {
             description: cmd.help.clone().unwrap_or_default(),
             kind,
             runnable,
-            badge: None,
             flags: vec![],
             args: vec![],
             tool_id: self.binary.clone(),

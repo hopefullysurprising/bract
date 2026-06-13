@@ -5,7 +5,7 @@
 //! pre-loaded one level deep so its expandability — and therefore the right
 //! controls — are known before you act on it.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -40,7 +40,9 @@ pub struct MillerView {
     path: Vec<usize>,
     tool_meta: HashMap<String, ToolMeta>,
     loader: Box<dyn Loader>,
-    pending: HashSet<String>,
+    /// In-flight loads and the priority they were requested at, so a focus (High)
+    /// can preempt an earlier speculative peek (Low) for the same node.
+    pending: HashMap<String, Priority>,
     spinner: usize,
     error: Option<String>,
     /// Type-ahead filter on the active column (`None` = not filtering).
@@ -69,7 +71,6 @@ impl MillerView {
                 description: String::new(),
                 kind: NodeKind::Branch,
                 runnable: false,
-                badge: None,
                 flags: vec![],
                 args: vec![],
                 tool_id: source.tool_id().to_string(),
@@ -93,7 +94,7 @@ impl MillerView {
             path,
             tool_meta,
             loader,
-            pending: HashSet::new(),
+            pending: HashMap::new(),
             spinner: 0,
             error: None,
             filter: None,
@@ -144,9 +145,15 @@ impl MillerView {
     // --- lazy loading ------------------------------------------------------
 
     fn request_load(&mut self, id: String, tool_id: String, command_path: Vec<String>, priority: Priority, show_spinner: bool) {
-        if !self.pending.insert(id.clone()) {
-            return;
+        // Skip only if an equal-or-higher-priority load for this node is already in
+        // flight; a High request still goes through when a Low peek is pending, so
+        // the loader can promote it ahead of the peek backlog.
+        match self.pending.get(&id) {
+            Some(Priority::High) => return,
+            Some(Priority::Low) if priority == Priority::Low => return,
+            _ => {}
         }
+        self.pending.insert(id.clone(), priority);
         if show_spinner
             && let Some(node) = Self::find_mut(&mut self.roots, &id) {
                 node.children = Children::Loading;
@@ -178,7 +185,7 @@ impl MillerView {
                     matches!(node.kind, NodeKind::Unknown) || node.description.is_empty();
                 if wants_peek
                     && matches!(node.children, Children::Unloaded)
-                    && !self.pending.contains(&node.id)
+                    && !self.pending.contains_key(&node.id)
                 {
                     targets.push((node.id.clone(), node.tool_id.clone(), node.command_path.clone()));
                 }
@@ -243,7 +250,21 @@ impl MillerView {
         self.path[depth] = visible[next];
     }
 
+    /// Whether the current selection is actually visible — false only when a
+    /// filter is active and matches nothing (the selected index then points at a
+    /// hidden row, so acting on it would run/descend a command the user can't see).
+    fn selection_visible(&self) -> bool {
+        self.filter.is_none()
+            || self
+                .path
+                .get(self.active_depth())
+                .is_some_and(|&i| self.filtered_indices().contains(&i))
+    }
+
     fn descend(&mut self) {
+        if !self.selection_visible() {
+            return;
+        }
         self.clear_filter();
         let Some(focused) = self.focused() else { return };
         if !focused.is_expandable() {
@@ -335,15 +356,22 @@ impl MillerView {
     /// The command chain from the tool root down to the focused node, so the form
     /// can group flags per level (the root carries the tool's own flags, e.g.
     /// `mani`'s `--config`).
-    fn ancestor_chain(&self) -> Vec<Node> {
+    fn ancestor_chain(&self) -> Vec<&Node> {
         (0..=self.active_depth())
-            .filter_map(|d| self.column_nodes(d).get(self.path[d]).cloned())
+            .filter_map(|d| self.column_nodes(d).get(self.path[d]))
             .collect()
     }
 
     fn run_focused(&self) -> Option<ViewAction> {
+        if !self.selection_visible() {
+            return None;
+        }
         let focused = self.focused()?;
-        if !focused.runnable {
+        // Only run once the node's own help has loaded: before that we don't have
+        // its flags, and a Cobra node's runnability isn't known yet (it defaults to
+        // runnable until proven a pure group). Otherwise the form would open empty
+        // or for a command that can't actually be run.
+        if !matches!(focused.children, Children::Loaded(_)) || !focused.runnable {
             return None;
         }
         let meta = self.tool_meta.get(&focused.tool_id)?;
@@ -354,6 +382,9 @@ impl MillerView {
     /// Enter is the smart "primary action": descend a branch, run a leaf, or
     /// trigger a load for something not yet resolved.
     fn activate(&mut self) -> Option<ViewAction> {
+        if !self.selection_visible() {
+            return None;
+        }
         enum Act {
             Descend,
             Load,
@@ -430,6 +461,10 @@ impl MillerView {
 
     pub fn focused_description(&self) -> Option<String> {
         self.focused().map(|n| n.description.clone())
+    }
+
+    pub fn depth(&self) -> usize {
+        self.active_depth()
     }
 
     pub fn focused_runnable(&self) -> bool {
@@ -628,7 +663,10 @@ impl MillerView {
         let inner = block.inner(area);
         frame.render_widget(block, area);
 
-        if matches!(focused.children, Children::Loading) {
+        // Anything not yet loaded (Loading, or Unloaded because only a background
+        // peek was requested) shows the spinner rather than a misleading empty
+        // "No parameters" card — the focused node is always loaded on the next tick.
+        if !matches!(focused.children, Children::Loaded(_)) {
             let spinner = SPINNER[self.spinner % SPINNER.len()];
             let line = Line::from(vec![
                 Span::styled(format!("{spinner} "), Style::new().fg(Color::Cyan)),
@@ -775,7 +813,14 @@ impl View for MillerView {
                 Some(ViewAction::Consumed)
             }
             KeyCode::Enter => self.activate().or(Some(ViewAction::Consumed)),
-            KeyCode::Char('r') => self.run_focused().or(Some(ViewAction::Consumed)),
+            KeyCode::Char('r') => {
+                // `run_focused` only fires once the node's help has loaded; if it
+                // hasn't, kick off the load so a follow-up press can run it.
+                self.run_focused().or_else(|| {
+                    self.ensure_focused_loading();
+                    Some(ViewAction::Consumed)
+                })
+            }
             KeyCode::Char('/') => {
                 self.start_filter();
                 Some(ViewAction::Consumed)
