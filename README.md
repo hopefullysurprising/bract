@@ -5,23 +5,11 @@
 [![release](https://img.shields.io/github/v/release/hopefullysurprising/bract?sort=semver)](https://github.com/hopefullysurprising/bract/releases)
 [![license](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-```text
- mani  ›  edit
- Tools                         │ mani                          │ edit                          │
- ▸ Mise Tasks                  │ • check  Validate config.     │ ▶ run edit   (r)              │
- ───────────────────────────── │ • completion  To load complet │                               │
- ▸ az                          │ ▸ describe  Describe projects │ Open up mani config file in   │
- ▸ gh  Work seamlessly with Gi │ ◆ edit  Open up mani config f │ $EDITOR.                      │
- ▸ mani  repositories manager  │ • exec  Execute arbitrary com │ mani                          │
- ▸ yq  yq is a portable comman │ • gen  Generate man page      │ • --color                     │
-                               │ ▸ list  List projects, tasks  │ • --config                    │
-                               │ • run  Run tasks.             │ ───────────────────────────── │
-                               │ • sync  Clone repositories an │ • project  Edit mani project  │
-                               │ • tui  Run TUI                │ • task  Edit mani task        │
- →/↵ open   r run   ← back   / search   q quit
-```
+| Without bract | With bract |
+| :--: | :--: |
+| ![Reading kubectl --help after --help, then hitting a required-flag error](docs/demo-bare.gif) | ![Searching and filling a guided kubectl form in bract](docs/demo-bract.gif) |
 
-A modern dev setup spans many CLIs — mise, gh, az, mani, … — each with its own
+A modern dev setup spans many CLIs — mise, gh, az, kubectl, … — each with its own
 flags and docs. bract discovers the tools [mise](https://mise.jdx.dev) manages,
 parses their `--help` **per framework** (so one parser covers many tools), and
 lets you browse commands in file-explorer-style columns and fill in arguments

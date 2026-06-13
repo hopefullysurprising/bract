@@ -2,6 +2,7 @@
 # Pin a recent Rust so transitive deps (e.g. kdl, which needs rustc ≥1.95) build
 # even with a bare `cargo install` — no need to remember `--locked`.
 rust = "latest"
+vhs = "latest"
 
 [tasks.install]
 description = "Build + install bract to ~/.cargo/bin (uses Cargo.lock)"
@@ -10,3 +11,15 @@ run = "cargo install --path crates/tui --locked --force"
 [tasks.test]
 description = "Run the workspace test suite"
 run = "cargo test"
+
+[tasks.demo]
+description = "Render the README demo GIFs from docs/*.tape (needs ttyd + ffmpeg on PATH)"
+run = '''
+cargo build --release -p bract
+mkdir -p tmp/demo
+printf '[tools]\nkubectl = "latest"\n' > tmp/demo/mise.toml
+mise trust tmp/demo
+(cd tmp/demo && mise install)
+vhs docs/demo-bare.tape
+vhs docs/demo-bract.tape
+'''

@@ -91,7 +91,7 @@ dependencies = [
 
 [[package]]
 name = "bract"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "goblin",
  "helptext-parser",
