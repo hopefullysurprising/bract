@@ -178,6 +178,13 @@ fn kubectl_1_36_2_grouped_template_parses() {
     // A subcommand group recurses too.
     let create = cobra("kubectl_1.36.2_create.txt");
     assert!(create.cmd.subcommands.contains_key("deployment"), "kubectl create has `deployment`");
+
+    // A bare UPPERCASE metavar (`kubectl create deployment NAME …`) is captured as
+    // a required positional, so the form can prompt for it.
+    let deployment = cobra("kubectl_1.36.2_create_deployment.txt");
+    let name = deployment.cmd.args.iter().find(|a| a.name == "NAME");
+    assert!(name.is_some_and(|a| a.required), "kubectl create deployment exposes a required NAME");
+    assert!(deployment.cmd.flags.iter().any(|f| f.long == vec!["image"]), "and an --image flag");
 }
 
 #[test]

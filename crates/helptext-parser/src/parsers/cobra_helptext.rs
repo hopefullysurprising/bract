@@ -54,6 +54,37 @@ fn is_command_header(header: &str) -> bool {
     base.ends_with("commands")
 }
 
+/// Process one line of a flags section into `target`, supporting both standard
+/// Cobra (one flag per line) and kubectl's `Options:` format (a `--flag=DEFAULT:`
+/// line followed by tab-indented description lines, with blank separators).
+/// Returns true when the section has ended (column-0 trailer prose like
+/// `Use "tool [command] --help" …`).
+fn flag_section_line(line: &str, target: &mut Vec<SpecFlag>, global: bool) -> bool {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return false; // blank: a separator between kubectl options, not the end
+    }
+    if !line.starts_with(char::is_whitespace) {
+        return true; // unindented prose after the flags = trailer
+    }
+    if trimmed.starts_with('-') {
+        if let Some(mut flag) = parse_flag_line(line) {
+            flag.global = global;
+            target.push(flag);
+        }
+    } else if let Some(last) = target.last_mut() {
+        // Indented non-flag line: a wrapped / kubectl multi-line description.
+        match last.help.as_mut() {
+            Some(help) => {
+                help.push(' ');
+                help.push_str(trimmed);
+            }
+            None => last.help = Some(trimmed.to_string()),
+        }
+    }
+    false
+}
+
 fn parse_flag_line(line: &str) -> Option<SpecFlag> {
     let trimmed = line.trim();
     if trimmed.is_empty() {
@@ -61,28 +92,40 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
     }
 
     let (def_part, help_text) = split_flag_and_description(trimmed);
+    // kubectl's `Options:` format writes the definition as `--flag=DEFAULT:` with a
+    // trailing colon and an inline default; drop the colon before tokenising.
+    let def_part = def_part.strip_suffix(':').map(str::to_string).unwrap_or(def_part);
 
     let mut short = Vec::new();
     let mut long = Vec::new();
     let mut arg: Option<SpecArg> = None;
     let mut default = Vec::new();
 
-    let tokens: Vec<&str> = def_part.split_whitespace().collect();
-    let mut i = 0;
-    while i < tokens.len() {
-        let token = tokens[i];
+    for token in def_part.split_whitespace() {
         if let Some(c) = token.strip_prefix('-').and_then(|s| s.strip_suffix(',')) {
             if c.len() == 1 {
                 short.push(c.chars().next().unwrap());
             }
-        } else if let Some(name) = token.strip_prefix("--") {
-            long.push(name.to_string());
-        } else if !token.starts_with('-') && !long.is_empty() {
-            arg = Some(SpecArg::builder()
-                .name(long.last().unwrap().clone())
-                .build());
+        } else if let Some(rest) = token.strip_prefix("--") {
+            match rest.split_once('=') {
+                // kubectl style `--flag=DEFAULT` — a value flag unless the default
+                // is a bool, in which case it's a switch.
+                Some((lname, dval)) => {
+                    long.push(lname.to_string());
+                    if dval != "true" && dval != "false" {
+                        arg = Some(SpecArg::builder().name(lname.to_string()).build());
+                        let cleaned = dval.trim_matches(|c| matches!(c, '\'' | '"' | '[' | ']'));
+                        if !cleaned.is_empty() {
+                            default.push(cleaned.to_string());
+                        }
+                    }
+                }
+                None => long.push(rest.to_string()),
+            }
+        } else if !token.starts_with('-') && !long.is_empty() && arg.is_none() {
+            // standard cobra: a trailing metavar (`--config string`) marks a value.
+            arg = Some(SpecArg::builder().name(long.last().unwrap().clone()).build());
         }
-        i += 1;
     }
 
     if let Some(help) = &help_text
@@ -128,6 +171,16 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
     Some(built)
 }
 
+/// A bare UPPERCASE token (e.g. `NAME`, `TYPE`, `FILE`) — Cobra's convention for
+/// a positional placeholder. Requires at least one uppercase letter so `--` and
+/// short flags don't qualify; allows `_`/`-` and a trailing `...`.
+fn is_metavar(token: &str) -> bool {
+    let core = token.trim_end_matches("...");
+    core.len() >= 2
+        && core.chars().any(|c| c.is_ascii_uppercase())
+        && core.chars().all(|c| c.is_ascii_uppercase() || c == '_' || c == '-')
+}
+
 fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
     // `[flags]` is never a real argument. `command`/`subcommand` are Cobra's
     // generic subcommand placeholders (`mani [command]`, `gh <command> <subcommand>`)
@@ -142,14 +195,20 @@ fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
     usage_line
         .split_whitespace()
         .filter_map(|token| {
-            let (name, required) = if let Some(inner) = token.strip_prefix('<').and_then(|s| s.strip_suffix('>')) {
+            let (raw, required) = if let Some(inner) = token.strip_prefix('<').and_then(|s| s.strip_suffix('>')) {
                 (inner, true)
             } else if let Some(inner) = token.strip_prefix('[').and_then(|s| s.strip_suffix(']')) {
                 (inner, false)
+            } else if is_metavar(token) {
+                // Bare UPPERCASE metavar — Cobra's convention for a required
+                // positional (e.g. `kubectl create deployment NAME --image=…`).
+                (token, true)
             } else {
                 return None;
             };
-            if reserved.contains(&name.to_lowercase().as_str()) {
+            // Strip a variadic marker so `FILE...` / `[args...]` read cleanly.
+            let name = raw.trim_end_matches("...");
+            if name.is_empty() || reserved.contains(&name.to_lowercase().as_str()) {
                 return None;
             }
             let mut arg = SpecArg::builder().name(name.to_string()).build();
@@ -245,18 +304,13 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
                 }
             }
             Section::Flags => {
-                if line.trim().is_empty() {
+                if flag_section_line(line, &mut flags, false) {
                     section = Section::Done;
-                } else if let Some(flag) = parse_flag_line(line) {
-                    flags.push(flag);
                 }
             }
             Section::GlobalFlags => {
-                if line.trim().is_empty() {
+                if flag_section_line(line, &mut global_flags, true) {
                     section = Section::Done;
-                } else if let Some(mut flag) = parse_flag_line(line) {
-                    flag.global = true;
-                    global_flags.push(flag);
                 }
             }
             Section::Done => {}
