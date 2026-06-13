@@ -104,7 +104,7 @@ pub fn az_source() -> Box<dyn Source> {
 
 pub fn task_source() -> Box<dyn Source> {
     let content =
-        fs::read_to_string(fixtures_dir().join("mise-usage/app_0.1.0_collisions.kdl")).unwrap();
+        fs::read_to_string(fixtures_dir().join("mise-usage/collisions.kdl")).unwrap();
     let spec = helptext_parser::parse(InputFormat::UsageKdl, &content).unwrap();
     Box::new(StaticSource {
         id: "mise_tasks".to_string(),

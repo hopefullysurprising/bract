@@ -645,7 +645,7 @@ impl MillerView {
             let title = self.column_title(depth);
             let refs: Vec<&Node> = nodes.iter().collect();
 
-            // A node that is both runnable and a parent (e.g. `mani edit`, or the
+            // A node that is both runnable and a parent (e.g. `mani edit`, or a
             // mise task `app:check`) gets the full run preview — its description
             // and parameters grouped by command level, exactly as the run form and
             // leaf card present them — above a separator, then its subtree below.

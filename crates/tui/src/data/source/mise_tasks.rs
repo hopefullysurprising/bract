@@ -87,7 +87,7 @@ fn build_hierarchy(tool_id: &str, prefix: &[String], entries: &[(&str, &SpecComm
         let subnodes = build_hierarchy(tool_id, &segments, children);
 
         // A name can be both a runnable task and a group parent (e.g. `app:check`
-        // alongside `app:check:be`). Fold the runnable task's metadata into the
+        // alongside `app:check:api`). Fold the runnable task's metadata into the
         // group node so it stays a single tree identifier instead of colliding.
         let (description, flags, args, runnable) = match leaves.remove(group) {
             Some(spec_cmd) => (

@@ -1,0 +1,24 @@
+cmd app:check help="Run all project checks locally" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd app:check:api:lint help="API: lint sources" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd app:check:api:test help="API: run the test suite" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd app:check:api:test:cov help="API: tests with coverage" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd app:check:ci help="Mirror the full CI pipeline locally" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd app:check:ci:fast help="Fast variant: skips coverage" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd repo:sync help="Sync repositories from the manifest" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}
+cmd repo:sync:adopt help="One-time: adopt existing repositories into the manifest" {
+    arg "[-- ARGS_LAST]…" help="Arguments to pass to the tasks." required=#false var=#true hide=#true
+}

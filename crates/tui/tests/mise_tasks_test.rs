@@ -35,13 +35,13 @@ fn find<'a>(nodes: &'a [Node], id: &str) -> Option<&'a Node> {
 }
 
 fn task_nodes() -> Vec<Node> {
-    let content = fixture("app_0.1.0_collisions.kdl");
+    let content = fixture("collisions.kdl");
     let spec = helptext_parser::parse(InputFormat::UsageKdl, &content).expect("parse");
     nodes_from_spec(&spec, "mise_tasks")
 }
 
 // A mise task can be both runnable and a parent (e.g. `app:check` alongside
-// `app:check:be`). The tree must not emit two nodes with the same id — that is
+// `app:check:api`). The tree must not emit two nodes with the same id — that is
 // what crashed the old tree widget on real task sets.
 #[test]
 fn leaf_and_group_collisions_produce_unique_ids() {
@@ -59,21 +59,18 @@ fn runnable_parent_keeps_metadata_children_and_runnability() {
     let nodes = task_nodes();
 
     let check = find(&nodes, "mise_tasks/app/check").expect("app:check node");
-    assert_eq!(
-        check.description,
-        "Run App Check locally (single origin on :8080 via service)"
-    );
+    assert_eq!(check.description, "Run all project checks locally");
     assert!(check.runnable, "a task that is also a parent stays runnable");
     assert!(matches!(check.children, Children::Loaded(ref c) if !c.is_empty()));
 
-    // `be` is a pure namespace (no `app:check:be` task), so it must not be runnable.
-    let be = find(&nodes, "mise_tasks/app/check/be").expect("be namespace node");
-    assert!(!be.runnable, "synthetic namespace must not be runnable");
+    // `api` is a pure namespace (no `app:check:api` task), so it must not be runnable.
+    let api = find(&nodes, "mise_tasks/app/check/api").expect("api namespace node");
+    assert!(!api.runnable, "synthetic namespace must not be runnable");
 }
 
 #[test]
 fn task_command_path_is_segmented_for_separator_joining() {
     let nodes = task_nodes();
-    let cov = find(&nodes, "mise_tasks/app/check/be/test/cov").expect("deep leaf");
-    assert_eq!(cov.command_path, vec!["app", "check", "be", "test", "cov"]);
+    let cov = find(&nodes, "mise_tasks/app/check/api/test/cov").expect("deep leaf");
+    assert_eq!(cov.command_path, vec!["app", "check", "api", "test", "cov"]);
 }

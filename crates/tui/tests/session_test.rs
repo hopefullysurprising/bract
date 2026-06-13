@@ -121,9 +121,9 @@ fn mise_runnable_branch_runs_with_joined_path() {
 #[test]
 fn mise_deep_leaf_runs_with_joined_path() {
     let mut session = Session::new(vec![task_source()], 100, 30);
-    session.navigate(&["Mise Tasks", "app", "check", "be", "test", "cov"]);
+    session.navigate(&["Mise Tasks", "app", "check", "api", "test", "cov"]);
     let spec = session.run_via_form();
-    assert_eq!(spec.args, vec!["app:check:be:test:cov"]);
+    assert_eq!(spec.args, vec!["app:check:api:test:cov"]);
 }
 
 // --- Cobra groups are not runnable; only leaves and dual commands are ----------
