@@ -4,22 +4,24 @@ pub mod event;
 pub mod ui;
 
 use std::process::Command;
+use std::time::Duration;
 
-use app::AppResult;
+use ratatui::backend::Backend;
+use ratatui::crossterm::event as term_event;
+use ratatui::Terminal;
+
+use app::{App, AppResult};
 use data::source;
-use data::source::mise_tasks::MiseTasksSource;
-use data::source::mise_tools;
-use ui::browse::BrowseView;
+use ui::miller::MillerView;
+
+const TICK: Duration = Duration::from_millis(80);
 
 pub fn run_main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut sources: Vec<Box<dyn source::Source>> = vec![Box::new(MiseTasksSource)];
-    sources.extend(mise_tools::discover_sources());
-    let tools = source::assemble_tools(sources)?;
-    let browse = BrowseView::new(&tools)?;
+    let sources = source::discover_sources();
+    let mut app = App::new(Box::new(MillerView::new(sources)));
 
     let mut terminal = ratatui::init();
-    let result = app::App::new(Box::new(browse))
-        .run(&mut terminal, || ratatui::crossterm::event::read());
+    let result = run_loop(&mut app, &mut terminal);
     ratatui::restore();
 
     match result? {
@@ -32,13 +34,32 @@ pub fn run_main() -> Result<(), Box<dyn std::error::Error>> {
 
             eprintln!("→ {} {}", spec.bin[0], all_args.join(" "));
 
-            let status = Command::new(&spec.bin[0])
-                .args(&all_args)
-                .status()?;
-
+            let status = Command::new(&spec.bin[0]).args(&all_args).status()?;
             std::process::exit(status.code().unwrap_or(1));
         }
     }
 
     Ok(())
+}
+
+/// The event loop polls rather than blocks, so background-loaded columns and the
+/// loading spinner keep refreshing while waiting for input.
+fn run_loop<B>(app: &mut App, terminal: &mut Terminal<B>) -> Result<AppResult, Box<dyn std::error::Error>>
+where
+    B: Backend,
+    B::Error: std::error::Error + 'static,
+{
+    loop {
+        app.render(terminal).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+
+        if term_event::poll(TICK)? {
+            let ev = term_event::read()?;
+            if let Some(result) = app.tick(ev) {
+                return Ok(result);
+            }
+        } else {
+            // No input this tick — advance background loads and the spinner.
+            app.on_idle();
+        }
+    }
 }

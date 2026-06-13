@@ -1,13 +1,12 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use helptext_parser::InputFormat;
+use helptext_parser::{InputFormat, SpecCommand};
 use serde::Deserialize;
 
-use crate::data::commands::Command;
+use crate::data::node::{Children, Node, NodeKind};
 
-use super::go_buildinfo;
-use super::{convert_args, convert_flags, DiscoveryResult, HelpProvider, Source};
+use super::{convert_args, convert_flags, go_buildinfo, python_introspect, HelpProvider, Loaded, Source};
 
 pub struct MiseHelpProvider;
 
@@ -40,12 +39,15 @@ struct MiseToolVersion {
     active: bool,
 }
 
+/// Identify which framework a binary is built with, so we know how to parse its
+/// `--help`. Go binaries are introspected via buildinfo; Python entry points via
+/// their virtualenv's installed packages.
 fn classify_binary(binary_path: &Path) -> Option<InputFormat> {
-    let deps = go_buildinfo::read_deps(binary_path)?;
-    if deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
-        return Some(InputFormat::CobraHelptext);
-    }
-    None
+    if let Some(deps) = go_buildinfo::read_deps(binary_path)
+        && deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
+            return Some(InputFormat::CobraHelptext);
+        }
+    python_introspect::detect_format(binary_path)
 }
 
 fn resolve_bin_paths(tool_key: &str, version: &str) -> Option<PathBuf> {
@@ -71,9 +73,7 @@ fn is_executable(path: &Path) -> bool {
 
 #[cfg(not(unix))]
 fn is_executable(path: &Path) -> bool {
-    path.extension()
-        .map(|ext| ext == "exe")
-        .unwrap_or(false)
+    path.extension().map(|ext| ext == "exe").unwrap_or(false)
 }
 
 fn list_executables(dir: &Path) -> Vec<PathBuf> {
@@ -87,20 +87,20 @@ fn list_executables(dir: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+/// Enumerate active mise tools and classify each executable by framework. This
+/// performs no `--help` calls — those happen lazily as the tree is navigated —
+/// so startup stays instant even with a tool as large as `az`.
 pub fn discover_sources() -> Vec<Box<dyn Source>> {
-    let output = match std::process::Command::new("mise")
-        .args(["ls", "--json"])
-        .output()
-    {
+    let output = match std::process::Command::new("mise").args(["ls", "--json"]).output() {
         Ok(o) if o.status.success() => o,
         _ => return vec![],
     };
 
-    let tools: BTreeMap<String, Vec<MiseToolVersion>> =
-        match serde_json::from_slice(&output.stdout) {
-            Ok(t) => t,
-            Err(_) => return vec![],
-        };
+    let tools: BTreeMap<String, Vec<MiseToolVersion>> = match serde_json::from_slice(&output.stdout)
+    {
+        Ok(t) => t,
+        Err(_) => return vec![],
+    };
 
     tools
         .into_iter()
@@ -115,8 +115,7 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                 .filter_map(|binary_path| {
                     let binary = binary_path.file_name()?.to_str()?.to_string();
                     let format = classify_binary(&binary_path)?;
-                    Some(Box::new(MiseToolSource::new(
-                        binary.clone(),
+                    Some(Box::new(HelpToolSource::new(
                         binary,
                         format,
                         Box::new(MiseHelpProvider),
@@ -129,106 +128,88 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
         .collect()
 }
 
-pub struct MiseToolSource {
+/// A tool whose command tree is discovered by parsing its `--help` output, one
+/// level at a time. Works for any framework the helptext parser understands
+/// (Cobra, Knack, …) — the framework only changes how `--help` is parsed and how
+/// a child's expandability is inferred.
+pub struct HelpToolSource {
     binary: String,
-    name: String,
     format: InputFormat,
     help_provider: Box<dyn HelpProvider>,
 }
 
-impl MiseToolSource {
-    pub fn new(
-        binary: String,
-        name: String,
-        format: InputFormat,
-        help_provider: Box<dyn HelpProvider>,
-    ) -> Self {
-        Self { binary, name, format, help_provider }
+impl HelpToolSource {
+    pub fn new(binary: String, format: InputFormat, help_provider: Box<dyn HelpProvider>) -> Self {
+        Self { binary, format, help_provider }
     }
 
-    fn run_help(&self, subcommand_path: &[&str]) -> Result<helptext_parser::Spec, Box<dyn std::error::Error>> {
-        let content = self.help_provider.fetch_help(&self.binary, subcommand_path)?;
-        Ok(helptext_parser::parse(self.format, &content)?)
-    }
+    fn child_node(&self, command_path: &[String], name: &str, cmd: &SpecCommand) -> Node {
+        let mut child_path = command_path.to_vec();
+        child_path.push(name.to_string());
 
-    fn resolve_command(&self, id: &str, name: &str, description: &str, subcommand_path: &[&str]) -> Command {
-        let (flags, args, subcommands) = match self.run_help(subcommand_path) {
-            Ok(spec) => {
-                let children = spec.cmd.subcommands.iter().map(|(child_name, child_cmd)| {
-                    let child_id = format!("{id}/{child_name}");
-                    let mut child_path = subcommand_path.to_vec();
-                    child_path.push(child_name.as_str());
-                    self.resolve_command(
-                        &child_id,
-                        child_name,
-                        child_cmd.help.as_deref().unwrap_or_default(),
-                        &child_path,
-                    )
-                }).collect();
-                (convert_flags(&spec.cmd.flags), convert_args(&spec.cmd.args), children)
+        // Knack help declares whether a child needs a subcommand, so we know its
+        // expandability up front. Cobra help does not, so it stays Unknown until
+        // the child is loaded.
+        let (kind, runnable) = match self.format {
+            InputFormat::KnackHelptext => {
+                if cmd.subcommand_required {
+                    (NodeKind::Branch, false)
+                } else {
+                    (NodeKind::Leaf, true)
+                }
             }
-            Err(_) => (vec![], vec![], vec![]),
+            _ => (NodeKind::Unknown, true),
         };
 
-        Command {
-            id: id.to_string(),
+        Node {
+            id: format!("{}/{}", self.binary, child_path.join("/")),
             name: name.to_string(),
-            description: description.to_string(),
-            flags,
-            args,
-            subcommands,
-            runnable: true,
+            description: cmd.help.clone().unwrap_or_default(),
+            kind,
+            runnable,
+            badge: None,
+            flags: vec![],
+            args: vec![],
+            tool_id: self.binary.clone(),
+            command_path: child_path,
+            children: Children::Unloaded,
         }
     }
 }
 
-impl Source for MiseToolSource {
+impl Source for HelpToolSource {
     fn tool_id(&self) -> &str {
         &self.binary
     }
 
     fn tool_name(&self) -> &str {
-        &self.name
+        &self.binary
     }
 
     fn tool_bin(&self) -> Vec<String> {
         vec![self.binary.clone()]
     }
 
-    fn discover(&self) -> Result<DiscoveryResult, Box<dyn std::error::Error>> {
-        let spec = match self.run_help(&[]) {
-            Ok(s) => s,
-            Err(_) => {
-                return Ok(DiscoveryResult {
-                    description: "failed to get help".to_string(),
-                    flags: vec![],
-                    args: vec![],
-                    commands: vec![],
-                });
-            }
-        };
+    fn load(&self, command_path: &[String]) -> Result<Loaded, Box<dyn std::error::Error>> {
+        let path_refs: Vec<&str> = command_path.iter().map(String::as_str).collect();
+        let content = self.help_provider.fetch_help(&self.binary, &path_refs)?;
+        let spec = helptext_parser::parse(self.format, &content)?;
 
-        let description = spec.cmd.help.clone().unwrap_or_default();
-        let flags = convert_flags(&spec.cmd.flags);
-        let args = convert_args(&spec.cmd.args);
-        let commands = spec.cmd
+        let children = spec
+            .cmd
             .subcommands
             .iter()
-            .map(|(name, cmd)| {
-                self.resolve_command(
-                    &format!("{}/{name}", self.binary),
-                    name,
-                    cmd.help.as_deref().unwrap_or_default(),
-                    &[name.as_str()],
-                )
-            })
+            .map(|(name, cmd)| self.child_node(command_path, name, cmd))
             .collect();
 
-        Ok(DiscoveryResult {
-            description,
-            flags,
-            args,
-            commands,
+        Ok(Loaded {
+            description: spec.cmd.help.clone().unwrap_or_default(),
+            // A command that requires a subcommand (a pure group) is not runnable;
+            // anything else — a leaf, or a group with its own run form — is.
+            runnable: !spec.cmd.subcommand_required,
+            flags: convert_flags(&spec.cmd.flags),
+            args: convert_args(&spec.cmd.args),
+            children,
         })
     }
 }

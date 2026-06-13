@@ -14,13 +14,32 @@ enum Section {
 }
 
 fn detect_section(line: &str) -> Option<Section> {
-    match line.trim_end() {
-        "Usage:" => Some(Section::Usage),
-        "Aliases:" => Some(Section::Aliases),
-        "Examples:" => Some(Section::Examples),
-        "Available Commands:" | "Additional Commands:" => Some(Section::Commands),
-        "Flags:" => Some(Section::Flags),
-        "Global Flags:" => Some(Section::GlobalFlags),
+    let trimmed = line.trim_end();
+    match trimmed {
+        "Usage:" => return Some(Section::Usage),
+        "Aliases:" => return Some(Section::Aliases),
+        "Examples:" => return Some(Section::Examples),
+        "Available Commands:" | "Additional Commands:" => return Some(Section::Commands),
+        "Flags:" => return Some(Section::Flags),
+        "Global Flags:" => return Some(Section::GlobalFlags),
+        _ => {}
+    }
+
+    // Some Cobra tools ship a custom uppercase template (notably `gh`): section
+    // headers sit at column 0 in all-caps, and command groups are named ending in
+    // "COMMANDS" (CORE/GENERAL/TARGETED/ADDITIONAL/ALIAS …). Prose sections
+    // (ARGUMENTS, HELP TOPICS, LEARN MORE …) are skipped.
+    if line.starts_with(char::is_whitespace) {
+        return None;
+    }
+    match trimmed {
+        "USAGE" => Some(Section::Usage),
+        "FLAGS" => Some(Section::Flags),
+        "INHERITED FLAGS" | "GLOBAL FLAGS" => Some(Section::GlobalFlags),
+        "HELP TOPICS" | "ARGUMENTS" | "EXAMPLES" | "LEARN MORE" | "ENVIRONMENT VARIABLES" => {
+            Some(Section::Done)
+        }
+        s if s.ends_with(" COMMANDS") => Some(Section::Commands),
         _ => None,
     }
 }
@@ -56,15 +75,13 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
         i += 1;
     }
 
-    if let Some(help) = &help_text {
-        if let Some(start) = help.rfind("(default ") {
-            if let Some(end) = help[start..].find(')') {
+    if let Some(help) = &help_text
+        && let Some(start) = help.rfind("(default ")
+            && let Some(end) = help[start..].find(')') {
                 let val = help[start + 9..start + end]
                     .trim_matches('"');
                 default.push(val.to_string());
             }
-        }
-    }
 
     let clean_help = help_text.map(|h| {
         if let Some(start) = h.rfind(" (default ") {
@@ -101,8 +118,13 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
     Some(built)
 }
 
-fn parse_usage_args(usage_line: &str) -> Vec<SpecArg> {
-    const RESERVED: &[&str] = &["flags", "command"];
+fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
+    // `[flags]` is never a real argument. `command`/`subcommand` are Cobra's
+    // generic subcommand placeholders (`mani [command]`, `gh <command> <subcommand>`)
+    // *only* on commands that have subcommands — on a leaf, `<command>` is a real
+    // positional (e.g. `mani exec <command>`), so we must keep it.
+    let reserved: &[&str] =
+        if has_subcommands { &["flags", "command", "subcommand"] } else { &["flags"] };
 
     usage_line
         .split_whitespace()
@@ -114,7 +136,7 @@ fn parse_usage_args(usage_line: &str) -> Vec<SpecArg> {
             } else {
                 return None;
             };
-            if RESERVED.contains(&name.to_lowercase().as_str()) {
+            if reserved.contains(&name.to_lowercase().as_str()) {
                 return None;
             }
             let mut arg = SpecArg::builder().name(name.to_string()).build();
@@ -152,13 +174,26 @@ fn parse_command_line(line: &str) -> Option<(String, String)> {
     }
 
     let (name_part, desc) = split_flag_and_description(trimmed);
-    Some((name_part, desc?))
+    // gh's template renders entries as `name:   description`; drop the trailing
+    // colon so the command name matches what you actually invoke.
+    let name = name_part.trim_end_matches(':').to_string();
+    Some((name, desc?))
+}
+
+/// A usage line whose only non-flag tokens are the generic `command`/`subcommand`
+/// placeholders is a subcommand-dispatch form (e.g. `mani describe [command]`),
+/// not a way to invoke the command itself.
+fn is_dispatch_form(usage_line: &str) -> bool {
+    usage_line.split_whitespace().any(|token| {
+        let bare = token.trim_matches(|c| c == '<' || c == '>' || c == '[' || c == ']');
+        bare == "command" || bare == "subcommand"
+    })
 }
 
 pub fn parse(content: &str) -> Result<Spec, ParseError> {
     let mut section = Section::Preamble;
     let mut preamble_lines: Vec<String> = Vec::new();
-    let mut usage_line = String::new();
+    let mut usage_lines: Vec<String> = Vec::new();
     let mut aliases: Vec<String> = Vec::new();
     let mut subcommands: Vec<SpecCommand> = Vec::new();
     let mut flags: Vec<SpecFlag> = Vec::new();
@@ -177,7 +212,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
             Section::Usage => {
                 let trimmed = line.trim();
                 if !trimmed.is_empty() {
-                    usage_line = trimmed.to_string();
+                    usage_lines.push(trimmed.to_string());
                 }
             }
             Section::Aliases => {
@@ -230,13 +265,27 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
         None
     };
 
-    let bin = usage_line
-        .split_whitespace()
-        .next()
+    let bin = usage_lines
+        .first()
+        .and_then(|l| l.split_whitespace().next())
         .unwrap_or("")
         .to_string();
 
-    let args = parse_usage_args(&usage_line);
+    let has_subcommands = !subcommands.is_empty();
+
+    // The command is a runnable command in its own right when it offers a usage
+    // form that isn't just subcommand dispatch. A pure group (only `[command]`
+    // forms) requires a subcommand and cannot be run directly — this is what keeps
+    // groups like `mani describe`/`mani list` from rendering as runnable commands,
+    // while genuinely dual commands like `mani edit` (own `[flags]` form *and*
+    // subcommands) stay runnable.
+    let run_form = usage_lines.iter().find(|l| !is_dispatch_form(l));
+    let subcommand_required = has_subcommands && run_form.is_none();
+
+    // Parse positional args from the run form (where real arguments live), falling
+    // back to the first usage line.
+    let args_line = run_form.or_else(|| usage_lines.first()).cloned().unwrap_or_default();
+    let args = parse_usage_args(&args_line, has_subcommands);
 
     if !aliases.is_empty() {
         aliases.remove(0);
@@ -262,6 +311,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
     spec.name = bin.clone();
     spec.bin = bin;
     spec.cmd = cmd_builder.build();
+    spec.cmd.subcommand_required = subcommand_required;
     if !preamble.is_empty() {
         spec.about = Some(preamble);
     }

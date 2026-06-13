@@ -4,6 +4,9 @@ Usage:
   mani [command]
 
 Available Commands:
+  describe    Describe projects and tasks
+  edit        Open up mani config file
+  exec        Execute arbitrary commands
   run         Run tasks
   sync        Clone repositories and update .gitignore
 

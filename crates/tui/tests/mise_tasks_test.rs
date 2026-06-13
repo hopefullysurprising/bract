@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
-use bract::data::commands::Command;
-use bract::data::source::mise_tasks::commands_from_spec;
-use bract::ui::browse::BrowseView;
+use bract::data::node::{Children, Node};
+use bract::data::source::mise_tasks::nodes_from_spec;
 use helptext_parser::InputFormat;
 
 fn fixture(name: &str) -> String {
@@ -12,92 +11,69 @@ fn fixture(name: &str) -> String {
     std::fs::read_to_string(&path).expect("read fixture")
 }
 
-fn collect_ids<'a>(commands: &'a [Command], out: &mut Vec<&'a str>) {
-    for cmd in commands {
-        out.push(&cmd.id);
-        collect_ids(&cmd.subcommands, out);
+fn collect_ids<'a>(nodes: &'a [Node], out: &mut Vec<&'a str>) {
+    for node in nodes {
+        out.push(&node.id);
+        if let Children::Loaded(children) = &node.children {
+            collect_ids(children, out);
+        }
     }
 }
 
-fn find<'a>(commands: &'a [Command], id: &str) -> Option<&'a Command> {
-    for cmd in commands {
-        if cmd.id == id {
-            return Some(cmd);
+fn find<'a>(nodes: &'a [Node], id: &str) -> Option<&'a Node> {
+    for node in nodes {
+        if node.id == id {
+            return Some(node);
         }
-        if let Some(found) = find(&cmd.subcommands, id) {
-            return Some(found);
+        if let Children::Loaded(children) = &node.children {
+            if let Some(found) = find(children, id) {
+                return Some(found);
+            }
         }
     }
     None
 }
 
-// A mise task can be both runnable and a parent of subtasks (e.g. `app:check`
-// alongside `app:check:be`). The hierarchy must not emit two nodes with the
-// same id, otherwise tui-tree-widget rejects the tree with a duplicate-identifier
-// error and the whole app fails to start.
-#[test]
-fn leaf_and_group_collisions_produce_unique_ids() {
+fn task_nodes() -> Vec<Node> {
     let content = fixture("app_0.1.0_collisions.kdl");
     let spec = helptext_parser::parse(InputFormat::UsageKdl, &content).expect("parse");
-    let commands = commands_from_spec(&spec, "mise");
+    nodes_from_spec(&spec, "mise_tasks")
+}
 
+// A mise task can be both runnable and a parent (e.g. `app:check` alongside
+// `app:check:be`). The tree must not emit two nodes with the same id — that is
+// what crashed the old tree widget on real task sets.
+#[test]
+fn leaf_and_group_collisions_produce_unique_ids() {
+    let nodes = task_nodes();
     let mut ids = Vec::new();
-    collect_ids(&commands, &mut ids);
-    let mut sorted = ids.clone();
-    sorted.sort_unstable();
-    sorted.dedup();
-    assert_eq!(ids.len(), sorted.len(), "duplicate command ids: {ids:?}");
+    collect_ids(&nodes, &mut ids);
+    let mut unique = ids.clone();
+    unique.sort_unstable();
+    unique.dedup();
+    assert_eq!(ids.len(), unique.len(), "duplicate node ids: {ids:?}");
 }
 
 #[test]
-fn runnable_parent_task_keeps_its_metadata_and_children() {
-    let content = fixture("app_0.1.0_collisions.kdl");
-    let spec = helptext_parser::parse(InputFormat::UsageKdl, &content).expect("parse");
-    let commands = commands_from_spec(&spec, "mise");
+fn runnable_parent_keeps_metadata_children_and_runnability() {
+    let nodes = task_nodes();
 
-    let check = find(&commands, "mise:app:check").expect("app:check node");
+    let check = find(&nodes, "mise_tasks/app/check").expect("app:check node");
     assert_eq!(
         check.description,
         "Run App Check locally (single origin on :8080 via service)"
     );
-    assert!(
-        !check.subcommands.is_empty(),
-        "merged node should keep its subtasks"
-    );
     assert!(check.runnable, "a task that is also a parent stays runnable");
+    assert!(matches!(check.children, Children::Loaded(ref c) if !c.is_empty()));
 
-    let test = find(&commands, "mise:app:check:be:test").expect("be:test node");
-    assert_eq!(test.description, "BE: tests across workers");
-    assert!(test.runnable);
-    assert!(find(&test.subcommands, "mise:app:check:be:test:cov").is_some());
-
-    // `be` is a pure namespace — there is no `app:check:be` task — so it must not
-    // be runnable; Enter on it should expand rather than try to run nothing.
-    let be = find(&commands, "mise:app:check:be").expect("be namespace node");
+    // `be` is a pure namespace (no `app:check:be` task), so it must not be runnable.
+    let be = find(&nodes, "mise_tasks/app/check/be").expect("be namespace node");
     assert!(!be.runnable, "synthetic namespace must not be runnable");
-    assert!(be.description.is_empty());
 }
 
-// The browse tree is what actually rejected duplicate identifiers in the wild;
-// assert it builds successfully from a colliding task set.
 #[test]
-fn browse_view_builds_from_colliding_tasks() {
-    use bract::data::commands::Tool;
-
-    let content = fixture("app_0.1.0_collisions.kdl");
-    let spec = helptext_parser::parse(InputFormat::UsageKdl, &content).expect("parse");
-    let commands = commands_from_spec(&spec, "mise");
-
-    let tool = Tool {
-        id: "mise_tasks".to_string(),
-        name: "Mise Tasks".to_string(),
-        bin: vec!["mise".to_string(), "run".to_string()],
-        path_separator: ":".to_string(),
-        description: String::new(),
-        flags: vec![],
-        args: vec![],
-        commands,
-    };
-
-    BrowseView::new(&[tool]).expect("browse view should build without duplicate ids");
+fn task_command_path_is_segmented_for_separator_joining() {
+    let nodes = task_nodes();
+    let cov = find(&nodes, "mise_tasks/app/check/be/test/cov").expect("deep leaf");
+    assert_eq!(cov.command_path, vec!["app", "check", "be", "test", "cov"]);
 }

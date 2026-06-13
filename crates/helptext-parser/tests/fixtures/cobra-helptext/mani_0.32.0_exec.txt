@@ -1,0 +1,44 @@
+Execute arbitrary commands.
+Use single quotes around your command to prevent file globbing and 
+environment variable expansion from occurring before the command is 
+executed in each directory.
+
+Usage:
+  mani exec <command> [flags]
+
+Examples:
+  # List files in all projects
+  mani exec --all ls
+
+  # List git files with markdown suffix in all projects
+  mani exec --all 'git ls-files | grep -e ".md"'
+
+Flags:
+  -a, --all                   target all projects
+  -k, --cwd                   use current working directory
+      --dry-run               print commands without executing them
+  -f, --forks uint32          maximum number of concurrent processes (default 4)
+  -h, --help                  help for exec
+      --ignore-errors         ignore errors
+      --ignore-non-existing   ignore non-existing projects
+      --omit-empty-columns    omit empty columns in table output
+      --omit-empty-rows       omit empty rows in table output
+  -o, --output string         set output format [stream|table|markdown|html]
+      --parallel              run tasks in parallel across projects
+  -d, --paths strings         select projects by path
+  -p, --projects strings      select projects by name
+  -s, --silent                hide progress when running tasks
+  -J, --spec string           set spec
+  -t, --tags strings          select projects by tag
+  -E, --tags-expr string      select projects by tags expression
+  -T, --target string         target projects by target name
+      --theme string          set theme
+      --tty                   replace current process
+
+Global Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -u, --user-config string   specify user config
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

@@ -7,7 +7,6 @@ const FLAGS_VERSION_INL: u8 = 0x2;
 
 pub struct GoDep {
     pub path: String,
-    pub version: String,
 }
 
 pub fn read_deps(binary_path: &Path) -> Option<Vec<GoDep>> {
@@ -89,7 +88,7 @@ fn find_aligned_magic(data: &[u8]) -> Option<usize> {
     None
 }
 
-fn read_varint_bytes<'a>(data: &'a [u8], start: usize) -> Option<(&'a [u8], usize)> {
+fn read_varint_bytes(data: &[u8], start: usize) -> Option<(&[u8], usize)> {
     let mut value: u64 = 0;
     let mut shift = 0;
     let mut pos = start;
@@ -124,10 +123,7 @@ fn parse_mod_info(raw: &[u8]) -> Option<Vec<GoDep>> {
             if parts.first()? != &"dep" || parts.len() < 3 {
                 return None;
             }
-            Some(GoDep {
-                path: parts[1].to_string(),
-                version: parts[2].to_string(),
-            })
+            Some(GoDep { path: parts[1].to_string() })
         })
         .collect();
     Some(deps)

@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/session_test.rs
+expression: session.screen()
+---
+" az  ›  account                                                                                     "
+" Tools                          │ az                              │ account                        │"
+" ▸ az                           │ ▸ account  Manage Azure subscri │ ▸ lock  Manage Azure subscript │"
+"                                │ ▸ acr  Manage private registrie │ ▸ management-group  Manage Azu │"
+"                                │ ▸ ad  Manage Microsoft Entra ID │ • clear  Clear all subscriptio │"
+"                                │ ▸ advisor  Manage Azure Advisor │ • get-access-token  Get a toke │"
+"                                │ ▸ afd  Manage Azure Front Door  │ • list  Get a list of subscrip │"
+"                                │ ▸ aks  Azure Kubernetes Service │ • list-locations  List support │"
+"                                │ ▸ ams  Manage Azure Media Servi │ • set  Set a subscription to b │"
+"                                │ ▸ apim  Manage Azure API Manage │ • show  Get the details of a s │"
+"                                │ ▸ appconfig  Manage App Configu │                                │"
+"                                │ ▸ appservice  Manage Appservice │                                │"
+"                                │ ▸ aro  Manage Azure Red Hat Ope │                                │"
+"                                │ ▸ artifacts  Manage Azure Artif │                                │"
+"                                │ ▸ backup  Manage Azure Backups. │                                │"
+"                                │ ▸ batch  Manage Azure Batch.    │                                │"
+"                                │ ▸ bicep  Bicep CLI command grou │                                │"
+"                                │ ▸ billing  Manage Azure Billing │                                │"
+"                                │ ▸ boards  Manage Azure Boards.  │                                │"
+"                                │ ▸ bot  Manage Microsoft Azure B │                                │"
+"────────────────────────────────────────────────────────────────────────────────────────────────────"
+" Manage Azure subscription information.                                                             "
+"                                                                                                    "
+" →/↵ open   ← back   / search   q quit                                                              "

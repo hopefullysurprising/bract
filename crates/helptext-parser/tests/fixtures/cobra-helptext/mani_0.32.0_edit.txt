@@ -1,0 +1,29 @@
+Open up mani config file in $EDITOR.
+
+Usage:
+  mani edit [flags]
+  mani edit [command]
+
+Aliases:
+  edit, e, ed
+
+Examples:
+  # Edit current context
+  mani edit
+
+Available Commands:
+  project     Edit mani project
+  task        Edit mani task
+
+Flags:
+  -h, --help   help for edit
+
+Global Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -u, --user-config string   specify user config
+
+Use "mani edit [command] --help" for more information about a command.
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

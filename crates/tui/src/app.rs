@@ -1,5 +1,3 @@
-use std::io;
-
 use ratatui::backend::Backend;
 use ratatui::crossterm::event::{Event, KeyEventKind};
 use ratatui::Terminal;
@@ -44,8 +42,8 @@ impl App {
             return None;
         }
 
-        if let Some(view) = self.view_stack.last_mut() {
-            if let Some(action) = view.handle_key(key) {
+        if let Some(view) = self.view_stack.last_mut()
+            && let Some(action) = view.handle_key(key) {
                 match action {
                     ViewAction::Push(new_view) => {
                         self.view_stack.push(new_view);
@@ -55,7 +53,6 @@ impl App {
                     ViewAction::Consumed => return None,
                 }
             }
-        }
 
         if let Some(Action::Quit) = app_event::map_key(key.code) {
             if self.view_stack.len() > 1 {
@@ -69,22 +66,10 @@ impl App {
         }
     }
 
-    pub fn run<B, E>(
-        mut self,
-        terminal: &mut Terminal<B>,
-        mut events: E,
-    ) -> Result<AppResult, Box<dyn std::error::Error>>
-    where
-        B: Backend,
-        B::Error: std::error::Error + 'static,
-        E: FnMut() -> io::Result<Event>,
-    {
-        loop {
-            self.render(terminal).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-            let ev = events()?;
-            if let Some(result) = self.tick(ev) {
-                return Ok(result);
-            }
+    /// Advance background work on the current view (lazy loads, spinners).
+    pub fn on_idle(&mut self) {
+        if let Some(view) = self.view_stack.last_mut() {
+            view.on_idle();
         }
     }
 }

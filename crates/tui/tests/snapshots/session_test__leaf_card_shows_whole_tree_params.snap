@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/session_test.rs
+expression: session.screen()
+---
+" mani  ›  sync                                                                                      "
+" Tools                          │ mani                            ││ sync                           "
+" ▸ mani  repositories manager a │ · describe  Describe projects a ││  Clone repositories and update "
+"                                │ · edit  Open up mani config fil ││  .gitignore file.              "
+"                                │ · exec  Execute arbitrary comma ││                                "
+"                                │ · run  Run tasks                ││  Parameters                    "
+"                                │ • sync  Clone repositories and  ││  • --forks                     "
+"                                │                                 ││  • --ignore-sync-state         "
+"                                │                                 ││  • --parallel                  "
+"                                │                                 ││  • --paths                     "
+"                                │                                 ││  • --remove-orphaned-worktrees "
+"                                │                                 ││  • --status                    "
+"                                │                                 ││  • --sync-gitignore            "
+"                                │                                 ││  • --sync-remotes              "
+"                                │                                 ││  • --tags                      "
+"                                │                                 ││  • --tags-expr                 "
+"                                │                                 ││                                "
+"                                │                                 ││  mani                          "
+"                                │                                 ││  • --color                     "
+"                                │                                 ││  • --config                    "
+"────────────────────────────────────────────────────────────────────────────────────────────────────"
+" Clone repositories and update .gitignore file.                                                     "
+"                                                                                                    "
+" ↵ run   ← back   / search   q quit                                                                 "

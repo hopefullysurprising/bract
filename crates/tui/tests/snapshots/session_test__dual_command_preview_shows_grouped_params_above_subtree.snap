@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/session_test.rs
+expression: session.screen()
+---
+" mani  ›  edit                                                                                      "
+" Tools                          │ mani                            │ edit                           │"
+" ▸ mani  repositories manager a │ · describe  Describe projects a │ ▶ run edit   (r)               │"
+"                                │ ◆ edit  Open up mani config fil │                                │"
+"                                │ · exec  Execute arbitrary comma │ Open up mani config file in    │"
+"                                │ · run  Run tasks                │ $EDITOR.                       │"
+"                                │ · sync  Clone repositories and  │                                │"
+"                                │                                 │ mani                           │"
+"                                │                                 │ • --color                      │"
+"                                │                                 │ • --config                     │"
+"                                │                                 │ • --user-config                │"
+"                                │                                 │ ────────────────────────────── │"
+"                                │                                 │ · project  Edit mani project   │"
+"                                │                                 │ · task  Edit mani task         │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"────────────────────────────────────────────────────────────────────────────────────────────────────"
+" Open up mani config file in $EDITOR.                                                               "
+"                                                                                                    "
+" →/↵ open   r run   ← back   / search   q quit                                                      "

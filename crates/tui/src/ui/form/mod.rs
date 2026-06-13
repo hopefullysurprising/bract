@@ -14,7 +14,7 @@ use text_input::TextInput;
 use toggle::Toggle;
 
 use super::{RunSpec, View, ViewAction};
-use crate::data::commands::{Command, FlagKind};
+use crate::data::node::{FlagKind, Node};
 
 enum FieldMeta {
     Arg,
@@ -40,11 +40,13 @@ pub struct FormView {
 }
 
 impl FormView {
-    pub fn new(ancestors: Vec<Command>, bin: &[String], path_separator: &str) -> Self {
-        let command_names: Vec<String> = ancestors.iter()
-            .skip(1)
-            .map(|c| c.name.clone())
-            .collect();
+    /// `ancestors` is the command chain from the topmost group down to the leaf
+    /// being run (leaf last). Each level contributes a labelled section of its
+    /// own flags/args — so flags defined on a parent command accumulate alongside
+    /// the leaf's, the way they did before lazy loading.
+    pub fn new(ancestors: &[Node], bin: &[String], path_separator: &str) -> Self {
+        let leaf = ancestors.last();
+        let command_names = leaf.map(|n| n.command_path.clone()).unwrap_or_default();
         let display_bin = bin.join(" ");
         let display_path = command_names.join(path_separator);
         let title = if display_path.is_empty() {
@@ -53,23 +55,16 @@ impl FormView {
             format!("{display_bin} {display_path}")
         };
 
-        let description = ancestors.last()
-            .map(|c| c.description.clone())
-            .unwrap_or_default();
+        let description = leaf.map(|n| n.description.clone()).unwrap_or_default();
 
-        let mut sections = Vec::new();
-        let ancestor_count = ancestors.len();
-        for (i, ancestor) in ancestors.iter().rev().enumerate() {
-            let fields = build_fields(ancestor);
-            if !fields.is_empty() {
-                let is_leaf = i == 0 && ancestor_count > 1;
-                sections.push(FormSection {
-                    label: if is_leaf { String::new() } else { ancestor.name.clone() },
-                    fields,
-                });
-            }
-        }
-
+        // Build leaf-first so the command's own parameters lead; the leaf section
+        // is unlabelled, parent levels are labelled by command name. The detail
+        // card in the browser shares `param_levels`, so what you preview matches
+        // what you can fill in here.
+        let sections: Vec<FormSection> = param_levels(ancestors)
+            .into_iter()
+            .map(|(label, node)| FormSection { label, fields: build_fields(node) })
+            .collect();
         let total_fields = sections.iter().map(|s| s.fields.len()).sum();
 
         Self {
@@ -128,6 +123,12 @@ impl FormView {
             }
         }
         false
+    }
+
+    /// Section labels in render order (`""` is the leaf's own parameters); used by
+    /// tests to confirm parent-level flags are accumulated into their own groups.
+    pub fn section_labels(&self) -> Vec<String> {
+        self.sections.iter().map(|s| s.label.clone()).collect()
     }
 
     pub fn run_spec(&self) -> RunSpec {
@@ -285,10 +286,28 @@ fn centered_area(area: Rect, max_width: u16) -> Rect {
     }
 }
 
-fn build_fields(command: &Command) -> Vec<(FieldMeta, Box<dyn FormField>)> {
+/// The command levels that contribute parameters, leaf-first: each is a section
+/// label (empty for the leaf) and the node whose flags/args fill it. Shared by
+/// the run form and the browser's detail card so the two never diverge on which
+/// parameters a command exposes.
+pub fn param_levels(ancestors: &[Node]) -> Vec<(String, &Node)> {
+    let leaf_index = ancestors.len().saturating_sub(1);
+    ancestors
+        .iter()
+        .enumerate()
+        .rev()
+        .filter(|(_, node)| !node.args.is_empty() || !node.flags.is_empty())
+        .map(|(i, node)| {
+            let label = if i == leaf_index { String::new() } else { node.name.clone() };
+            (label, node)
+        })
+        .collect()
+}
+
+fn build_fields(node: &Node) -> Vec<(FieldMeta, Box<dyn FormField>)> {
     let mut fields: Vec<(FieldMeta, Box<dyn FormField>)> = Vec::new();
 
-    for arg in &command.args {
+    for arg in &node.args {
         let chars: Vec<char> = arg.default.chars().collect();
         let cursor = chars.len();
         fields.push((
@@ -306,7 +325,7 @@ fn build_fields(command: &Command) -> Vec<(FieldMeta, Box<dyn FormField>)> {
         ));
     }
 
-    for flag in &command.flags {
+    for flag in &node.flags {
         match &flag.kind {
             FlagKind::Boolean => {
                 fields.push((

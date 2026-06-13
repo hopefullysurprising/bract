@@ -1,0 +1,32 @@
+Describe projects and tasks.
+
+Usage:
+  mani describe [command]
+
+Aliases:
+  describe, desc
+
+Examples:
+  # Describe all projects
+  mani describe projects
+
+  # Describe all tasks
+  mani describe tasks
+
+Available Commands:
+  projects    Describe projects
+  tasks       Describe tasks
+
+Flags:
+  -h, --help           help for describe
+      --theme string   set theme (default "default")
+
+Global Flags:
+      --color                enable color (default true)
+  -c, --config string        specify config
+  -u, --user-config string   specify user config
+
+Use "mani describe [command] --help" for more information about a command.
+
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues

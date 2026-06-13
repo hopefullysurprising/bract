@@ -6,6 +6,7 @@ use usage::Spec;
 pub enum InputFormat {
     UsageKdl,
     CobraHelptext,
+    KnackHelptext,
 }
 
 impl InputFormat {
@@ -13,6 +14,7 @@ impl InputFormat {
         match self {
             InputFormat::UsageKdl => parsers::usage_kdl::parse(content),
             InputFormat::CobraHelptext => parsers::cobra_helptext::parse(content),
+            InputFormat::KnackHelptext => parsers::knack_helptext::parse(content),
         }
     }
 }

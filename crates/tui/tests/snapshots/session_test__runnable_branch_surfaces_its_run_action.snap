@@ -1,0 +1,28 @@
+---
+source: crates/tui/tests/session_test.rs
+expression: session.screen()
+---
+" Mise Tasks  ›  app  ›  check                                                                     "
+" Mise Tasks                     │ app                             │ check                        │"
+" ▸ app                          │ ◆ check  Run App Check loca │ ▶ run check   (r)            │"
+" ▸ mani                         │                                 │                                │"
+"                                │                                 │ Run App Check locally        │"
+"                                │                                 │ (single origin on :8080 via    │"
+"                                │                                 │ service)                       │"
+"                                │                                 │ ────────────────────────────── │"
+"                                │                                 │ ▸ be                           │"
+"                                │                                 │ ◆ ci  Mirror the full Azure pi │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"                                │                                 │                                │"
+"────────────────────────────────────────────────────────────────────────────────────────────────────"
+" Run App Check locally (single origin on :8080 via service)                                       "
+"                                                                                                    "
+" →/↵ open   r run   ← back   / search   q quit                                                      "

@@ -6,3 +6,5 @@ target
 # insta: pending (unreviewed) snapshots — accepted ones (*.snap) are committed
 *.snap.new
 *.pending-snap
+
+tmp
