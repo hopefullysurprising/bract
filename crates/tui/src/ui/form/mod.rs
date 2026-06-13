@@ -2,6 +2,8 @@ mod field;
 mod text_input;
 mod toggle;
 
+use std::collections::HashSet;
+
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -61,9 +63,18 @@ impl FormView {
         // is unlabelled, parent levels are labelled by command name. The detail
         // card in the browser shares `param_levels`, so what you preview matches
         // what you can fill in here.
+        // Walk leaf → root so the command's own parameters win: a flag the leaf
+        // declares locally (kubectl repeats inherited flags inline under every
+        // command's `Options:`) is shown once, under the leaf, and skipped where
+        // an ancestor re-declares it. Sections emptied by dedup are dropped.
+        let mut seen = HashSet::new();
         let sections: Vec<FormSection> = param_levels(ancestors)
             .into_iter()
-            .map(|(label, node)| FormSection { label, fields: build_fields(node) })
+            .map(|(label, node)| FormSection {
+                label,
+                fields: build_fields(node, &mut seen),
+            })
+            .filter(|section| !section.fields.is_empty())
             .collect();
         let total_fields = sections.iter().map(|s| s.fields.len()).sum();
 
@@ -131,6 +142,15 @@ impl FormView {
         self.sections.iter().map(|s| s.label.clone()).collect()
     }
 
+    /// Field names across every section, in render order; used by tests to
+    /// confirm a flag inherited at multiple levels is shown exactly once.
+    pub fn field_names(&self) -> Vec<String> {
+        self.sections
+            .iter()
+            .flat_map(|s| s.fields.iter().map(|(_, f)| f.name().to_string()))
+            .collect()
+    }
+
     pub fn run_spec(&self) -> RunSpec {
         // mise joins task segments into one token (`app:check`); cobra keeps them
         // as separate argv tokens (`list projects`). Joining on the tool's separator
@@ -153,8 +173,16 @@ impl FormView {
                         args.push(flag_token(long, short));
                     }
                     (FieldMeta::ValueFlag { long, short }, FieldValue::Text(v)) if !v.is_empty() => {
-                        args.push(flag_token(long, short));
-                        args.push(v);
+                        // `--flag=value`, not `--flag value`: an optional-value flag
+                        // (cobra's NoOptDefVal, e.g. kubectl `--dry-run`) treats a
+                        // space-separated token as a positional, not its value. The
+                        // `=` form binds the value across cobra/clap/click alike.
+                        if let Some(l) = long {
+                            args.push(format!("--{l}={v}"));
+                        } else if let Some(s) = short {
+                            args.push(format!("-{s}"));
+                            args.push(v);
+                        }
                     }
                     _ => {}
                 }
@@ -304,12 +332,16 @@ pub fn param_levels<'a>(ancestors: &[&'a Node]) -> Vec<(String, &'a Node)> {
         .collect()
 }
 
-fn build_fields(node: &Node) -> Vec<(FieldMeta, Box<dyn FormField>)> {
+fn build_fields(
+    node: &Node,
+    seen: &mut HashSet<String>,
+) -> Vec<(FieldMeta, Box<dyn FormField>)> {
     let mut fields: Vec<(FieldMeta, Box<dyn FormField>)> = Vec::new();
 
     for arg in &node.args {
-        let chars: Vec<char> = arg.default.chars().collect();
-        let cursor = chars.len();
+        if !seen.insert(format!("arg:{}", arg.name)) {
+            continue;
+        }
         fields.push((
             FieldMeta::Arg,
             Box::new(TextInput {
@@ -319,13 +351,22 @@ fn build_fields(node: &Node) -> Vec<(FieldMeta, Box<dyn FormField>)> {
                     format!("[{}]", arg.name)
                 },
                 help: arg.description.clone(),
-                chars,
-                cursor,
+                default: arg.default.clone(),
+                chars: Vec::new(),
+                cursor: 0,
             }),
         ));
     }
 
     for flag in &node.flags {
+        let key = match (&flag.long, &flag.short) {
+            (Some(long), _) => format!("flag:--{long}"),
+            (None, Some(short)) => format!("flag:-{short}"),
+            (None, None) => continue,
+        };
+        if !seen.insert(key) {
+            continue;
+        }
         match &flag.kind {
             FlagKind::Boolean => {
                 fields.push((
@@ -341,8 +382,6 @@ fn build_fields(node: &Node) -> Vec<(FieldMeta, Box<dyn FormField>)> {
                 ));
             }
             FlagKind::Value { default, .. } => {
-                let chars: Vec<char> = default.chars().collect();
-                let cursor = chars.len();
                 fields.push((
                     FieldMeta::ValueFlag {
                         long: flag.long.clone(),
@@ -351,8 +390,9 @@ fn build_fields(node: &Node) -> Vec<(FieldMeta, Box<dyn FormField>)> {
                     Box::new(TextInput {
                         name: flag.name.clone(),
                         help: flag.description.clone(),
-                        chars,
-                        cursor,
+                        default: default.clone(),
+                        chars: Vec::new(),
+                        cursor: 0,
                     }),
                 ));
             }

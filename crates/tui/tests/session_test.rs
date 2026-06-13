@@ -1,6 +1,6 @@
 mod common;
 
-use common::{az_source, cli_source, mani_source, task_source, Session};
+use common::{az_source, cli_source, kubectl_source, mani_source, task_source, Session};
 
 // --- Root ordering: Mise Tasks pinned on top, the rest alphabetical -----------
 
@@ -97,8 +97,8 @@ fn cobra_leaf_runs_after_lazy_load() {
     session.navigate(&["mani", "sync"]);
     session.open_run_form();
     let spec = session.run();
-    // The lazily-loaded subcommand path is what we assert; the form additionally
-    // pre-fills any flag defaults (e.g. `--forks 4`), which is expected.
+    // The lazily-loaded subcommand path is what we assert; flag defaults
+    // (e.g. `--forks 4`) show as placeholders and are omitted unless edited.
     assert_eq!(spec.bin, vec!["mani"]);
     assert_eq!(spec.args.first().map(String::as_str), Some("sync"));
 }
@@ -222,6 +222,45 @@ fn form_groups_parent_flags_into_their_own_sections() {
     let labels = session.form_section_labels();
     assert!(labels.contains(&String::new()), "the leaf's own parameters form an unlabelled section");
     assert!(labels.contains(&"mani".to_string()), "root-level flags are grouped under 'mani'");
+}
+
+// --- Inherited flags shown inline at every level appear once in the form -------
+// kubectl repeats inherited flags under each command's `Options:` (no separate
+// `Global Flags:` header), so `create` and `create deployment` both declare
+// `--dry-run`/`--field-manager`/`--validate`. The form must dedup them.
+#[test]
+fn cobra_inherited_flags_appear_once_in_form() {
+    let mut session = Session::new(vec![kubectl_source()], 120, 40);
+    session.navigate(&["kubectl", "create", "deployment"]);
+    session.open_run_form();
+
+    let names = session.form_field_names();
+    for flag in ["--dry-run", "--field-manager", "--validate"] {
+        let count = names.iter().filter(|n| n.as_str() == flag).count();
+        assert_eq!(count, 1, "{flag} must appear exactly once, got {count} in {names:?}");
+    }
+}
+
+// --- A command runs with only the parameters the user actually filled ----------
+// Flag defaults are placeholders, not values: an untouched `--field-manager`
+// (default `kubectl-create`) must not be echoed back, which would bloat — and
+// for kubectl, break — the command.
+#[test]
+fn value_flag_defaults_are_omitted_unless_edited() {
+    let mut session = Session::new(vec![kubectl_source()], 120, 40);
+    session.navigate(&["kubectl", "create", "deployment"]);
+    session.open_run_form();
+
+    assert!(session.set_field("<NAME>", "web"), "the NAME positional is fillable");
+    assert!(session.set_field("--image", "nginx"), "--image is fillable");
+
+    let spec = session.run();
+    assert_eq!(spec.bin, vec!["kubectl"]);
+    assert_eq!(
+        spec.args,
+        vec!["create", "deployment", "--image=nginx", "web"],
+        "only the command path plus what the user filled — no default flags"
+    );
 }
 
 // --- Search jumps to a match in a long column ---------------------------------

@@ -1,5 +1,5 @@
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
-use ratatui::style::{Color, Style};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
 use super::field::{self, FieldValue, FormField};
@@ -7,6 +7,10 @@ use super::field::{self, FieldValue, FormField};
 pub struct TextInput {
     pub name: String,
     pub help: String,
+    /// The tool's own default, shown as a dim placeholder. It is *not* part of
+    /// the value — leaving the field untouched omits the flag, so the tool
+    /// applies this default itself instead of us passing it back redundantly.
+    pub default: String,
     pub chars: Vec<char>,
     pub cursor: usize,
 }
@@ -26,6 +30,9 @@ impl FormField for TextInput {
         let mut lines = vec![field::label_line(&self.name, focused)];
 
         let track = Span::styled("  │ ".to_string(), Style::new().fg(Color::DarkGray));
+        let placeholder = Style::new()
+            .fg(Color::DarkGray)
+            .add_modifier(Modifier::ITALIC);
 
         if focused {
             let before: String = self.chars[..self.cursor].iter().collect();
@@ -40,11 +47,20 @@ impl FormField for TextInput {
                 String::new()
             };
 
-            lines.push(Line::from(vec![
+            let mut spans = vec![
                 track,
                 Span::styled(before, Style::new().fg(Color::White)),
                 Span::styled(cursor_ch, Style::new().fg(Color::Black).bg(Color::White)),
                 Span::styled(after, Style::new().fg(Color::White)),
+            ];
+            if self.chars.is_empty() && !self.default.is_empty() {
+                spans.push(Span::styled(self.default.clone(), placeholder));
+            }
+            lines.push(Line::from(spans));
+        } else if self.chars.is_empty() && !self.default.is_empty() {
+            lines.push(Line::from(vec![
+                track,
+                Span::styled(self.default.clone(), placeholder),
             ]));
         } else {
             let value: String = self.chars.iter().collect();

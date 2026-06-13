@@ -97,6 +97,15 @@ pub fn cli_source() -> Box<dyn Source> {
     ))
 }
 
+pub fn kubectl_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "kubectl_1.36.2");
+    Box::new(HelpToolSource::new(
+        "kubectl".to_string(),
+        InputFormat::CobraHelptext,
+        Box::new(provider),
+    ))
+}
+
 pub fn az_source() -> Box<dyn Source> {
     let provider = FixtureHelpProvider::new(fixtures_dir().join("knack-help"), "az_2.87.0");
     Box::new(HelpToolSource::new("az".to_string(), InputFormat::KnackHelptext, Box::new(provider)))
@@ -171,6 +180,10 @@ impl Session {
 
     pub fn form_section_labels(&mut self) -> Vec<String> {
         self.expect_form().section_labels()
+    }
+
+    pub fn form_field_names(&mut self) -> Vec<String> {
+        self.expect_form().field_names()
     }
 
     pub fn set_field(&mut self, name: &str, value: &str) -> bool {
