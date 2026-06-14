@@ -4,6 +4,30 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.5.0] - 2026-06-14
+
+### Added
+
+- **Mise and usage-based CLIs.** Browse and build `mise`'s own commands — pinned
+  right under Mise Tasks — and any CLI built on the [Usage](https://usage.jdx.dev)
+  spec, via a third parser alongside Cobra and Knack.
+- **Form memory.** Fields you fill often rise to the top, and your last value for
+  a field is offered as a greyed hint you accept with `→`.
+- **Environment-variable parameters.** Pre-fill any flag or argument from
+  `BRACT_<PATH>__<PARAM>` — set once, applied across a whole command family, and
+  never written to disk. Useful for values a CLI won't take from the environment
+  itself (e.g. Azure CLI's `--org`).
+- **Clipboard.** The command you build is copied ready to paste (a native tool
+  with an OSC 52 fallback that also works over SSH), so re-running it later is a
+  single paste.
+- **Opt-outs** `BRACT_NO_MEMORY` and `BRACT_NO_CLIPBOARD`, for demos, CI, or privacy.
+
+### Changed
+
+- **Instant navigation.** A subtree's `--help` is cached per tool version, and
+  cache hits resolve synchronously — so revisiting a tool is immediate, with no
+  loading spinner.
+
 ## [0.4.1] - 2026-06-13
 
 ### Added

@@ -1,4 +1,4 @@
-# With bract: search, navigate, and fill the same kubectl command — then run it.
+# With bract: narrow to the tool, step into the command, fill it, then run it.
 # Render: `mise run demo` (needs vhs + ttyd + ffmpeg, and a kubectl-active dir).
 Output docs/demo-bract.gif
 
@@ -10,7 +10,7 @@ Set Padding 18
 Set TypingSpeed 110ms
 
 Hide
-Type `cd tmp/demo && eval "$(mise env)" && export PATH="$OLDPWD/target/release:$PATH" && clear`
+Type `cd tmp/demo && eval "$(mise env)" && export PATH="$OLDPWD/target/release:$PATH" && export BRACT_NO_MEMORY=1 && clear`
 Enter
 Sleep 1s
 Show
@@ -19,20 +19,19 @@ Type "bract"
 Enter
 Sleep 3.5s
 
-Down
-Sleep 1s
-Down
-Sleep 1.5s
-Right
-Sleep 3.5s
+# A few letters narrow the toolchain to kubectl — no need to type it out.
+Type "/kube"
+Sleep 1.8s
+Enter
+Sleep 3s
 
-Type "/create"
-Sleep 1.5s
+# `create` is already under the cursor; just step into it.
 Enter
 Sleep 2.5s
 
-Type "/deployment"
-Sleep 1.5s
+# `depl` lands straight on `deployment`; open its form.
+Type "/depl"
+Sleep 1.8s
 Enter
 Sleep 3s
 

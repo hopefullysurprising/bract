@@ -134,6 +134,11 @@ impl FormMemory for RedbFormMemory {
 /// [`NullFormMemory`] if the db can't be opened, so a launch never fails over
 /// form memory.
 pub fn default_form_memory() -> Arc<dyn FormMemory> {
+    // Opt out (demos, CI, privacy): no persistence, so field order and recall are
+    // the deterministic defaults and nothing is written to disk.
+    if std::env::var_os("BRACT_NO_MEMORY").is_some() {
+        return Arc::new(NullFormMemory);
+    }
     let path = dirs::data_dir().map(|d| d.join("bract").join("form-memory.redb"));
     if let Some(path) = path
         && let Ok(mem) = RedbFormMemory::open(&path)
