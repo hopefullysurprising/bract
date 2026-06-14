@@ -1,4 +1,5 @@
 mod go_buildinfo;
+pub mod help_cache;
 mod python_introspect;
 pub mod mise_tasks;
 pub mod mise_tools;
@@ -35,6 +36,13 @@ pub trait Source: Send + Sync {
     /// Fetch the details for the node at `command_path` (`&[]` = the tool's top
     /// level): its flags/args and its child nodes.
     fn load(&self, command_path: &[String]) -> Result<Loaded, Box<dyn std::error::Error>>;
+
+    /// Whether [`load`] for this path would be served entirely from cache (no
+    /// subprocess). When true the UI resolves it synchronously instead of on the
+    /// background thread. Defaults to false for sources without a cache.
+    fn cached(&self, _command_path: &[String]) -> bool {
+        false
+    }
 }
 
 pub trait HelpProvider: Send + Sync {
@@ -43,6 +51,12 @@ pub trait HelpProvider: Send + Sync {
         binary: &str,
         subcommand_path: &[&str],
     ) -> Result<String, Box<dyn std::error::Error>>;
+
+    /// Whether [`fetch_help`] for this path is already on disk. Defaults to false
+    /// (no cache); the caching decorator overrides it.
+    fn is_cached(&self, _binary: &str, _subcommand_path: &[&str]) -> bool {
+        false
+    }
 }
 
 pub fn discover_sources() -> Vec<Box<dyn Source>> {

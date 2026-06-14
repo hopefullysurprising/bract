@@ -6,6 +6,7 @@
 //! controls — are known before you act on it.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -17,8 +18,9 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use super::form::FormView;
 use super::{View, ViewAction};
 use crate::data::loader::{BackgroundLoader, LoadRequest, Loader, Priority};
+use crate::data::memory::{default_form_memory, FormMemory, NullFormMemory};
 use crate::data::node::{Children, Node, NodeKind};
-use crate::data::source::Source;
+use crate::data::source::{Loaded, Source};
 
 const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const MAX_VISIBLE_COLUMNS: usize = 3;
@@ -47,16 +49,32 @@ pub struct MillerView {
     error: Option<String>,
     /// Type-ahead filter on the active column (`None` = not filtering).
     filter: Option<String>,
+    /// Remembers form fills for frequency-sorting and value recall.
+    memory: Arc<dyn FormMemory>,
 }
 
 impl MillerView {
     pub fn new(sources: Vec<Box<dyn Source>>) -> Self {
-        Self::with_loader(sources, |s| Box::new(BackgroundLoader::new(s)))
+        Self::with_loader_and_memory(
+            sources,
+            |s| Box::new(BackgroundLoader::new(s)),
+            default_form_memory(),
+        )
     }
 
+    /// Test constructor: a custom loader and no form memory (the keychain/db is
+    /// never touched in tests).
     pub fn with_loader(
         sources: Vec<Box<dyn Source>>,
         make_loader: impl FnOnce(Vec<Box<dyn Source>>) -> Box<dyn Loader>,
+    ) -> Self {
+        Self::with_loader_and_memory(sources, make_loader, Arc::new(NullFormMemory))
+    }
+
+    pub fn with_loader_and_memory(
+        sources: Vec<Box<dyn Source>>,
+        make_loader: impl FnOnce(Vec<Box<dyn Source>>) -> Box<dyn Loader>,
+        memory: Arc<dyn FormMemory>,
     ) -> Self {
         let mut roots = Vec::new();
         let mut tool_meta = HashMap::new();
@@ -98,6 +116,7 @@ impl MillerView {
             spinner: 0,
             error: None,
             filter: None,
+            memory,
         };
         view.ensure_focused_loading();
         view
@@ -153,12 +172,25 @@ impl MillerView {
             Some(Priority::Low) if priority == Priority::Low => return,
             _ => {}
         }
+        let req = LoadRequest { node_id: id.clone(), tool_id, command_path, priority };
+
+        // Cache hit on a focus load: resolve inline. A cached load is ~85µs —
+        // far below a frame — so routing it through the background thread (and
+        // flashing a spinner for a poll tick) would only add latency. Peeks
+        // (Low) stay async so a wide column can't stall the main thread.
+        if priority == Priority::High
+            && let Some(result) = self.loader.load_cached(&req)
+        {
+            self.apply_outcome(&id, result);
+            return;
+        }
+
         self.pending.insert(id.clone(), priority);
         if show_spinner
             && let Some(node) = Self::find_mut(&mut self.roots, &id) {
                 node.children = Children::Loading;
             }
-        self.loader.request(LoadRequest { node_id: id, tool_id, command_path, priority });
+        self.loader.request(req);
     }
 
     fn ensure_focused_loading(&mut self) {
@@ -198,36 +230,42 @@ impl MillerView {
 
     fn integrate_results(&mut self) {
         for outcome in self.loader.poll() {
-            self.pending.remove(&outcome.node_id);
-            let Some(node) = Self::find_mut(&mut self.roots, &outcome.node_id) else { continue };
-            match outcome.loaded {
-                Ok(loaded) => {
-                    if !loaded.description.is_empty() {
-                        node.description = loaded.description;
-                    }
-                    node.flags = loaded.flags;
-                    node.args = loaded.args;
-                    // A node with children is a branch; without, a terminal leaf.
-                    // Tools keep their branch identity even if a tool's help fails.
-                    if !node.command_path.is_empty() {
-                        node.kind = if loaded.children.is_empty() {
-                            NodeKind::Leaf
-                        } else {
-                            NodeKind::Branch
-                        };
-                        // Now that we've parsed the node's own help, we know whether
-                        // it is directly runnable (a leaf or a dual command) or a
-                        // pure group that only dispatches to subcommands.
-                        node.runnable = loaded.runnable;
-                    }
-                    node.children = Children::Loaded(loaded.children);
+            self.apply_outcome(&outcome.node_id, outcome.loaded);
+        }
+    }
+
+    /// Fold one load result into the tree. Shared by the async poll path and the
+    /// synchronous cache-hit path so both produce an identical node state.
+    fn apply_outcome(&mut self, node_id: &str, loaded: Result<Loaded, String>) {
+        self.pending.remove(node_id);
+        let Some(node) = Self::find_mut(&mut self.roots, node_id) else { return };
+        match loaded {
+            Ok(loaded) => {
+                if !loaded.description.is_empty() {
+                    node.description = loaded.description;
                 }
-                Err(e) => {
-                    self.error = Some(e);
-                    node.children = Children::Loaded(vec![]);
-                    if matches!(node.kind, NodeKind::Unknown) {
-                        node.kind = NodeKind::Leaf;
-                    }
+                node.flags = loaded.flags;
+                node.args = loaded.args;
+                // A node with children is a branch; without, a terminal leaf.
+                // Tools keep their branch identity even if a tool's help fails.
+                if !node.command_path.is_empty() {
+                    node.kind = if loaded.children.is_empty() {
+                        NodeKind::Leaf
+                    } else {
+                        NodeKind::Branch
+                    };
+                    // Now that we've parsed the node's own help, we know whether it
+                    // is directly runnable (a leaf or a dual command) or a pure
+                    // group that only dispatches to subcommands.
+                    node.runnable = loaded.runnable;
+                }
+                node.children = Children::Loaded(loaded.children);
+            }
+            Err(e) => {
+                self.error = Some(e);
+                node.children = Children::Loaded(vec![]);
+                if matches!(node.kind, NodeKind::Unknown) {
+                    node.kind = NodeKind::Leaf;
                 }
             }
         }
@@ -376,7 +414,13 @@ impl MillerView {
         }
         let meta = self.tool_meta.get(&focused.tool_id)?;
         let ancestors = self.ancestor_chain();
-        Some(ViewAction::Push(Box::new(FormView::new(&ancestors, &meta.bin, &meta.separator))))
+        Some(ViewAction::Push(Box::new(FormView::new(
+            &ancestors,
+            &meta.bin,
+            &meta.separator,
+            &focused.tool_id,
+            self.memory.clone(),
+        ))))
     }
 
     /// Enter is the smart "primary action": descend a branch, run a leaf, or
@@ -977,4 +1021,69 @@ fn param_line(name: &str, required: bool) -> Line<'static> {
         spans.push(Span::styled("  required", Style::new().fg(Color::Yellow)));
     }
     Line::from(spans)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data::source::help_cache::CachingHelpProvider;
+    use crate::data::source::mise_tools::HelpToolSource;
+    use crate::data::source::HelpProvider;
+    use helptext_parser::InputFormat;
+    use std::path::PathBuf;
+
+    /// Stands in for the slow `mise exec -- tool --help`; returns fixed help so
+    /// the only variable under test is cached vs. uncached, never a subprocess.
+    struct StaticProvider(String);
+    impl HelpProvider for StaticProvider {
+        fn fetch_help(&self, _b: &str, _p: &[&str]) -> Result<String, Box<dyn std::error::Error>> {
+            Ok(self.0.clone())
+        }
+    }
+
+    fn mani_root_help() -> String {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/cli-help/mani_0.32.0_root.txt");
+        std::fs::read_to_string(path).unwrap()
+    }
+
+    /// A MillerView backed by the real (threaded) background loader, so the
+    /// synchronous cache path is genuinely distinguishable from the async one.
+    fn view_with(src: Box<dyn Source>) -> MillerView {
+        MillerView::with_loader(vec![src], |s| Box::new(BackgroundLoader::new(s)))
+    }
+
+    #[test]
+    fn cached_focus_load_resolves_synchronously_without_a_spinner() {
+        let tmp = tempfile::tempdir().unwrap();
+        let provider = CachingHelpProvider::new(
+            Box::new(StaticProvider(mani_root_help())),
+            tmp.path().to_path_buf(),
+            "v".into(),
+        );
+        let src = HelpToolSource::new("mani".into(), InputFormat::CobraHelptext, Box::new(provider));
+        src.load(&[]).unwrap(); // prime the root cache file
+
+        // new() runs ensure_focused_loading on the root. A cache hit is resolved
+        // inline: nothing is dispatched to the loader and the node is already
+        // Loaded — so no spinner ever shows.
+        let view = view_with(Box::new(src));
+        assert_eq!(view.pending_loads(), 0, "a cache hit must not touch the background loader");
+        assert!(view.focused_loaded(), "the cached root loads synchronously, never Loading");
+    }
+
+    #[test]
+    fn uncached_focus_load_goes_async_and_shows_a_spinner() {
+        let src = HelpToolSource::new(
+            "mani".into(),
+            InputFormat::CobraHelptext,
+            Box::new(StaticProvider(mani_root_help())),
+        );
+
+        // No cache (is_cached defaults false): the load is dispatched to the
+        // background thread and the node is marked Loading until a later poll.
+        let view = view_with(Box::new(src));
+        assert_eq!(view.pending_loads(), 1, "a miss is dispatched to the background loader");
+        assert!(!view.focused_loaded(), "the node shows a Loading spinner, not Loaded");
+    }
 }

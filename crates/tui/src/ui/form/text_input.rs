@@ -11,8 +11,31 @@ pub struct TextInput {
     /// the value — leaving the field untouched omits the flag, so the tool
     /// applies this default itself instead of us passing it back redundantly.
     pub default: String,
+    /// The value entered here last time, if any. Shown as a ghost (preferred over
+    /// `default`) and accepted with → / End — so a repeated argument is one key
+    /// away instead of retyped.
+    pub remembered: Option<String>,
     pub chars: Vec<char>,
     pub cursor: usize,
+}
+
+impl TextInput {
+    /// The placeholder shown when the field is empty: the previously-used value
+    /// if we have one, else the tool's default. `None` if neither exists.
+    fn ghost(&self) -> Option<&str> {
+        self.remembered
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .or(if self.default.is_empty() { None } else { Some(&self.default) })
+    }
+
+    fn accept_ghost(&mut self) {
+        if self.chars.is_empty()
+            && let Some(ghost) = self.ghost().map(str::to_string)
+        {
+            self.set_text(&ghost);
+        }
+    }
 }
 
 impl FormField for TextInput {
@@ -53,15 +76,16 @@ impl FormField for TextInput {
                 Span::styled(cursor_ch, Style::new().fg(Color::Black).bg(Color::White)),
                 Span::styled(after, Style::new().fg(Color::White)),
             ];
-            if self.chars.is_empty() && !self.default.is_empty() {
-                spans.push(Span::styled(self.default.clone(), placeholder));
+            if self.chars.is_empty()
+                && let Some(ghost) = self.ghost()
+            {
+                spans.push(Span::styled(ghost.to_string(), placeholder));
             }
             lines.push(Line::from(spans));
-        } else if self.chars.is_empty() && !self.default.is_empty() {
-            lines.push(Line::from(vec![
-                track,
-                Span::styled(self.default.clone(), placeholder),
-            ]));
+        } else if self.chars.is_empty()
+            && let Some(ghost) = self.ghost()
+        {
+            lines.push(Line::from(vec![track, Span::styled(ghost.to_string(), placeholder)]));
         } else {
             let value: String = self.chars.iter().collect();
             lines.push(Line::from(vec![
@@ -99,10 +123,19 @@ impl FormField for TextInput {
             KeyCode::Right => {
                 if self.cursor < self.chars.len() {
                     self.cursor += 1;
+                } else {
+                    // At the end of an empty field, → accepts the ghost value.
+                    self.accept_ghost();
                 }
             }
             KeyCode::Home => self.cursor = 0,
-            KeyCode::End => self.cursor = self.chars.len(),
+            KeyCode::End => {
+                if self.chars.is_empty() {
+                    self.accept_ghost();
+                } else {
+                    self.cursor = self.chars.len();
+                }
+            }
             _ => {}
         }
     }

@@ -2,7 +2,8 @@ mod field;
 mod text_input;
 mod toggle;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -16,6 +17,7 @@ use text_input::TextInput;
 use toggle::Toggle;
 
 use super::{RunSpec, View, ViewAction};
+use crate::data::memory::{FieldStat, FormMemory};
 use crate::data::node::{FlagKind, Node};
 
 enum FieldMeta {
@@ -39,6 +41,10 @@ pub struct FormView {
     total_fields: usize,
     focused: usize,
     scroll_offset: u16,
+    /// Identity under which fills are remembered: the tool and the leaf command.
+    tool_id: String,
+    command_key: String,
+    memory: Arc<dyn FormMemory>,
 }
 
 impl FormView {
@@ -46,7 +52,13 @@ impl FormView {
     /// being run (leaf last). Each level contributes a labelled section of its
     /// own flags/args — so flags defined on a parent command accumulate alongside
     /// the leaf's, the way they did before lazy loading.
-    pub fn new(ancestors: &[&Node], bin: &[String], path_separator: &str) -> Self {
+    pub fn new(
+        ancestors: &[&Node],
+        bin: &[String],
+        path_separator: &str,
+        tool_id: &str,
+        memory: Arc<dyn FormMemory>,
+    ) -> Self {
         let leaf = ancestors.last();
         let command_names = leaf.map(|n| n.command_path.clone()).unwrap_or_default();
         let display_bin = bin.join(" ");
@@ -67,12 +79,15 @@ impl FormView {
         // declares locally (kubectl repeats inherited flags inline under every
         // command's `Options:`) is shown once, under the leaf, and skipped where
         // an ancestor re-declares it. Sections emptied by dedup are dropped.
+        let command_key = command_names.join(path_separator);
+        let stats = memory.stats(tool_id, &command_key);
+
         let mut seen = HashSet::new();
         let sections: Vec<FormSection> = param_levels(ancestors)
             .into_iter()
             .map(|(label, node)| FormSection {
                 label,
-                fields: build_fields(node, &mut seen),
+                fields: build_fields(node, &mut seen, &stats),
             })
             .filter(|section| !section.fields.is_empty())
             .collect();
@@ -88,6 +103,9 @@ impl FormView {
             total_fields,
             focused: 0,
             scroll_offset: 0,
+            tool_id: tool_id.to_string(),
+            command_key,
+            memory,
         }
     }
 
@@ -196,6 +214,26 @@ impl FormView {
             args,
         }
     }
+
+    /// Persist what the user filled, so next time these fields sort higher and
+    /// offer their value for recall. Called when the command is actually run.
+    fn record_fills(&self) {
+        for section in &self.sections {
+            for (meta, field) in &section.fields {
+                match (meta, field.value()) {
+                    (FieldMeta::Arg | FieldMeta::ValueFlag { .. }, FieldValue::Text(v))
+                        if !v.is_empty() =>
+                    {
+                        self.memory.record(&self.tool_id, &self.command_key, field.name(), &v);
+                    }
+                    (FieldMeta::BoolFlag { .. }, FieldValue::Bool(true)) => {
+                        self.memory.record(&self.tool_id, &self.command_key, field.name(), "true");
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
 }
 
 impl View for FormView {
@@ -282,6 +320,7 @@ impl View for FormView {
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<ViewAction> {
         if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
+            self.record_fills();
             return Some(ViewAction::Run(self.run_spec()));
         }
 
@@ -332,30 +371,49 @@ pub fn param_levels<'a>(ancestors: &[&'a Node]) -> Vec<(String, &'a Node)> {
         .collect()
 }
 
+/// A field plus the keys it's ordered by: required-first (you can't run without
+/// them), then most-frequently-filled, then original parser order as the stable
+/// tiebreak.
+struct RankedField {
+    required: bool,
+    count: u64,
+    original: usize,
+    meta: FieldMeta,
+    field: Box<dyn FormField>,
+}
+
 fn build_fields(
     node: &Node,
     seen: &mut HashSet<String>,
+    stats: &HashMap<String, FieldStat>,
 ) -> Vec<(FieldMeta, Box<dyn FormField>)> {
-    let mut fields: Vec<(FieldMeta, Box<dyn FormField>)> = Vec::new();
+    let mut ranked: Vec<RankedField> = Vec::new();
+    let stat = |name: &str| stats.get(name);
 
     for arg in &node.args {
         if !seen.insert(format!("arg:{}", arg.name)) {
             continue;
         }
-        fields.push((
-            FieldMeta::Arg,
-            Box::new(TextInput {
-                name: if arg.required {
-                    format!("<{}>", arg.name)
-                } else {
-                    format!("[{}]", arg.name)
-                },
+        let name = if arg.required {
+            format!("<{}>", arg.name)
+        } else {
+            format!("[{}]", arg.name)
+        };
+        let st = stat(&name);
+        ranked.push(RankedField {
+            required: arg.required,
+            count: st.map(|s| s.count).unwrap_or(0),
+            original: ranked.len(),
+            meta: FieldMeta::Arg,
+            field: Box::new(TextInput {
+                name,
                 help: arg.description.clone(),
                 default: arg.default.clone(),
+                remembered: st.and_then(|s| s.last_value.clone()),
                 chars: Vec::new(),
                 cursor: 0,
             }),
-        ));
+        });
     }
 
     for flag in &node.flags {
@@ -367,39 +425,45 @@ fn build_fields(
         if !seen.insert(key) {
             continue;
         }
+        let st = stat(&flag.name);
+        let count = st.map(|s| s.count).unwrap_or(0);
+        let original = ranked.len();
         match &flag.kind {
-            FlagKind::Boolean => {
-                fields.push((
-                    FieldMeta::BoolFlag {
-                        long: flag.long.clone(),
-                        short: flag.short,
-                    },
-                    Box::new(Toggle {
-                        name: flag.name.clone(),
-                        help: flag.description.clone(),
-                        value: false,
-                    }),
-                ));
-            }
-            FlagKind::Value { default, .. } => {
-                fields.push((
-                    FieldMeta::ValueFlag {
-                        long: flag.long.clone(),
-                        short: flag.short,
-                    },
-                    Box::new(TextInput {
-                        name: flag.name.clone(),
-                        help: flag.description.clone(),
-                        default: default.clone(),
-                        chars: Vec::new(),
-                        cursor: 0,
-                    }),
-                ));
-            }
+            FlagKind::Boolean => ranked.push(RankedField {
+                required: flag.required,
+                count,
+                original,
+                meta: FieldMeta::BoolFlag { long: flag.long.clone(), short: flag.short },
+                field: Box::new(Toggle {
+                    name: flag.name.clone(),
+                    help: flag.description.clone(),
+                    value: false,
+                }),
+            }),
+            FlagKind::Value { default, .. } => ranked.push(RankedField {
+                required: flag.required,
+                count,
+                original,
+                meta: FieldMeta::ValueFlag { long: flag.long.clone(), short: flag.short },
+                field: Box::new(TextInput {
+                    name: flag.name.clone(),
+                    help: flag.description.clone(),
+                    default: default.clone(),
+                    remembered: st.and_then(|s| s.last_value.clone()),
+                    chars: Vec::new(),
+                    cursor: 0,
+                }),
+            }),
         }
     }
 
-    fields
+    ranked.sort_by(|a, b| {
+        b.required
+            .cmp(&a.required)
+            .then(b.count.cmp(&a.count))
+            .then(a.original.cmp(&b.original))
+    });
+    ranked.into_iter().map(|r| (r.meta, r.field)).collect()
 }
 
 fn flag_token(long: &Option<String>, short: &Option<char>) -> String {
@@ -451,10 +515,125 @@ fn footer(width: u16) -> Paragraph<'static> {
             Span::styled(" toggle", Style::new().fg(Color::DarkGray)),
             Span::styled("  ·  ", Style::new().fg(Color::DarkGray)),
             Span::styled(
+                "→",
+                Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" recall", Style::new().fg(Color::DarkGray)),
+            Span::styled("  ·  ", Style::new().fg(Color::DarkGray)),
+            Span::styled(
                 "esc",
                 Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
             ),
             Span::styled(" back", Style::new().fg(Color::DarkGray)),
         ]),
     ])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data::node::{Arg, Children, Flag, FlagKind, NodeKind};
+    use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    /// Returns whatever stats it's seeded with, ignoring tool/command — enough to
+    /// drive the form's sort and recall without a real db.
+    struct FakeMemory(HashMap<String, (u64, Option<String>)>);
+
+    impl FormMemory for FakeMemory {
+        fn record(&self, _: &str, _: &str, _: &str, _: &str) {}
+        fn stats(&self, _: &str, _: &str) -> HashMap<String, FieldStat> {
+            self.0
+                .iter()
+                .map(|(k, (count, last))| {
+                    (k.clone(), FieldStat { count: *count, last_value: last.clone() })
+                })
+                .collect()
+        }
+    }
+
+    fn value_flag(name: &str) -> Flag {
+        Flag {
+            name: format!("--{name}"),
+            short: None,
+            long: Some(name.to_string()),
+            description: String::new(),
+            required: false,
+            kind: FlagKind::Value {
+                arg_name: name.to_string(),
+                default: String::new(),
+                choices: vec![],
+            },
+        }
+    }
+
+    fn leaf(flags: Vec<Flag>, args: Vec<Arg>) -> Node {
+        Node {
+            id: "t/cmd".into(),
+            name: "cmd".into(),
+            description: String::new(),
+            kind: NodeKind::Leaf,
+            runnable: true,
+            flags,
+            args,
+            tool_id: "t".into(),
+            command_path: vec!["cmd".into()],
+            children: Children::Loaded(vec![]),
+        }
+    }
+
+    fn build(node: &Node, stats: &[(&str, u64, Option<&str>)]) -> FormView {
+        let map = stats
+            .iter()
+            .map(|(k, c, v)| (k.to_string(), (*c, v.map(str::to_string))))
+            .collect();
+        FormView::new(&[node], &["t".to_string()], " ", "t", Arc::new(FakeMemory(map)))
+    }
+
+    #[test]
+    fn frequently_filled_fields_sort_higher() {
+        let node = leaf(vec![value_flag("alpha"), value_flag("beta"), value_flag("gamma")], vec![]);
+        let form = build(&node, &[("--beta", 5, None), ("--gamma", 2, None)]);
+        assert_eq!(form.field_names(), vec!["--beta", "--gamma", "--alpha"]);
+    }
+
+    #[test]
+    fn required_fields_stay_on_top_regardless_of_frequency() {
+        let req = Arg {
+            name: "NAME".into(),
+            description: String::new(),
+            required: true,
+            default: String::new(),
+            choices: vec![],
+        };
+        let node = leaf(vec![value_flag("beta")], vec![req]);
+        // --beta is filled far more often, but a required arg can't be buried.
+        let form = build(&node, &[("--beta", 99, None)]);
+        assert_eq!(form.field_names().first().map(String::as_str), Some("<NAME>"));
+    }
+
+    #[test]
+    fn previous_value_recalls_with_right_arrow() {
+        let node = leaf(vec![value_flag("image")], vec![]);
+        let mut form = build(&node, &[("--image", 3, Some("nginx"))]);
+        // The focused field is --image; → accepts the remembered ghost.
+        form.handle_key(KeyEvent::new(KeyCode::Right, KeyModifiers::NONE));
+        assert!(
+            form.run_spec().args.contains(&"--image=nginx".to_string()),
+            "recalled value reaches the command: {:?}",
+            form.run_spec().args
+        );
+    }
+
+    #[test]
+    fn an_untouched_remembered_value_is_not_sent() {
+        let node = leaf(vec![value_flag("image")], vec![]);
+        let form = build(&node, &[("--image", 3, Some("nginx"))]);
+        // No key pressed: the ghost is a suggestion, not a value. Only the command
+        // path is emitted — the remembered --image is not.
+        let args = form.run_spec().args;
+        assert!(
+            !args.iter().any(|a| a.starts_with("--image")),
+            "remembered value stays a ghost until recalled: {args:?}"
+        );
+    }
 }

@@ -6,7 +6,10 @@ use serde::Deserialize;
 
 use crate::data::node::{Children, Node, NodeKind};
 
-use super::{convert_args, convert_flags, go_buildinfo, python_introspect, HelpProvider, Loaded, Source};
+use super::{
+    convert_args, convert_flags, go_buildinfo, help_cache, python_introspect, HelpProvider, Loaded,
+    Source,
+};
 
 pub struct MiseHelpProvider;
 
@@ -109,17 +112,25 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
             let active = versions.into_iter().find(|v| v.active)?;
             let bin_dir = resolve_bin_paths(&key, &active.version)?;
             let executables = list_executables(&bin_dir);
+            let cache_dir = help_cache::default_cache_dir();
 
             let sources: Vec<Box<dyn Source>> = executables
                 .into_iter()
                 .filter_map(|binary_path| {
                     let binary = binary_path.file_name()?.to_str()?.to_string();
                     let format = classify_binary(&binary_path)?;
-                    Some(Box::new(HelpToolSource::new(
-                        binary,
-                        format,
-                        Box::new(MiseHelpProvider),
-                    )) as Box<dyn Source>)
+                    // Cache `--help` keyed by the version mise reports for this tool,
+                    // so repeat launches skip the subprocess. Falls back to the raw
+                    // provider if no cache dir resolves.
+                    let provider: Box<dyn HelpProvider> = match &cache_dir {
+                        Some(dir) => Box::new(help_cache::CachingHelpProvider::new(
+                            Box::new(MiseHelpProvider),
+                            dir.clone(),
+                            active.version.clone(),
+                        )),
+                        None => Box::new(MiseHelpProvider),
+                    };
+                    Some(Box::new(HelpToolSource::new(binary, format, provider)) as Box<dyn Source>)
                 })
                 .collect();
             Some(sources)
@@ -187,6 +198,11 @@ impl Source for HelpToolSource {
 
     fn tool_bin(&self) -> Vec<String> {
         vec![self.binary.clone()]
+    }
+
+    fn cached(&self, command_path: &[String]) -> bool {
+        let path_refs: Vec<&str> = command_path.iter().map(String::as_str).collect();
+        self.help_provider.is_cached(&self.binary, &path_refs)
     }
 
     fn load(&self, command_path: &[String]) -> Result<Loaded, Box<dyn std::error::Error>> {

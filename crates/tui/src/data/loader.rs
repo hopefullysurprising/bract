@@ -38,6 +38,14 @@ pub struct LoadOutcome {
 pub trait Loader {
     fn request(&self, req: LoadRequest);
     fn poll(&self) -> Vec<LoadOutcome>;
+    /// Resolve `req` synchronously iff it can be served cheaply (its `--help` is
+    /// already cached on disk). Returns `None` when a real fetch is needed — the
+    /// caller then falls back to [`request`]. This lets the UI skip the
+    /// background round-trip (and the spinner) for the common cache-hit case,
+    /// where the whole load is tens of microseconds.
+    fn load_cached(&self, _req: &LoadRequest) -> Option<Result<Loaded, String>> {
+        None
+    }
 }
 
 fn index(sources: Vec<Box<dyn Source>>) -> HashMap<String, Arc<dyn Source>> {
@@ -47,35 +55,49 @@ fn index(sources: Vec<Box<dyn Source>>) -> HashMap<String, Arc<dyn Source>> {
         .collect()
 }
 
-fn run(sources: &HashMap<String, Arc<dyn Source>>, req: &LoadRequest) -> Result<Loaded, String> {
+type SourceIndex = HashMap<String, Arc<dyn Source>>;
+
+fn run(sources: &SourceIndex, req: &LoadRequest) -> Result<Loaded, String> {
     match sources.get(&req.tool_id) {
         Some(src) => src.load(&req.command_path).map_err(|e| e.to_string()),
         None => Err(format!("no source for tool '{}'", req.tool_id)),
     }
 }
 
+/// Resolve `req` now iff the source reports its help is already cached. Shared by
+/// both loaders so the synchronous fast-path behaves identically in tests and in
+/// production.
+fn run_if_cached(sources: &SourceIndex, req: &LoadRequest) -> Option<Result<Loaded, String>> {
+    let src = sources.get(&req.tool_id)?;
+    if src.cached(&req.command_path) {
+        Some(src.load(&req.command_path).map_err(|e| e.to_string()))
+    } else {
+        None
+    }
+}
+
 pub struct BackgroundLoader {
     tx: Sender<LoadRequest>,
     rx: Receiver<LoadOutcome>,
+    /// Shared with the worker so cache hits can be resolved on the calling thread
+    /// without a channel round-trip.
+    sources: Arc<SourceIndex>,
 }
 
 impl BackgroundLoader {
     pub fn new(sources: Vec<Box<dyn Source>>) -> Self {
-        let sources = index(sources);
+        let sources = Arc::new(index(sources));
         let (tx_req, rx_req) = mpsc::channel::<LoadRequest>();
         let (tx_out, rx_out) = mpsc::channel::<LoadOutcome>();
 
-        thread::spawn(move || worker(sources, rx_req, tx_out));
+        let worker_sources = Arc::clone(&sources);
+        thread::spawn(move || worker(&worker_sources, rx_req, tx_out));
 
-        Self { tx: tx_req, rx: rx_out }
+        Self { tx: tx_req, rx: rx_out, sources }
     }
 }
 
-fn worker(
-    sources: HashMap<String, Arc<dyn Source>>,
-    rx: Receiver<LoadRequest>,
-    tx: Sender<LoadOutcome>,
-) {
+fn worker(sources: &SourceIndex, rx: Receiver<LoadRequest>, tx: Sender<LoadOutcome>) {
     let mut high: VecDeque<LoadRequest> = VecDeque::new();
     let mut low: VecDeque<LoadRequest> = VecDeque::new();
 
@@ -93,7 +115,7 @@ fn worker(
         }
 
         let Some(req) = high.pop_front().or_else(|| low.pop_front()) else { continue };
-        let loaded = run(&sources, &req);
+        let loaded = run(sources, &req);
         if tx.send(LoadOutcome { node_id: req.node_id, loaded }).is_err() {
             break;
         }
@@ -128,6 +150,10 @@ impl Loader for BackgroundLoader {
     fn poll(&self) -> Vec<LoadOutcome> {
         self.rx.try_iter().collect()
     }
+
+    fn load_cached(&self, req: &LoadRequest) -> Option<Result<Loaded, String>> {
+        run_if_cached(&self.sources, req)
+    }
 }
 
 /// Resolves requests inline and queues the outcomes for the next `poll`. Lets
@@ -151,5 +177,9 @@ impl Loader for SyncLoader {
 
     fn poll(&self) -> Vec<LoadOutcome> {
         std::mem::take(&mut *self.pending.borrow_mut())
+    }
+
+    fn load_cached(&self, req: &LoadRequest) -> Option<Result<Loaded, String>> {
+        run_if_cached(&self.sources, req)
     }
 }
