@@ -1,6 +1,8 @@
 pub mod app;
+mod clipboard;
 pub mod data;
 pub mod event;
+mod shell_quote;
 pub mod ui;
 
 use std::io::IsTerminal;
@@ -35,12 +37,27 @@ pub fn run_main() -> Result<(), Box<dyn std::error::Error>> {
     match result? {
         AppResult::Exit => {}
         AppResult::Run(spec) => {
+            // The exact, re-runnable command line (properly shell-quoted) — shown,
+            // copied to the clipboard, and what `args` below reproduce via argv.
+            let mut tokens = spec.bin.clone();
+            tokens.extend(spec.args.iter().cloned());
+            let line = shell_quote::quote_command(&tokens);
+
+            eprintln!("→ {line}");
+            match clipboard::copy_command(&line) {
+                clipboard::CopyOutcome::Confirmed => {
+                    eprintln!("  copied to clipboard — paste to run it again");
+                }
+                clipboard::CopyOutcome::BestEffort => {
+                    eprintln!("  sent to clipboard via OSC 52 — paste to run it again (if your terminal allows it)");
+                }
+                clipboard::CopyOutcome::Disabled => {}
+            }
+
             let all_args: Vec<&str> = spec.bin.iter().skip(1)
                 .map(|s| s.as_str())
                 .chain(spec.args.iter().map(|s| s.as_str()))
                 .collect();
-
-            eprintln!("→ {} {}", spec.bin[0], all_args.join(" "));
 
             let status = Command::new(&spec.bin[0]).args(&all_args).status()?;
             std::process::exit(status.code().unwrap_or(1));
