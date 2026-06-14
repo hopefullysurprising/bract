@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea or improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Ideas are welcome. For open-ended thoughts, a [discussion](https://github.com/hopefullysurprising/bract/discussions) may fit better than an issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem or use case?
+      description: What are you trying to do that's awkward or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: Your idea — rough is fine.
+    validations:
+      required: false

@@ -99,6 +99,15 @@ end-to-end against the real specs of:
 - **Knack** — `az` (Azure CLI).
 - **Usage** — `mise` itself and the [`usage`](https://usage.jdx.dev) CLI.
 
+## Feedback
+
+Bug reports, ideas, and questions are very welcome:
+
+- **Bugs & feature requests** → [open an issue](https://github.com/hopefullysurprising/bract/issues/new/choose).
+- **Questions & ideas** → [start a discussion](https://github.com/hopefullysurprising/bract/discussions).
+
+bract follows an opinionated roadmap — see [CONTRIBUTING](CONTRIBUTING.md).
+
 ## License
 
 [GPL-3.0-only](LICENSE).

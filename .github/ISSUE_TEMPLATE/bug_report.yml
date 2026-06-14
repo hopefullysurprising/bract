@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in bract behaves incorrectly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report — a few details make it much easier to reproduce.
+  - type: input
+    id: version
+    attributes:
+      label: bract version
+      description: The release you're on (e.g. the tag from the Releases page).
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: OS, terminal, and shell
+      placeholder: "macOS 14, iTerm2, zsh"
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: Tool / command involved
+      description: Which CLI and command were you building? e.g. `kubectl create deployment`
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Any error text or help/spec output that helps. Please redact secrets.
+      render: text
+    validations:
+      required: false
