@@ -17,6 +17,7 @@ use text_input::TextInput;
 use toggle::Toggle;
 
 use super::{RunSpec, View, ViewAction};
+use crate::data::env_params::{resolve, EnvSource};
 use crate::data::memory::{FieldStat, FormMemory};
 use crate::data::node::{FlagKind, Node};
 
@@ -57,6 +58,7 @@ impl FormView {
         bin: &[String],
         path_separator: &str,
         tool_id: &str,
+        env: &dyn EnvSource,
         memory: Arc<dyn FormMemory>,
     ) -> Self {
         let leaf = ancestors.last();
@@ -82,12 +84,18 @@ impl FormView {
         let command_key = command_names.join(path_separator);
         let stats = memory.stats(tool_id, &command_key);
 
+        // Env params prefix-match the full command being run (tool first), so a
+        // value set on an ancestor applies to every field regardless of the
+        // level it's defined at.
+        let full_path: Vec<String> =
+            std::iter::once(tool_id.to_string()).chain(command_names.iter().cloned()).collect();
+
         let mut seen = HashSet::new();
         let sections: Vec<FormSection> = param_levels(ancestors)
             .into_iter()
             .map(|(label, node)| FormSection {
                 label,
-                fields: build_fields(node, &mut seen, &stats),
+                fields: build_fields(node, &mut seen, &stats, env, &full_path),
             })
             .filter(|section| !section.fields.is_empty())
             .collect();
@@ -220,6 +228,10 @@ impl FormView {
     fn record_fills(&self) {
         for section in &self.sections {
             for (meta, field) in &section.fields {
+                // Env-provided values are deliberately kept off disk.
+                if field.is_env_sourced() {
+                    continue;
+                }
                 match (meta, field.value()) {
                     (FieldMeta::Arg | FieldMeta::ValueFlag { .. }, FieldValue::Text(v))
                         if !v.is_empty() =>
@@ -386,9 +398,20 @@ fn build_fields(
     node: &Node,
     seen: &mut HashSet<String>,
     stats: &HashMap<String, FieldStat>,
+    env: &dyn EnvSource,
+    full_path: &[String],
 ) -> Vec<(FieldMeta, Box<dyn FormField>)> {
     let mut ranked: Vec<RankedField> = Vec::new();
     let stat = |name: &str| stats.get(name);
+
+    // A text field starts empty unless an env var provides a value, in which case
+    // it's pre-filled and tagged with the source variable.
+    let prefill = |name: &str| -> (Vec<char>, usize, Option<String>) {
+        match resolve(env, full_path, name) {
+            Some(ev) => (ev.value.chars().collect(), ev.value.chars().count(), Some(ev.var_name)),
+            None => (Vec::new(), 0, None),
+        }
+    };
 
     for arg in &node.args {
         if !seen.insert(format!("arg:{}", arg.name)) {
@@ -400,6 +423,7 @@ fn build_fields(
             format!("[{}]", arg.name)
         };
         let st = stat(&name);
+        let (chars, cursor, env_source) = prefill(&name);
         ranked.push(RankedField {
             required: arg.required,
             count: st.map(|s| s.count).unwrap_or(0),
@@ -410,8 +434,9 @@ fn build_fields(
                 help: arg.description.clone(),
                 default: arg.default.clone(),
                 remembered: st.and_then(|s| s.last_value.clone()),
-                chars: Vec::new(),
-                cursor: 0,
+                env_source,
+                chars,
+                cursor,
             }),
         });
     }
@@ -429,31 +454,45 @@ fn build_fields(
         let count = st.map(|s| s.count).unwrap_or(0);
         let original = ranked.len();
         match &flag.kind {
-            FlagKind::Boolean => ranked.push(RankedField {
-                required: flag.required,
-                count,
-                original,
-                meta: FieldMeta::BoolFlag { long: flag.long.clone(), short: flag.short },
-                field: Box::new(Toggle {
-                    name: flag.name.clone(),
-                    help: flag.description.clone(),
-                    value: false,
-                }),
-            }),
-            FlagKind::Value { default, .. } => ranked.push(RankedField {
-                required: flag.required,
-                count,
-                original,
-                meta: FieldMeta::ValueFlag { long: flag.long.clone(), short: flag.short },
-                field: Box::new(TextInput {
-                    name: flag.name.clone(),
-                    help: flag.description.clone(),
-                    default: default.clone(),
-                    remembered: st.and_then(|s| s.last_value.clone()),
-                    chars: Vec::new(),
-                    cursor: 0,
-                }),
-            }),
+            FlagKind::Boolean => {
+                // An env var with a truthy value pre-enables the toggle; either way
+                // its presence marks the field env-controlled (and thus not saved).
+                let env_hit = resolve(env, full_path, &flag.name);
+                let (value, env_source) = match env_hit {
+                    Some(ev) => (crate::data::env_params::is_truthy(&ev.value), Some(ev.var_name)),
+                    None => (false, None),
+                };
+                ranked.push(RankedField {
+                    required: flag.required,
+                    count,
+                    original,
+                    meta: FieldMeta::BoolFlag { long: flag.long.clone(), short: flag.short },
+                    field: Box::new(Toggle {
+                        name: flag.name.clone(),
+                        help: flag.description.clone(),
+                        value,
+                        env_source,
+                    }),
+                })
+            }
+            FlagKind::Value { default, .. } => {
+                let (chars, cursor, env_source) = prefill(&flag.name);
+                ranked.push(RankedField {
+                    required: flag.required,
+                    count,
+                    original,
+                    meta: FieldMeta::ValueFlag { long: flag.long.clone(), short: flag.short },
+                    field: Box::new(TextInput {
+                        name: flag.name.clone(),
+                        help: flag.description.clone(),
+                        default: default.clone(),
+                        remembered: st.and_then(|s| s.last_value.clone()),
+                        env_source,
+                        chars,
+                        cursor,
+                    }),
+                })
+            }
         }
     }
 
@@ -532,8 +571,10 @@ fn footer(width: u16) -> Paragraph<'static> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data::env_params::NullEnv;
     use crate::data::node::{Arg, Children, Flag, FlagKind, NodeKind};
     use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use std::sync::Mutex;
 
     /// Returns whatever stats it's seeded with, ignoring tool/command — enough to
     /// drive the form's sort and recall without a real db.
@@ -551,6 +592,28 @@ mod tests {
         }
     }
 
+    /// Captures every `record` call so a test can assert what was (and wasn't)
+    /// persisted on run.
+    struct RecordingMemory(Mutex<Vec<String>>);
+    impl FormMemory for RecordingMemory {
+        fn record(&self, _tool: &str, _cmd: &str, field: &str, _value: &str) {
+            self.0.lock().unwrap().push(field.to_string());
+        }
+        fn stats(&self, _: &str, _: &str) -> HashMap<String, FieldStat> {
+            HashMap::new()
+        }
+    }
+
+    struct FakeEnv(HashMap<String, String>);
+    impl EnvSource for FakeEnv {
+        fn get(&self, key: &str) -> Option<String> {
+            self.0.get(key).cloned()
+        }
+    }
+    fn fake_env(pairs: &[(&str, &str)]) -> FakeEnv {
+        FakeEnv(pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect())
+    }
+
     fn value_flag(name: &str) -> Flag {
         Flag {
             name: format!("--{name}"),
@@ -563,6 +626,17 @@ mod tests {
                 default: String::new(),
                 choices: vec![],
             },
+        }
+    }
+
+    fn bool_flag(name: &str) -> Flag {
+        Flag {
+            name: format!("--{name}"),
+            short: None,
+            long: Some(name.to_string()),
+            description: String::new(),
+            required: false,
+            kind: FlagKind::Boolean,
         }
     }
 
@@ -586,7 +660,7 @@ mod tests {
             .iter()
             .map(|(k, c, v)| (k.to_string(), (*c, v.map(str::to_string))))
             .collect();
-        FormView::new(&[node], &["t".to_string()], " ", "t", Arc::new(FakeMemory(map)))
+        FormView::new(&[node], &["t".to_string()], " ", "t", &NullEnv, Arc::new(FakeMemory(map)))
     }
 
     #[test]
@@ -634,6 +708,96 @@ mod tests {
         assert!(
             !args.iter().any(|a| a.starts_with("--image")),
             "remembered value stays a ghost until recalled: {args:?}"
+        );
+    }
+
+    // tool_id "t", command_path ["cmd"] → full path ["t","cmd"], so a tool-wide
+    // var is BRACT_T__<PARAM>.
+    fn env_form(node: &Node, env: FakeEnv, memory: Arc<dyn FormMemory>) -> FormView {
+        FormView::new(&[node], &["t".to_string()], " ", "t", &env, memory)
+    }
+
+    #[test]
+    fn env_var_prefills_a_field_and_is_applied_without_a_keypress() {
+        let node = leaf(vec![value_flag("org")], vec![]);
+        let env = fake_env(&[("BRACT_T__ORG", "myorg")]);
+        let form = env_form(&node, env, Arc::new(FakeMemory(HashMap::new())));
+        // No interaction: the env value is already in the command.
+        assert!(
+            form.run_spec().args.contains(&"--org=myorg".to_string()),
+            "env value is pre-filled and applied: {:?}",
+            form.run_spec().args
+        );
+    }
+
+    #[test]
+    fn env_var_takes_precedence_over_a_remembered_value() {
+        let node = leaf(vec![value_flag("org")], vec![]);
+        let env = fake_env(&[("BRACT_T__ORG", "envorg")]);
+        let mut map = HashMap::new();
+        map.insert("--org".to_string(), (5u64, Some("oldorg".to_string())));
+        let form = env_form(&node, env, Arc::new(FakeMemory(map)));
+        // The remembered value would only be a ghost (needs →); the env value is
+        // applied outright.
+        assert!(
+            form.run_spec().args.contains(&"--org=envorg".to_string()),
+            "env wins over remembered: {:?}",
+            form.run_spec().args
+        );
+    }
+
+    #[test]
+    fn env_sourced_field_is_never_persisted_to_memory() {
+        let node = leaf(vec![value_flag("org"), value_flag("name")], vec![]);
+        let env = fake_env(&[("BRACT_T__ORG", "myorg")]);
+        let mem = Arc::new(RecordingMemory(Mutex::new(Vec::new())));
+        let mut form = env_form(&node, env, mem.clone());
+        // Fill a non-env field by hand, then run.
+        assert!(form.set_field("--name", "web"));
+        form.handle_key(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL));
+
+        let recorded = mem.0.lock().unwrap();
+        assert!(recorded.contains(&"--name".to_string()), "hand-typed field is remembered");
+        assert!(
+            !recorded.contains(&"--org".to_string()),
+            "env-provided value must not be written to disk: {recorded:?}"
+        );
+    }
+
+    #[test]
+    fn truthy_env_var_enables_a_bool_flag() {
+        let node = leaf(vec![bool_flag("verbose")], vec![]);
+        let env = fake_env(&[("BRACT_T__VERBOSE", "true")]);
+        let form = env_form(&node, env, Arc::new(FakeMemory(HashMap::new())));
+        assert!(
+            form.run_spec().args.contains(&"--verbose".to_string()),
+            "a truthy env var enables the toggle: {:?}",
+            form.run_spec().args
+        );
+    }
+
+    #[test]
+    fn falsy_env_var_leaves_a_bool_flag_off() {
+        let node = leaf(vec![bool_flag("verbose")], vec![]);
+        let env = fake_env(&[("BRACT_T__VERBOSE", "false")]);
+        let form = env_form(&node, env, Arc::new(FakeMemory(HashMap::new())));
+        assert!(
+            !form.run_spec().args.contains(&"--verbose".to_string()),
+            "a falsy env var keeps the toggle off: {:?}",
+            form.run_spec().args
+        );
+    }
+
+    #[test]
+    fn env_sourced_bool_flag_is_not_recorded() {
+        let node = leaf(vec![bool_flag("verbose")], vec![]);
+        let env = fake_env(&[("BRACT_T__VERBOSE", "true")]);
+        let mem = Arc::new(RecordingMemory(Mutex::new(Vec::new())));
+        let mut form = env_form(&node, env, mem.clone());
+        form.handle_key(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL));
+        assert!(
+            !mem.0.lock().unwrap().contains(&"--verbose".to_string()),
+            "an env-enabled toggle must not be persisted"
         );
     }
 }

@@ -18,6 +18,12 @@ pub trait FormField {
     fn toggle(&mut self) -> bool {
         false
     }
+    /// Whether this field's value was pre-filled from an environment variable.
+    /// Such values are applied for this run but never written to form memory —
+    /// env params are meant to stay in the environment, not on disk.
+    fn is_env_sourced(&self) -> bool {
+        false
+    }
 }
 
 pub fn label_line(name: &str, focused: bool) -> Line<'static> {

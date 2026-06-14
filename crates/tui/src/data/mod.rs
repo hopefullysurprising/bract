@@ -1,3 +1,4 @@
+pub mod env_params;
 pub mod loader;
 pub mod memory;
 pub mod node;

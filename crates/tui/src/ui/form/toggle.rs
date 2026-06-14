@@ -1,5 +1,5 @@
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
-use ratatui::style::{Color, Style};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
 use super::field::{self, FieldValue, FormField};
@@ -8,6 +8,9 @@ pub struct Toggle {
     pub name: String,
     pub help: String,
     pub value: bool,
+    /// Set when the initial state came from an environment variable; holds the
+    /// variable name for the on-screen hint. Such fields are never persisted.
+    pub env_source: Option<String>,
 }
 
 impl FormField for Toggle {
@@ -42,6 +45,15 @@ impl FormField for Toggle {
 
         let mut lines = vec![label];
         lines.extend(field::help_line(&self.help));
+        if let Some(var) = &self.env_source {
+            lines.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(
+                    format!("from ${var}"),
+                    Style::new().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+                ),
+            ]));
+        }
         lines
     }
 
@@ -53,5 +65,9 @@ impl FormField for Toggle {
 
     fn value(&self) -> FieldValue {
         FieldValue::Bool(self.value)
+    }
+
+    fn is_env_sourced(&self) -> bool {
+        self.env_source.is_some()
     }
 }

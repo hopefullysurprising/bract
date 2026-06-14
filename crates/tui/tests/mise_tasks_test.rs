@@ -25,10 +25,10 @@ fn find<'a>(nodes: &'a [Node], id: &str) -> Option<&'a Node> {
         if node.id == id {
             return Some(node);
         }
-        if let Children::Loaded(children) = &node.children {
-            if let Some(found) = find(children, id) {
-                return Some(found);
-            }
+        if let Children::Loaded(children) = &node.children
+            && let Some(found) = find(children, id)
+        {
+            return Some(found);
         }
     }
     None

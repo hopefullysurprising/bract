@@ -15,6 +15,9 @@ pub struct TextInput {
     /// `default`) and accepted with → / End — so a repeated argument is one key
     /// away instead of retyped.
     pub remembered: Option<String>,
+    /// Set when `chars` was pre-filled from an environment variable; holds the
+    /// variable name for the on-screen hint. Such fields are never persisted.
+    pub env_source: Option<String>,
     pub chars: Vec<char>,
     pub cursor: usize,
 }
@@ -95,6 +98,15 @@ impl FormField for TextInput {
         }
 
         lines.extend(field::help_line(&self.help));
+        if let Some(var) = &self.env_source {
+            lines.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(
+                    format!("from ${var}"),
+                    Style::new().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+                ),
+            ]));
+        }
         lines
     }
 
@@ -142,5 +154,9 @@ impl FormField for TextInput {
 
     fn value(&self) -> FieldValue {
         FieldValue::Text(self.chars.iter().collect())
+    }
+
+    fn is_env_sourced(&self) -> bool {
+        self.env_source.is_some()
     }
 }

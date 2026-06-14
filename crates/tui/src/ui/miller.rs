@@ -17,6 +17,7 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 use super::form::FormView;
 use super::{View, ViewAction};
+use crate::data::env_params::{EnvSource, NullEnv, SystemEnv};
 use crate::data::loader::{BackgroundLoader, LoadRequest, Loader, Priority};
 use crate::data::memory::{default_form_memory, FormMemory, NullFormMemory};
 use crate::data::node::{Children, Node, NodeKind};
@@ -51,6 +52,8 @@ pub struct MillerView {
     filter: Option<String>,
     /// Remembers form fills for frequency-sorting and value recall.
     memory: Arc<dyn FormMemory>,
+    /// Supplies env-var values that pre-fill matching form fields.
+    env: Arc<dyn EnvSource>,
 }
 
 impl MillerView {
@@ -59,22 +62,24 @@ impl MillerView {
             sources,
             |s| Box::new(BackgroundLoader::new(s)),
             default_form_memory(),
+            Arc::new(SystemEnv),
         )
     }
 
-    /// Test constructor: a custom loader and no form memory (the keychain/db is
-    /// never touched in tests).
+    /// Test constructor: a custom loader, no form memory, and an empty
+    /// environment (so tests never touch the real db or process env).
     pub fn with_loader(
         sources: Vec<Box<dyn Source>>,
         make_loader: impl FnOnce(Vec<Box<dyn Source>>) -> Box<dyn Loader>,
     ) -> Self {
-        Self::with_loader_and_memory(sources, make_loader, Arc::new(NullFormMemory))
+        Self::with_loader_and_memory(sources, make_loader, Arc::new(NullFormMemory), Arc::new(NullEnv))
     }
 
     pub fn with_loader_and_memory(
         sources: Vec<Box<dyn Source>>,
         make_loader: impl FnOnce(Vec<Box<dyn Source>>) -> Box<dyn Loader>,
         memory: Arc<dyn FormMemory>,
+        env: Arc<dyn EnvSource>,
     ) -> Self {
         let mut roots = Vec::new();
         let mut tool_meta = HashMap::new();
@@ -117,6 +122,7 @@ impl MillerView {
             error: None,
             filter: None,
             memory,
+            env,
         };
         view.ensure_focused_loading();
         view
@@ -419,6 +425,7 @@ impl MillerView {
             &meta.bin,
             &meta.separator,
             &focused.tool_id,
+            self.env.as_ref(),
             self.memory.clone(),
         ))))
     }
