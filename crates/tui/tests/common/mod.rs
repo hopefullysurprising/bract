@@ -8,6 +8,7 @@ use bract::data::loader::SyncLoader;
 use bract::data::node::Node;
 use bract::data::source::mise_tasks::nodes_from_spec;
 use bract::data::source::mise_tools::HelpToolSource;
+use bract::data::source::usage_source::nodes_from_nested_spec;
 use bract::data::source::{HelpProvider, Loaded, Source};
 use bract::ui::form::FormView;
 use bract::ui::miller::MillerView;
@@ -121,6 +122,21 @@ pub fn task_source() -> Box<dyn Source> {
         bin: vec!["mise".to_string(), "run".to_string()],
         separator: ":".to_string(),
         roots: nodes_from_spec(&spec, "mise_tasks"),
+    })
+}
+
+/// Mise's own CLI, built eagerly from a real usage spec — stands in for the
+/// `mise usage` source (tool_id "mise", pinned under Mise Tasks).
+pub fn mise_self_source() -> Box<dyn Source> {
+    let content =
+        fs::read_to_string(fixtures_dir().join("usage-kdl/usage_3.5.0.kdl")).unwrap();
+    let spec = helptext_parser::parse(InputFormat::UsageKdl, &content).unwrap();
+    Box::new(StaticSource {
+        id: "mise".to_string(),
+        name: "Mise".to_string(),
+        bin: vec!["mise".to_string()],
+        separator: " ".to_string(),
+        roots: nodes_from_nested_spec(&spec, "mise"),
     })
 }
 

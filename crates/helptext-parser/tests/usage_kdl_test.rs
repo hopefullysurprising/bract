@@ -22,3 +22,20 @@ fn mise_2026_1_7_tasks_with_choices() {
     assert!(choices.choices.contains(&"personal".to_string()));
     assert!(choices.choices.contains(&"company".to_string()));
 }
+
+#[test]
+fn usage_3_5_0_nested_subcommands() {
+    // A usage-lib CLI's own spec (`usage --usage-spec`): unlike mise tasks, its
+    // subcommands nest directly rather than via colon-joined names.
+    let spec = common::parse_fixture(InputFormat::UsageKdl, "usage-kdl", "usage_3.5.0.kdl");
+
+    let generate = &spec.cmd.subcommands["generate"];
+    assert!(
+        generate.subcommands.contains_key("completion"),
+        "generate nests a 'completion' subcommand"
+    );
+    assert!(
+        spec.cmd.subcommands["lint"].subcommands.is_empty(),
+        "lint is a leaf with no subcommands"
+    );
+}

@@ -1,6 +1,8 @@
 mod common;
 
-use common::{az_source, cli_source, kubectl_source, mani_source, task_source, Session};
+use common::{
+    az_source, cli_source, kubectl_source, mani_source, mise_self_source, task_source, Session,
+};
 
 // --- Root ordering: Mise Tasks pinned on top, the rest alphabetical -----------
 
@@ -9,6 +11,29 @@ fn root_tools_are_sorted_with_mise_tasks_pinned() {
     // Deliberately unsorted input order.
     let mut session = Session::new(vec![az_source(), task_source(), mani_source()], 100, 30);
     assert_eq!(session.root_names(), vec!["Mise Tasks", "az", "mani"]);
+}
+
+#[test]
+fn mise_self_is_pinned_directly_under_mise_tasks() {
+    // The Mise kernel leads — Tasks, then Mise's own CLI — before the alphabetical
+    // toolchain, regardless of input order.
+    let mut session =
+        Session::new(vec![az_source(), mani_source(), mise_self_source(), task_source()], 100, 30);
+    assert_eq!(session.root_names(), vec!["Mise Tasks", "Mise", "az", "mani"]);
+}
+
+// --- Mise's own CLI navigates and runs (usage spec, eager full tree) -----------
+
+#[test]
+fn mise_self_navigates_nested_commands_and_runs() {
+    let mut session = Session::new(vec![mise_self_source()], 100, 30);
+    // `usage generate completion` is a 3-level nested path from one spec dump.
+    session.navigate(&["Mise", "generate", "completion"]);
+    assert!(session.focused_runnable(), "a usage leaf is runnable");
+    let spec = session.run_via_form();
+    assert_eq!(spec.bin, vec!["mise"]);
+    assert_eq!(spec.args.first().map(String::as_str), Some("generate"));
+    assert!(spec.args.contains(&"completion".to_string()), "nested path reaches the command: {:?}", spec.args);
 }
 
 // --- Root tools gain their own --help description -----------------------------

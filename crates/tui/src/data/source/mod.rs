@@ -3,6 +3,7 @@ pub mod help_cache;
 mod python_introspect;
 pub mod mise_tasks;
 pub mod mise_tools;
+pub mod usage_source;
 
 use helptext_parser::{SpecArg, SpecFlag};
 
@@ -60,7 +61,11 @@ pub trait HelpProvider: Send + Sync {
 }
 
 pub fn discover_sources() -> Vec<Box<dyn Source>> {
-    let mut sources: Vec<Box<dyn Source>> = vec![Box::new(mise_tasks::MiseTasksSource)];
+    // The Mise kernel leads: Tasks, then Mise's own CLI, then the toolchain.
+    let mut sources: Vec<Box<dyn Source>> = vec![
+        Box::new(mise_tasks::MiseTasksSource),
+        Box::new(usage_source::UsageSpecSource::mise_self()),
+    ];
     sources.extend(mise_tools::discover_sources());
     sources
 }

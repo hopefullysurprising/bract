@@ -102,10 +102,15 @@ impl MillerView {
             });
         }
 
-        // Mise Tasks is the opinionated kernel, so it's pinned to the top; the rest
-        // of the toolchain follows alphabetically (a separator is drawn between).
+        // The Mise kernel is pinned to the top — Tasks, then Mise's own CLI — and
+        // the rest of the toolchain follows alphabetically (a separator divides
+        // the kernel from the tools).
         roots.sort_by(|a, b| {
-            let rank = |n: &Node| usize::from(n.tool_id != "mise_tasks");
+            let rank = |n: &Node| match n.tool_id.as_str() {
+                "mise_tasks" => 0u8,
+                "mise" => 1,
+                _ => 2,
+            };
             rank(a).cmp(&rank(b)).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
         });
 
@@ -645,12 +650,15 @@ impl MillerView {
         }
     }
 
-    /// Draw a separator after Mise Tasks (the pinned kernel) in the root column.
+    /// Draw a separator after the pinned Mise kernel (Tasks + Mise) in the root
+    /// column, when there are tools below it.
     fn root_separator(&self) -> Option<usize> {
-        match self.roots.first() {
-            Some(first) if first.tool_id == "mise_tasks" && self.roots.len() > 1 => Some(0),
-            _ => None,
-        }
+        let pinned = self
+            .roots
+            .iter()
+            .take_while(|n| matches!(n.tool_id.as_str(), "mise_tasks" | "mise"))
+            .count();
+        (pinned > 0 && self.roots.len() > pinned).then(|| pinned - 1)
     }
 
     /// Full-width description of the focused node — the navigation helper that

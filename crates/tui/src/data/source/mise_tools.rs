@@ -7,8 +7,8 @@ use serde::Deserialize;
 use crate::data::node::{Children, Node, NodeKind};
 
 use super::{
-    convert_args, convert_flags, go_buildinfo, help_cache, python_introspect, HelpProvider, Loaded,
-    Source,
+    convert_args, convert_flags, go_buildinfo, help_cache, python_introspect, usage_source,
+    HelpProvider, Loaded, Source,
 };
 
 pub struct MiseHelpProvider;
@@ -118,6 +118,12 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                 .into_iter()
                 .filter_map(|binary_path| {
                     let binary = binary_path.file_name()?.to_str()?.to_string();
+                    // Curated usage-lib CLIs: built on mise's own spec framework,
+                    // not auto-detectable from the binary, so recognized by name.
+                    if binary == "usage" {
+                        return Some(Box::new(usage_source::UsageSpecSource::for_tool(&binary))
+                            as Box<dyn Source>);
+                    }
                     let format = classify_binary(&binary_path)?;
                     // Cache `--help` keyed by the version mise reports for this tool,
                     // so repeat launches skip the subprocess. Falls back to the raw
