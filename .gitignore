@@ -8,3 +8,6 @@ target
 *.pending-snap
 
 tmp
+
+# Local task roster (mustered into the supereverything map, never committed)
+TASKS.org
