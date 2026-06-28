@@ -1,7 +1,8 @@
 mod common;
 
 use common::{
-    az_source, cli_source, kubectl_source, mani_source, mise_self_source, task_source, Session,
+    atlassian_source, az_source, cli_source, kubectl_source, mani_source, mise_self_source,
+    task_source, Session,
 };
 
 // --- Root ordering: Mise Tasks pinned on top, the rest alphabetical -----------
@@ -336,4 +337,45 @@ fn dual_command_preview_shows_grouped_params_above_subtree() {
     session.navigate(&["mani", "edit"]);
     assert!(session.focused_runnable() && session.focused_expandable());
     insta::assert_snapshot!(session.screen());
+}
+
+// --- Clap support: a real Clap CLI (atlassian-cli) driven through the TUI ------
+// Mirrors the Cobra coverage above, but for a clap-derived tool: detection picks
+// ClapHelptext, the help parser builds the tree, and navigation/forms/run work
+// the same way they do for Cobra and Knack tools.
+
+#[test]
+fn atlassian_root_and_jira_are_groups() {
+    let mut session = Session::new(vec![atlassian_source()], 120, 40);
+    session.navigate(&["atlassian-cli"]);
+    // A pure clap group (`Usage: atlassian-cli [OPTIONS] <COMMAND>`) is expandable
+    // but not runnable on its own.
+    assert!(session.focused_expandable(), "the root is a group");
+    assert!(!session.focused_runnable(), "a pure group is not runnable");
+
+    // Its services load lazily as children, and a nested group recurses.
+    session.navigate(&["atlassian-cli", "jira"]);
+    assert!(session.focused_expandable(), "jira is a nested group");
+    assert!(!session.focused_runnable());
+}
+
+#[test]
+fn atlassian_leaf_runs_with_its_positional() {
+    let mut session = Session::new(vec![atlassian_source()], 120, 40);
+    session.navigate(&["atlassian-cli", "jira", "issue", "get"]);
+    assert!(session.focused_runnable(), "jira issue get is a runnable leaf");
+    assert!(!session.focused_expandable(), "a leaf has no children");
+
+    session.open_run_form();
+    let fields = session.form_field_names();
+    // The leaf's own positional plus the root's global flags (profile/config/debug)
+    // propagate into the form via the ancestor-command hierarchy.
+    assert!(fields.iter().any(|f| f == "<KEY>"), "the <KEY> positional is a form field: {fields:?}");
+    assert!(fields.iter().any(|f| f == "--profile"), "root global flags propagate down: {fields:?}");
+
+    assert!(session.set_field("<KEY>", "DEV-123"), "the KEY positional accepts a value");
+    let spec = session.run();
+    assert_eq!(spec.bin, vec!["atlassian-cli"]);
+    // The full subcommand path and the positional value reach the command line.
+    assert_eq!(&spec.args[..4], &["jira", "issue", "get", "DEV-123"], "args: {:?}", spec.args);
 }

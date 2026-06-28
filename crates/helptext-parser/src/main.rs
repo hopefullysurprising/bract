@@ -6,15 +6,16 @@ fn main() {
         Some("usage-kdl") => InputFormat::UsageKdl,
         Some("cobra-helptext") => InputFormat::CobraHelptext,
         Some("knack-helptext") => InputFormat::KnackHelptext,
+        Some("clap-helptext") => InputFormat::ClapHelptext,
         Some(other) => {
             eprintln!("unknown format: {other}");
-            eprintln!("supported formats: usage-kdl, cobra-helptext, knack-helptext");
+            eprintln!("supported formats: usage-kdl, cobra-helptext, knack-helptext, clap-helptext");
             std::process::exit(1);
         }
         None => {
             eprintln!("usage: helptext-parser <format>");
             eprintln!("reads content from stdin");
-            eprintln!("supported formats: usage-kdl, cobra-helptext, knack-helptext");
+            eprintln!("supported formats: usage-kdl, cobra-helptext, knack-helptext, clap-helptext");
             std::process::exit(1);
         }
     };

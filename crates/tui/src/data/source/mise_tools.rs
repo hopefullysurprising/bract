@@ -7,8 +7,8 @@ use serde::Deserialize;
 use crate::data::node::{Children, Node, NodeKind};
 
 use super::{
-    convert_args, convert_flags, go_buildinfo, help_cache, python_introspect, usage_source,
-    HelpProvider, Loaded, Source,
+    convert_args, convert_flags, go_buildinfo, help_cache, python_introspect,
+    rust_clap_introspect, usage_source, HelpProvider, Loaded, Source,
 };
 
 pub struct MiseHelpProvider;
@@ -43,13 +43,17 @@ struct MiseToolVersion {
 }
 
 /// Identify which framework a binary is built with, so we know how to parse its
-/// `--help`. Go binaries are introspected via buildinfo; Python entry points via
+/// `--help`. Go binaries are introspected via buildinfo (Cobra); Rust binaries
+/// via clap's embedded registry-path strings (Clap); Python entry points via
 /// their virtualenv's installed packages.
 fn classify_binary(binary_path: &Path) -> Option<InputFormat> {
     if let Some(deps) = go_buildinfo::read_deps(binary_path)
         && deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
             return Some(InputFormat::CobraHelptext);
         }
+    if rust_clap_introspect::detect_clap_version(binary_path).is_some() {
+        return Some(InputFormat::ClapHelptext);
+    }
     python_introspect::detect_format(binary_path)
 }
 

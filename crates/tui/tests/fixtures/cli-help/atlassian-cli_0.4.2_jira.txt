@@ -1,0 +1,23 @@
+Jira commands
+
+Usage: atlassian-cli jira [OPTIONS] <COMMAND>
+
+Commands:
+  issue       Issue operations (search, get, create, update, delete, etc.)
+  project     Manage projects
+  components  Manage components
+  versions    Manage versions/releases
+  roles       Manage project roles
+  fields      Manage custom fields
+  workflows   Manage workflows
+  bulk        Bulk operations
+  automation  Manage automation rules
+  webhooks    Manage webhooks
+  audit       Audit log access
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -f, --format <FORMAT>  Output format for command results (table, json, yaml, csv, quiet, markdown)
+                         [default: table] [possible values: table, json, yaml, csv, quiet, markdown]
+      --envelope         Wrap JSON/YAML list output in {"data": [...], "count": N} envelope
+  -h, --help             Print help

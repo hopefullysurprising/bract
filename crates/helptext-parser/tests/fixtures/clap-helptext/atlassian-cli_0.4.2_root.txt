@@ -1,0 +1,24 @@
+Unified Atlassian Cloud CLI
+
+Usage: atlassian-cli [OPTIONS] <COMMAND>
+
+Commands:
+  jira        Jira commands
+  confluence  Confluence commands
+  bitbucket   Bitbucket commands [aliases: bb]
+  jsm         Jira Service Management commands
+  opsgenie    Opsgenie commands
+  bamboo      Bamboo commands
+  auth        Authentication commands
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -p, --profile <PROFILE>  Profile to use from config file
+      --config <CONFIG>    Path to config file (defaults to ~/.atlassian-cli/config.yaml)
+  -f, --format <FORMAT>    Output format for command results (table, json, yaml, csv, quiet,
+                           markdown) [default: table] [possible values: table, json, yaml, csv,
+                           quiet, markdown]
+      --envelope           Wrap JSON/YAML list output in {"data": [...], "count": N} envelope
+      --debug              Enable verbose logging
+  -h, --help               Print help
+  -V, --version            Print version

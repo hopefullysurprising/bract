@@ -1,0 +1,10 @@
+Prints the shell function used to execute starship
+
+Usage: starship init [OPTIONS] <SHELL>
+
+Arguments:
+  <SHELL>  
+
+Options:
+      --print-full-init  
+  -h, --help             Print help

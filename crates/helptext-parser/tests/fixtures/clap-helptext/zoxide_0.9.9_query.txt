@@ -1,0 +1,29 @@
+zoxide-query 0.9.9
+Ajeet D'Souza <98ajeet@gmail.com>
+https://github.com/ajeetdsouza/zoxide
+
+Search for a directory in the database
+
+Usage:
+  zoxide query [OPTIONS] [KEYWORDS]...
+
+Arguments:
+  [KEYWORDS]...  
+
+Options:
+  -a, --all              Show unavailable directories
+  -i, --interactive      Use interactive selection
+  -l, --list             List all matching directories
+  -s, --score            Print score with results
+      --exclude <path>   Exclude the current directory
+      --base-dir <path>  Only search within this directory
+  -h, --help             Print help
+  -V, --version          Print version
+
+Environment variables:
+  _ZO_DATA_DIR          Path for zoxide data files
+  _ZO_ECHO              Print the matched directory before navigating to it when set to 1
+  _ZO_EXCLUDE_DIRS      List of directory globs to be excluded
+  _ZO_FZF_OPTS          Custom flags to pass to fzf
+  _ZO_MAXAGE            Maximum total age after which entries start getting deleted
+  _ZO_RESOLVE_SYMLINKS  Resolve symlinks when storing paths

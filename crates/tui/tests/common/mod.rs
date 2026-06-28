@@ -107,6 +107,15 @@ pub fn kubectl_source() -> Box<dyn Source> {
     ))
 }
 
+pub fn atlassian_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "atlassian-cli_0.4.2");
+    Box::new(HelpToolSource::new(
+        "atlassian-cli".to_string(),
+        InputFormat::ClapHelptext,
+        Box::new(provider),
+    ))
+}
+
 pub fn az_source() -> Box<dyn Source> {
     let provider = FixtureHelpProvider::new(fixtures_dir().join("knack-help"), "az_2.87.0");
     Box::new(HelpToolSource::new("az".to_string(), InputFormat::KnackHelptext, Box::new(provider)))

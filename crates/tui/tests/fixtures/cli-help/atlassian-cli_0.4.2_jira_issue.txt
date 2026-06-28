@@ -1,0 +1,23 @@
+Issue operations (search, get, create, update, delete, etc.)
+
+Usage: atlassian-cli jira issue [OPTIONS] <COMMAND>
+
+Commands:
+  search      Search issues using JQL or filter parameters
+  get         Fetch a single issue
+  create      Create a new issue
+  update      Update an existing issue
+  delete      Delete an issue
+  transition  Transition an issue to a new status
+  assign      Assign issue to user
+  unassign    Unassign issue
+  watchers    Manage issue watchers
+  links       Manage issue links
+  comments    Manage issue comments
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -f, --format <FORMAT>  Output format for command results (table, json, yaml, csv, quiet, markdown)
+                         [default: table] [possible values: table, json, yaml, csv, quiet, markdown]
+      --envelope         Wrap JSON/YAML list output in {"data": [...], "count": N} envelope
+  -h, --help             Print help

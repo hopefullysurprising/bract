@@ -7,6 +7,7 @@ pub enum InputFormat {
     UsageKdl,
     CobraHelptext,
     KnackHelptext,
+    ClapHelptext,
 }
 
 impl InputFormat {
@@ -15,6 +16,7 @@ impl InputFormat {
             InputFormat::UsageKdl => parsers::usage_kdl::parse(content),
             InputFormat::CobraHelptext => parsers::cobra_helptext::parse(content),
             InputFormat::KnackHelptext => parsers::knack_helptext::parse(content),
+            InputFormat::ClapHelptext => parsers::clap_helptext::parse(content),
         }
     }
 }

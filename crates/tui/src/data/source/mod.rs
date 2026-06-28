@@ -1,6 +1,7 @@
 mod go_buildinfo;
 pub mod help_cache;
 mod python_introspect;
+mod rust_clap_introspect;
 pub mod mise_tasks;
 pub mod mise_tools;
 pub mod usage_source;

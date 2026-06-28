@@ -1,0 +1,12 @@
+Fetch a single issue
+
+Usage: atlassian-cli jira issue get [OPTIONS] <KEY>
+
+Arguments:
+  <KEY>  Issue key (e.g. DEV-123)
+
+Options:
+  -f, --format <FORMAT>  Output format for command results (table, json, yaml, csv, quiet, markdown)
+                         [default: table] [possible values: table, json, yaml, csv, quiet, markdown]
+      --envelope         Wrap JSON/YAML list output in {"data": [...], "count": N} envelope
+  -h, --help             Print help
