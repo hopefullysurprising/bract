@@ -1,7 +1,9 @@
 [tools]
-# Pin a recent Rust so transitive deps (e.g. kdl, which needs rustc ≥1.95) build
-# even with a bare `cargo install` — no need to remember `--locked`.
-rust = "latest"
+# Pin a concrete Rust so transitive deps (e.g. kdl, which needs rustc ≥1.95)
+# build even with a bare `cargo install` — no need to remember `--locked`. Pin a
+# version, not "latest": "latest" silently sticks to whatever was installed first
+# and drifts out of sync with the real latest stable.
+rust = "1.96.0"
 vhs = "latest"
 
 [tasks.install]
