@@ -24,13 +24,7 @@ impl HelpProvider for MiseHelpProvider {
         args.push("--help");
 
         let output = std::process::Command::new("mise").args(&args).output()?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("help failed: {stderr}").into());
-        }
-
-        Ok(String::from_utf8(output.stdout)?)
+        super::help_from_output(output)
     }
 }
 

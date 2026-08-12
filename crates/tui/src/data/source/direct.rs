@@ -30,13 +30,7 @@ impl HelpProvider for DirectHelpProvider {
         subcommand_path: &[&str],
     ) -> Result<String, Box<dyn std::error::Error>> {
         let output = Command::new(binary).args(subcommand_path).arg("--help").output()?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("help failed: {stderr}").into());
-        }
-
-        Ok(String::from_utf8(output.stdout)?)
+        super::help_from_output(output)
     }
 }
 
@@ -182,3 +176,60 @@ mod tests {
     }
 }
 
+
+#[cfg(all(test, unix))]
+mod exit_status_tests {
+    use super::*;
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+
+    fn executable(dir: &Path, name: &str, body: &str) -> PathBuf {
+        let path = dir.join(name);
+        fs::write(&path, body).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+        path
+    }
+
+    // `devspace run --help` prints its whole help to stdout and *then* fails,
+    // because `run` also demands an argument. Judging by exit status alone throws
+    // away 2 KB of usable help and surfaces the failure as an error instead.
+    #[test]
+    fn help_printed_before_a_nonzero_exit_is_still_help() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = executable(
+            dir.path(),
+            "devspace",
+            "#!/bin/sh\necho 'Usage: devspace run'\necho 'run requires an argument' >&2\nexit 1\n",
+        );
+        let help = DirectHelpProvider
+            .fetch_help(path.to_str().unwrap(), &[])
+            .expect("help on stdout is help, whatever the exit status");
+        assert!(help.contains("Usage: devspace run"), "got: {help:?}");
+    }
+
+    // Nothing printed and a failure really is a failure.
+    #[test]
+    fn a_failure_with_no_output_is_still_an_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = executable(dir.path(), "broken", "#!/bin/sh\necho 'boom' >&2\nexit 1\n");
+        let err = DirectHelpProvider.fetch_help(path.to_str().unwrap(), &[]).expect_err("no help");
+        assert!(err.to_string().contains("boom"), "surfaces the tool's message: {err}");
+    }
+
+    // Colour codes are meaningless in the status line and render as literal junk.
+    #[test]
+    fn ansi_colour_is_stripped_from_a_reported_failure() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = executable(
+            dir.path(),
+            "colourful",
+            "#!/bin/sh\nprintf '\\033[1;31mfatal \\033[0mit broke\\n' >&2\nexit 1\n",
+        );
+        let err = DirectHelpProvider
+            .fetch_help(path.to_str().unwrap(), &[])
+            .expect_err("no help")
+            .to_string();
+        assert!(err.contains("fatal it broke"), "message survives: {err:?}");
+        assert!(!err.contains('\u{1b}'), "no escape sequences reach the UI: {err:?}");
+    }
+}

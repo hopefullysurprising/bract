@@ -89,6 +89,47 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
     sources
 }
 
+/// Interpret what a `--help` invocation produced.
+///
+/// A non-zero exit does not mean there is no help. `devspace run --help` prints
+/// its full help to stdout and *then* fails, because `run` also demands an
+/// argument — judging by exit status alone discards a page of usable help and
+/// reports the tool as broken. What the tool printed is the better evidence; the
+/// exit status only decides the case where it printed nothing.
+pub(crate) fn help_from_output(
+    output: std::process::Output,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let stdout = String::from_utf8(output.stdout)?;
+    if !stdout.trim().is_empty() || output.status.success() {
+        return Ok(stdout);
+    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(format!("help failed: {}", strip_ansi(stderr.trim())).into())
+}
+
+/// Drop ANSI escape sequences. A tool's failure message is shown as plain text in
+/// the status line, where colour codes would render as literal junk.
+fn strip_ansi(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        if c != '\u{1b}' {
+            out.push(c);
+            continue;
+        }
+        // CSI (`ESC [`) runs until a byte in `@`..=`~`; any other escape is a
+        // two-character sequence.
+        if chars.next() == Some('[') {
+            for terminator in chars.by_ref() {
+                if ('@'..='~').contains(&terminator) {
+                    break;
+                }
+            }
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 #[cfg(unix)]
 pub(crate) fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
