@@ -4,6 +4,58 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.6.0] - 2026-08-13
+
+### Added
+
+- **Clap-based CLIs.** A fourth parser alongside Cobra, Knack and Usage, with
+  detection straight from the binary — so Rust CLIs join the tree without any
+  per-tool configuration.
+- **Browse any CLI, with or without Mise.** `bract --tool <name|path>` builds a
+  tool's command tree by introspecting the binary and never consults Mise.
+  Repeat it to browse several at once. Tools outside the Mise ecosystem —
+  anything on your PATH — are now reachable.
+- **Headless mode.** `bract --spec` walks the whole tree and prints it as a
+  [Usage](https://usage.jdx.dev) spec instead of opening the TUI, giving a
+  reader — often another program — one document describing everything a CLI can
+  do.
+- **A command line of its own.** `--help` and `--version`, unknown arguments
+  rejected, and `BRACT_NO_CLIPBOARD` surfaced as the documented `--no-clipboard`
+  (the environment variable still works).
+
+### Changed
+
+- **The help cache follows the program, not its neighbours.** Entries are keyed
+  on a fingerprint of the binary itself rather than the version Mise reports for
+  the tool that owned the directory. A shared directory such as `~/.cargo/bin`
+  holds binaries Mise never installed, so a genuine upgrade could go unnoticed;
+  now replacing a tool re-reads its help, in both modes.
+
+### Fixed
+
+- **Multi-call dispatchers.** `~/.cargo/bin` is thirteen symlinks to a single
+  `rustup`, which then runs a different program for each name. Bract read the
+  router's bytes and gave every proxy rustup's framework, listing tools that
+  could not work (`rust-gdb`, `rls`) and misparsing ones that could. It now asks
+  the dispatcher which binary a name resolves to and introspects that.
+- **Python CLIs behind a shell wrapper.** Homebrew ships `az` as a bash script
+  naming its interpreter on the second line, so a shebang-only search never
+  found it.
+- **A flags-only tool is a leaf.** A CLI with no subcommands (gomplate) showed an
+  expand arrow that expanded nothing and offered no way to reach its run form.
+- **A tool's marker no longer changes under you.** Expandability is shown as
+  unknown until the tool's help has actually been read, rather than guessed.
+- **Help that arrives with a non-zero exit is kept.** `devspace run --help`
+  prints its full help and *then* fails; that help was being discarded and the
+  failure shown instead. Error messages are also stripped of colour codes, which
+  previously reached the screen as raw escapes.
+- **Decorated help.** A tool that banners each subcommand with rows of `#`
+  (devspace) no longer has those rows become the command's description.
+- **Clap parsing.** Command aliases (`build, b`) are recorded rather than
+  becoming part of the name, cargo's `...` list-elision marker is no longer
+  offered as a command, and a flag with an optional value
+  (`--include-args[=<VALUE>]`) keeps a usable name.
+
 ## [0.5.0] - 2026-06-14
 
 ### Added
