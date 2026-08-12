@@ -7,8 +7,8 @@ use serde::Deserialize;
 use crate::data::node::{Children, Node, NodeKind};
 
 use super::{
-    convert_args, convert_flags, dispatcher, go_buildinfo, help_cache, python_introspect,
-    rust_clap_introspect, usage_source, HelpProvider, Loaded, Source,
+    convert_args, convert_flags, dispatcher, fingerprint, go_buildinfo, help_cache,
+    python_introspect, rust_clap_introspect, usage_source, HelpProvider, Loaded, Source,
 };
 
 pub struct MiseHelpProvider;
@@ -46,19 +46,27 @@ struct MiseToolVersion {
 /// `--help`. Go binaries are introspected via buildinfo (Cobra); Rust binaries
 /// via clap's embedded registry-path strings (Clap); Python entry points via
 /// their virtualenv's installed packages.
-fn classify_binary(binary_path: &Path) -> Option<InputFormat> {
+///
+/// Returns the resolved program alongside its format: callers need the same path
+/// the framework was read from, not the name it was reached by.
+fn classify_binary(binary_path: &Path) -> Option<(InputFormat, PathBuf)> {
     // Introspect the program that actually runs. A multi-call dispatcher would
     // otherwise lend its own framework to every name it serves, and a name it
     // cannot resolve is dropped here rather than failing later at `--help`.
-    let binary_path = &dispatcher::program_for(binary_path)?;
-    if let Some(deps) = go_buildinfo::read_deps(binary_path)
+    let program = dispatcher::program_for(binary_path)?;
+    let format = detect_format(&program)?;
+    Some((format, program))
+}
+
+fn detect_format(program: &Path) -> Option<InputFormat> {
+    if let Some(deps) = go_buildinfo::read_deps(program)
         && deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
             return Some(InputFormat::CobraHelptext);
         }
-    if rust_clap_introspect::detect_clap_version(binary_path).is_some() {
+    if rust_clap_introspect::detect_clap_version(program).is_some() {
         return Some(InputFormat::ClapHelptext);
     }
-    python_introspect::detect_format(binary_path)
+    python_introspect::detect_format(program)
 }
 
 fn resolve_bin_paths(tool_key: &str, version: &str) -> Option<PathBuf> {
@@ -132,18 +140,24 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                         return Some(Box::new(usage_source::UsageSpecSource::for_tool(&binary))
                             as Box<dyn Source>);
                     }
-                    let format = classify_binary(&binary_path)?;
-                    // Cache `--help` keyed by the version mise reports for this tool,
-                    // so repeat launches skip the subprocess. Falls back to the raw
-                    // provider if no cache dir resolves.
-                    let provider: Box<dyn HelpProvider> = match &cache_dir {
-                        Some(dir) => Box::new(help_cache::CachingHelpProvider::new(
-                            Box::new(MiseHelpProvider),
-                            dir.clone(),
-                            active.version.clone(),
-                        )),
-                        None => Box::new(MiseHelpProvider),
-                    };
+                    let (format, program) = classify_binary(&binary_path)?;
+                    // Cache `--help` keyed by the program's own bytes, so repeat
+                    // launches skip the subprocess while a replaced tool is re-read.
+                    // Mise's version can't serve here: it describes the tool, and a
+                    // bin dir may hold binaries mise never installed. Without a
+                    // fingerprint we decline to cache rather than key on something
+                    // unverified.
+                    let provider: Box<dyn HelpProvider> =
+                        match (&cache_dir, fingerprint::of(&program)) {
+                            (Some(dir), Some(fingerprint)) => {
+                                Box::new(help_cache::CachingHelpProvider::new(
+                                    Box::new(MiseHelpProvider),
+                                    dir.clone(),
+                                    fingerprint,
+                                ))
+                            }
+                            _ => Box::new(MiseHelpProvider),
+                        };
                     // Scoped by the mise tool that led here: the same binary name
                     // can be reached through two tools whose bin dirs differ.
                     let tool_id = format!("{key}::{binary}");
@@ -359,6 +373,7 @@ mod tests {
             dispatcher::program_for(&proxy).as_deref().and_then(Path::file_name),
             Some(OsStr::new("served-binary"))
         );
-        assert_eq!(classify_binary(&proxy), Some(InputFormat::ClapHelptext));
+        assert_eq!(classify_binary(&proxy).map(|(format, _)| format), Some(InputFormat::ClapHelptext));
     }
 }
+

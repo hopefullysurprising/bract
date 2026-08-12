@@ -1,11 +1,12 @@
-//! Version-keyed `--help` cache. Spawning `mise exec -- tool --help` for every
-//! node on every launch is the slow part of discovery; parsing is cheap. This
-//! decorator caches the raw help text on disk keyed by the tool's version, so a
-//! tool (or subtree) is only re-fetched after its version changes.
+//! Fingerprint-keyed `--help` cache. Spawning `mise exec -- tool --help` for
+//! every node on every launch is the slow part of discovery; parsing is cheap.
+//! This decorator caches the raw help text on disk under a key identifying the
+//! program it came from, so a tool (or subtree) is re-fetched once that program
+//! is replaced.
 //!
-//! The version is treated as an **opaque equality key** — we never parse it, so
-//! no assumption is made about any tool's `--version` format. When `mise`
-//! reports a new version the key changes and the old text is simply bypassed.
+//! The key is **opaque** — never parsed, so nothing here assumes what identifies
+//! a program. When the caller supplies a different one the old text is simply
+//! bypassed. See `fingerprint` for how one is derived, and why not from a version.
 
 use std::path::PathBuf;
 
@@ -14,12 +15,12 @@ use super::HelpProvider;
 pub struct CachingHelpProvider {
     inner: Box<dyn HelpProvider>,
     dir: PathBuf,
-    version: String,
+    fingerprint: String,
 }
 
 impl CachingHelpProvider {
-    pub fn new(inner: Box<dyn HelpProvider>, dir: PathBuf, version: String) -> Self {
-        Self { inner, dir, version }
+    pub fn new(inner: Box<dyn HelpProvider>, dir: PathBuf, fingerprint: String) -> Self {
+        Self { inner, dir, fingerprint }
     }
 
     fn cache_path(&self, binary: &str, subcommand_path: &[&str]) -> PathBuf {
@@ -30,7 +31,7 @@ impl CachingHelpProvider {
         };
         self.dir
             .join(sanitize(binary))
-            .join(sanitize(&self.version))
+            .join(sanitize(&self.fingerprint))
             .join(format!("{}.txt", sanitize(&leaf)))
     }
 }
@@ -53,7 +54,7 @@ impl HelpProvider for CachingHelpProvider {
         }
         // Publish atomically: write to a unique temp file, then rename into place.
         // A crash or interrupt mid-write must never leave a truncated help text
-        // that would parse wrong (and stay wrong until the version changes).
+        // that would parse wrong (and stay wrong until the program changes).
         let tmp = path.with_extension(format!("tmp.{}", std::process::id()));
         if std::fs::write(&tmp, &fresh).is_ok() && std::fs::rename(&tmp, &path).is_err() {
             let _ = std::fs::remove_file(&tmp);
@@ -105,14 +106,14 @@ mod tests {
         }
     }
 
-    fn caching(dir: &Path, version: &str, response: &str) -> (CachingHelpProvider, Arc<AtomicUsize>) {
+    fn caching(dir: &Path, fingerprint: &str, response: &str) -> (CachingHelpProvider, Arc<AtomicUsize>) {
         let calls = Arc::new(AtomicUsize::new(0));
         let inner = Box::new(CountingProvider { calls: calls.clone(), response: response.to_string() });
-        (CachingHelpProvider::new(inner, dir.to_path_buf(), version.to_string()), calls)
+        (CachingHelpProvider::new(inner, dir.to_path_buf(), fingerprint.to_string()), calls)
     }
 
     #[test]
-    fn second_fetch_of_same_version_hits_cache() {
+    fn second_fetch_of_the_same_program_hits_cache() {
         let tmp = tempfile::tempdir().unwrap();
         let (provider, calls) = caching(tmp.path(), "1.0", "HELP");
 
@@ -124,16 +125,16 @@ mod tests {
     }
 
     #[test]
-    fn a_new_version_misses_the_old_cache() {
+    fn a_replaced_program_misses_the_old_cache() {
         let tmp = tempfile::tempdir().unwrap();
-        let (v1, _) = caching(tmp.path(), "1.0", "OLD");
-        let first = v1.fetch_help("kubectl", &[]).unwrap();
-        let (v2, v2_calls) = caching(tmp.path(), "2.0", "NEW");
-        let second = v2.fetch_help("kubectl", &[]).unwrap();
+        let (before, _) = caching(tmp.path(), "1.0", "OLD");
+        let first = before.fetch_help("kubectl", &[]).unwrap();
+        let (after, after_calls) = caching(tmp.path(), "2.0", "NEW");
+        let second = after.fetch_help("kubectl", &[]).unwrap();
 
         assert_eq!(first, "OLD");
-        assert_eq!(second, "NEW", "a version bump must bypass the stale cached help");
-        assert_eq!(v2_calls.load(Ordering::SeqCst), 1, "the new version is fetched fresh");
+        assert_eq!(second, "NEW", "a replaced program must bypass the stale cached help");
+        assert_eq!(after_calls.load(Ordering::SeqCst), 1, "the replacement is fetched fresh");
     }
 
     #[test]

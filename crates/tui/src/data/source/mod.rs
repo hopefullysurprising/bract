@@ -1,4 +1,5 @@
 mod dispatcher;
+mod fingerprint;
 mod go_buildinfo;
 pub mod help_cache;
 mod python_introspect;
