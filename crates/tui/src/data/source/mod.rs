@@ -1,3 +1,5 @@
+mod classify;
+pub mod direct;
 mod dispatcher;
 mod fingerprint;
 mod go_buildinfo;
@@ -63,6 +65,20 @@ pub trait HelpProvider: Send + Sync {
     }
 }
 
+/// The tools to browse this run: the ones named on the command line, or — when
+/// none were — whatever mise makes active here.
+///
+/// The two modes are exclusive. Naming a tool means mise is never consulted, so
+/// the Mise kernel entries do not appear either; they belong to mise's view of
+/// the world, not to a tool the user pointed at.
+pub fn sources_for(tools: &[String]) -> Result<Vec<Box<dyn Source>>, String> {
+    if tools.is_empty() {
+        Ok(discover_sources())
+    } else {
+        direct::sources_from(tools)
+    }
+}
+
 pub fn discover_sources() -> Vec<Box<dyn Source>> {
     // The Mise kernel leads: Tasks, then Mise's own CLI, then the toolchain.
     let mut sources: Vec<Box<dyn Source>> = vec![
@@ -71,6 +87,19 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
     ];
     sources.extend(mise_tools::discover_sources());
     sources
+}
+
+#[cfg(unix)]
+pub(crate) fn is_executable(path: &std::path::Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    path.metadata()
+        .map(|m| m.permissions().mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(unix))]
+pub(crate) fn is_executable(path: &std::path::Path) -> bool {
+    path.extension().map(|ext| ext == "exe").unwrap_or(false)
 }
 
 pub(crate) fn convert_flags(spec_flags: &[SpecFlag]) -> Vec<Flag> {

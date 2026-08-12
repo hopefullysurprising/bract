@@ -29,7 +29,15 @@ pub fn run_main(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    let sources = source::discover_sources();
+    // Resolve the tools before claiming the terminal: a mistyped `--tool` should
+    // print a plain error, not flash a full-screen TUI holding nothing.
+    let sources = match source::sources_for(&cli.tools) {
+        Ok(sources) => sources,
+        Err(problem) => {
+            eprintln!("{problem}");
+            std::process::exit(1);
+        }
+    };
     let mut app = App::new(Box::new(MillerView::new(sources)));
 
     let mut terminal = ratatui::init();

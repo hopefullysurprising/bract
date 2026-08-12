@@ -9,6 +9,11 @@ pub const NO_CLIPBOARD_ENV: &str = "BRACT_NO_CLIPBOARD";
 #[derive(Parser, Debug)]
 #[command(version, about)]
 pub struct Cli {
+    /// Browse this CLI instead of the mise toolchain — a name on PATH or a path
+    /// to a binary. Repeat to browse several; mise is not consulted at all
+    #[arg(long = "tool", short = 't', value_name = "NAME|PATH")]
+    pub tools: Vec<String>,
+
     /// Don't copy the built command to the system clipboard [env: BRACT_NO_CLIPBOARD]
     #[arg(long)]
     pub no_clipboard: bool,

@@ -7,8 +7,8 @@ use serde::Deserialize;
 use crate::data::node::{Children, Node, NodeKind};
 
 use super::{
-    convert_args, convert_flags, dispatcher, fingerprint, go_buildinfo, help_cache,
-    python_introspect, rust_clap_introspect, usage_source, HelpProvider, Loaded, Source,
+    classify, convert_args, convert_flags, fingerprint, help_cache, is_executable, usage_source,
+    HelpProvider, Loaded, Source,
 };
 
 pub struct MiseHelpProvider;
@@ -42,33 +42,6 @@ struct MiseToolVersion {
     active: bool,
 }
 
-/// Identify which framework a binary is built with, so we know how to parse its
-/// `--help`. Go binaries are introspected via buildinfo (Cobra); Rust binaries
-/// via clap's embedded registry-path strings (Clap); Python entry points via
-/// their virtualenv's installed packages.
-///
-/// Returns the resolved program alongside its format: callers need the same path
-/// the framework was read from, not the name it was reached by.
-fn classify_binary(binary_path: &Path) -> Option<(InputFormat, PathBuf)> {
-    // Introspect the program that actually runs. A multi-call dispatcher would
-    // otherwise lend its own framework to every name it serves, and a name it
-    // cannot resolve is dropped here rather than failing later at `--help`.
-    let program = dispatcher::program_for(binary_path)?;
-    let format = detect_format(&program)?;
-    Some((format, program))
-}
-
-fn detect_format(program: &Path) -> Option<InputFormat> {
-    if let Some(deps) = go_buildinfo::read_deps(program)
-        && deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
-            return Some(InputFormat::CobraHelptext);
-        }
-    if rust_clap_introspect::detect_clap_version(program).is_some() {
-        return Some(InputFormat::ClapHelptext);
-    }
-    python_introspect::detect_format(program)
-}
-
 fn resolve_bin_paths(tool_key: &str, version: &str) -> Option<PathBuf> {
     let tool_version = format!("{tool_key}@{version}");
     let output = std::process::Command::new("mise")
@@ -80,19 +53,6 @@ fn resolve_bin_paths(tool_key: &str, version: &str) -> Option<PathBuf> {
     }
     let stdout = String::from_utf8(output.stdout).ok()?;
     stdout.lines().next().map(PathBuf::from)
-}
-
-#[cfg(unix)]
-fn is_executable(path: &Path) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-    path.metadata()
-        .map(|m| m.permissions().mode() & 0o111 != 0)
-        .unwrap_or(false)
-}
-
-#[cfg(not(unix))]
-fn is_executable(path: &Path) -> bool {
-    path.extension().map(|ext| ext == "exe").unwrap_or(false)
 }
 
 fn list_executables(dir: &Path) -> Vec<PathBuf> {
@@ -140,7 +100,7 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                         return Some(Box::new(usage_source::UsageSpecSource::for_tool(&binary))
                             as Box<dyn Source>);
                     }
-                    let (format, program) = classify_binary(&binary_path)?;
+                    let (format, program) = classify::program_and_format(&binary_path)?;
                     // Cache `--help` keyed by the program's own bytes, so repeat
                     // launches skip the subprocess while a replaced tool is re-read.
                     // Mise's version can't serve here: it describes the tool, and a
@@ -317,63 +277,6 @@ mod identity_tests {
         let from_shared_dir = shared_dir.child_node(&[], "sweep", &cmd);
         assert_ne!(from_backend.id, from_shared_dir.id, "child nodes collide too");
         assert_ne!(from_backend.tool_id, from_shared_dir.tool_id);
-    }
-}
-
-#[cfg(all(test, unix))]
-mod tests {
-    use super::*;
-    use std::ffi::OsStr;
-    use std::fs;
-    use std::os::unix::fs::{symlink, PermissionsExt};
-
-    /// A stand-in for `~/.cargo/bin`: one multi-call dispatcher carrying a clap
-    /// marker of its own (as the real rustup does), reached under two names — one
-    /// it can resolve to a real clap binary, one it cannot resolve at all.
-    fn dispatcher_farm() -> tempfile::TempDir {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let served = dir.path().join("served-binary");
-        fs::write(&served, "padding clap_builder-4.6.0 padding").expect("write served");
-
-        let dispatcher = dir.path().join("rustup");
-        fs::write(
-            &dispatcher,
-            format!(
-                "#!/bin/sh\n# clap_builder-4.5.60\n[ \"$2\" = served ] && echo '{}' || exit 1\n",
-                served.display()
-            ),
-        )
-        .expect("write dispatcher");
-        fs::set_permissions(&dispatcher, fs::Permissions::from_mode(0o755)).expect("chmod");
-
-        symlink("rustup", dir.path().join("served")).expect("symlink served");
-        symlink("rustup", dir.path().join("absent")).expect("symlink absent");
-        dir
-    }
-
-    // The `rust-gdb` case: a proxy for a program that was never installed must not
-    // become a browsable tool. Classifying the dispatcher's bytes instead lends it
-    // rustup's own framework, and the failure only surfaces later as `help failed`.
-    #[test]
-    fn a_proxy_the_dispatcher_cannot_resolve_is_not_classified() {
-        let dir = dispatcher_farm();
-        assert_eq!(classify_binary(&dir.path().join("absent")), None);
-    }
-
-    // The `cargo` case: a resolvable proxy is classified from the program that
-    // actually runs, not from the router that dispatches to it. Both markers say
-    // clap, so the format alone cannot tell the two apart — assert the binary
-    // reached, or this passes on the dispatcher's marker exactly as it did before
-    // the resolution step existed.
-    #[test]
-    fn a_resolvable_proxy_is_classified_from_the_program_it_serves() {
-        let dir = dispatcher_farm();
-        let proxy = dir.path().join("served");
-        assert_eq!(
-            dispatcher::program_for(&proxy).as_deref().and_then(Path::file_name),
-            Some(OsStr::new("served-binary"))
-        );
-        assert_eq!(classify_binary(&proxy).map(|(format, _)| format), Some(InputFormat::ClapHelptext));
     }
 }
 
