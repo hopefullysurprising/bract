@@ -299,3 +299,23 @@ impl Session {
         }
     }
 }
+
+/// A tool with no subcommands at all — `gomplate [flags]`, flags only.
+pub fn gomplate_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "gomplate_5.2.0");
+    Box::new(HelpToolSource::new(
+        "gomplate".to_string(),
+        InputFormat::CobraHelptext,
+        Box::new(provider),
+    ))
+}
+
+/// A tool whose `--help` cannot be fetched at all (no fixture behind it).
+pub fn broken_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "does-not-exist");
+    Box::new(HelpToolSource::new(
+        "brokentool".to_string(),
+        InputFormat::CobraHelptext,
+        Box::new(provider),
+    ))
+}

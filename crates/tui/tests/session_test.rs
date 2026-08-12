@@ -1,8 +1,8 @@
 mod common;
 
 use common::{
-    atlassian_source, az_source, cli_source, kubectl_source, mani_source, mise_self_source,
-    task_source, Session,
+    atlassian_source, az_source, broken_source, cli_source, gomplate_source, kubectl_source,
+    mani_source, mise_self_source, task_source, Session,
 };
 
 // --- Root ordering: Mise Tasks pinned on top, the rest alphabetical -----------
@@ -378,4 +378,72 @@ fn atlassian_leaf_runs_with_its_positional() {
     assert_eq!(spec.bin, vec!["atlassian-cli"]);
     // The full subcommand path and the positional value reach the command line.
     assert_eq!(&spec.args[..4], &["jira", "issue", "get", "DEV-123"], "args: {:?}", spec.args);
+}
+
+// --- A tool with no subcommands is a leaf, not a dead-end branch ---------------
+
+// gomplate is flags-only: no `Available Commands:` section at all. Presented as a
+// branch it grows an expand arrow that expands nothing, and Enter does nothing
+// either, so the tool is unreachable from the TUI.
+#[test]
+fn a_tool_without_subcommands_presents_as_a_leaf() {
+    let mut session = Session::new(vec![gomplate_source()], 100, 30);
+    session.navigate(&["gomplate"]);
+    assert!(!session.focused_expandable(), "a flags-only tool has nothing to expand into");
+}
+
+#[test]
+fn a_tool_without_subcommands_can_be_run() {
+    let mut session = Session::new(vec![gomplate_source()], 100, 30);
+    session.navigate(&["gomplate"]);
+    assert!(session.focused_runnable(), "its own help says it takes flags and runs");
+}
+
+#[test]
+fn enter_on_a_tool_without_subcommands_opens_the_run_form() {
+    let mut session = Session::new(vec![gomplate_source()], 100, 30);
+    session.navigate(&["gomplate"]);
+    session.press_enter();
+    assert!(session.on_form(), "Enter is the primary action and must reach the form");
+}
+
+// A tool that does have subcommands must keep behaving as a branch.
+#[test]
+fn a_tool_with_subcommands_still_presents_as_a_branch() {
+    let mut session = Session::new(vec![mani_source()], 100, 30);
+    session.navigate(&["mani"]);
+    assert!(session.focused_expandable(), "mani has subcommands to descend into");
+}
+
+
+// --- A tool's marker must not be a guess that changes under the user ----------
+
+// Before a tool's help is read, nothing is known about whether it has
+// subcommands. Rendering it as a branch asserts something unverified, so the
+// arrow flips to a leaf marker the moment the data lands.
+#[test]
+fn an_unloaded_tool_does_not_claim_to_have_subcommands() {
+    let mut session = Session::new(vec![gomplate_source(), mani_source()], 60, 12);
+    let before = session.screen();
+    assert!(!before.contains("▸ mani"), "an unread tool must not show an expand arrow:\n{before}");
+}
+
+// …and once read, it settles on the truth and stays there.
+#[test]
+fn a_tools_marker_settles_once_its_help_is_read() {
+    let mut session = Session::new(vec![gomplate_source(), mani_source()], 60, 12);
+    session.pump();
+    let settled = session.screen();
+    assert!(settled.contains("• gomplate"), "flags-only tool reads as a leaf:\n{settled}");
+    assert!(settled.contains("▸ mani"), "a tool with subcommands reads as a branch:\n{settled}");
+}
+
+
+// A tool whose help cannot be read has no flags and no children, so it must not
+// present as something that can be run — Enter would open nothing.
+#[test]
+fn a_tool_whose_help_fails_is_not_runnable() {
+    let mut session = Session::new(vec![broken_source(), mani_source()], 60, 10);
+    session.navigate(&["brokentool"]);
+    assert!(!session.focused_runnable(), "a tool that could not be read cannot be run");
 }

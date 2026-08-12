@@ -92,7 +92,12 @@ impl MillerView {
                 id: source.tool_id().to_string(),
                 name: source.tool_name().to_string(),
                 description: String::new(),
-                kind: NodeKind::Branch,
+                // Nothing is known about a tool until its help is read — whether it
+                // has subcommands at all, or is runnable on its own. Claiming
+                // `Branch` here shows an expand arrow that flips to a leaf marker
+                // the moment the data lands; `Unknown` says so honestly and still
+                // descends (which triggers the load).
+                kind: NodeKind::Unknown,
                 runnable: false,
                 flags: vec![],
                 args: vec![],
@@ -257,19 +262,19 @@ impl MillerView {
                 }
                 node.flags = loaded.flags;
                 node.args = loaded.args;
-                // A node with children is a branch; without, a terminal leaf.
-                // Tools keep their branch identity even if a tool's help fails.
-                if !node.command_path.is_empty() {
-                    node.kind = if loaded.children.is_empty() {
-                        NodeKind::Leaf
-                    } else {
-                        NodeKind::Branch
-                    };
-                    // Now that we've parsed the node's own help, we know whether it
-                    // is directly runnable (a leaf or a dual command) or a pure
-                    // group that only dispatches to subcommands.
-                    node.runnable = loaded.runnable;
-                }
+                // A node with children is a branch; without, a terminal leaf. This
+                // applies to a tool's own root too: a CLI that takes only flags
+                // (gomplate) is a leaf, and presenting it as a branch gives it an
+                // arrow that expands nothing and no route to its run form.
+                node.kind = if loaded.children.is_empty() {
+                    NodeKind::Leaf
+                } else {
+                    NodeKind::Branch
+                };
+                // Now that we've parsed the node's own help, we know whether it is
+                // directly runnable (a leaf or a dual command) or a pure group that
+                // only dispatches to subcommands.
+                node.runnable = loaded.runnable;
                 node.children = Children::Loaded(loaded.children);
             }
             Err(e) => {
@@ -895,7 +900,10 @@ fn icon(kind: NodeKind, runnable: bool) -> Span<'static> {
         // glyph so it stands out from a plain namespace among its siblings.
         NodeKind::Branch if runnable => Span::styled("◆", Style::new().fg(Color::Green)),
         NodeKind::Branch => Span::styled("▸", Style::new().fg(Color::Cyan)),
-        NodeKind::Leaf => Span::styled("•", Style::new().fg(Color::Green)),
+        NodeKind::Leaf if runnable => Span::styled("•", Style::new().fg(Color::Green)),
+        // A leaf with nothing to run is a dead end — most often a tool whose help
+        // could not be read. Green would promise a run form that never opens.
+        NodeKind::Leaf => Span::styled("•", Style::new().fg(Color::DarkGray)),
         NodeKind::Unknown => Span::styled("·", Style::new().fg(Color::DarkGray)),
     }
 }
