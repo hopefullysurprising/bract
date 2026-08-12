@@ -319,3 +319,14 @@ pub fn broken_source() -> Box<dyn Source> {
         Box::new(provider),
     ))
 }
+
+/// A clap tool with an optional-value flag (`--include-args[=<INCLUDE_ARGS>]`),
+/// the shape that made a rendered spec unparseable.
+pub fn samply_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "samply_0.13.1");
+    Box::new(HelpToolSource::new(
+        "samply".to_string(),
+        InputFormat::ClapHelptext,
+        Box::new(provider),
+    ))
+}

@@ -14,6 +14,11 @@ pub struct Cli {
     #[arg(long = "tool", short = 't', value_name = "NAME|PATH")]
     pub tools: Vec<String>,
 
+    /// Print the whole command tree as a usage spec and exit, instead of opening
+    /// the TUI. Every subcommand's help is fetched, so this is slow and thorough
+    #[arg(long)]
+    pub spec: bool,
+
     /// Don't copy the built command to the system clipboard [env: BRACT_NO_CLIPBOARD]
     #[arg(long)]
     pub no_clipboard: bool,

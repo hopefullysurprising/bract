@@ -22,15 +22,9 @@ use ui::miller::MillerView;
 const TICK: Duration = Duration::from_millis(80);
 
 pub fn run_main(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    // bract is a full-screen TUI; it must own an interactive terminal. Bail with a
-    // clear hint rather than rendering into a void if stdout/stdin isn't a TTY.
-    if let Some(hint) = terminal_unavailable(std::io::stdout().is_terminal(), std::io::stdin().is_terminal()) {
-        eprintln!("{hint}");
-        std::process::exit(1);
-    }
-
-    // Resolve the tools before claiming the terminal: a mistyped `--tool` should
-    // print a plain error, not flash a full-screen TUI holding nothing.
+    // Resolve the tools first, before anything about the terminal: a mistyped
+    // `--tool` is a usage error whether or not a TUI could have run, and `--spec`
+    // is meant to be piped.
     let sources = match source::sources_for(&cli.tools) {
         Ok(sources) => sources,
         Err(problem) => {
@@ -38,6 +32,21 @@ pub fn run_main(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
     };
+
+    if cli.spec {
+        for spec in data::export::usage_specs(&sources) {
+            println!("{spec}");
+        }
+        return Ok(());
+    }
+
+    // bract is a full-screen TUI; it must own an interactive terminal. Bail with a
+    // clear hint rather than rendering into a void if stdout/stdin isn't a TTY.
+    if let Some(hint) = terminal_unavailable(std::io::stdout().is_terminal(), std::io::stdin().is_terminal()) {
+        eprintln!("{hint}");
+        std::process::exit(1);
+    }
+
     let mut app = App::new(Box::new(MillerView::new(sources)));
 
     let mut terminal = ratatui::init();
