@@ -8,6 +8,7 @@ description = "A TUI that turns your CLI toolchain into a guided, browsable comm
 readme = "../../README.md"
 
 [dependencies]
+clap = { workspace = true }
 dirs = "6"
 goblin = "0.10"
 helptext-parser = { path = "../helptext-parser" }

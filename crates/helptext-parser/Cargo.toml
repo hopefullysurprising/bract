@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-only"
 repository = "https://github.com/hopefullysurprising/bract"
-description = "Parse CLI --help output (Cobra, Knack) into structured usage specs."
+description = "Parse CLI --help output into structured usage specs."
 
 [dependencies]
+clap = { workspace = true }
 usage-lib = "3.0.0"
 thiserror = "2"
 

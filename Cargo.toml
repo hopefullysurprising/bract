@@ -2,6 +2,11 @@
 resolver = "2"
 members = ["crates/*"]
 
+# Both binaries parse their own argv with clap, and helptext-parser derives
+# `ValueEnum` on a type bract consumes — so the two must agree on one clap.
+[workspace.dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+
 # The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"

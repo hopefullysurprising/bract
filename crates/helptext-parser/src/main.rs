@@ -1,36 +1,40 @@
+use clap::Parser;
 use helptext_parser::{parse, InputFormat};
 use std::io::Read;
 
+// `about` renders the crate description, so it stays in one place (Cargo.toml).
+#[derive(Parser)]
+#[command(version, about, after_help = "Reads the content to parse from stdin.")]
+struct Cli {
+    /// Format of the input on stdin
+    format: InputFormat,
+}
+
 fn main() {
-    let format = match std::env::args().nth(1).as_deref() {
-        Some("usage-kdl") => InputFormat::UsageKdl,
-        Some("cobra-helptext") => InputFormat::CobraHelptext,
-        Some("knack-helptext") => InputFormat::KnackHelptext,
-        Some("clap-helptext") => InputFormat::ClapHelptext,
-        Some(other) => {
-            eprintln!("unknown format: {other}");
-            eprintln!("supported formats: usage-kdl, cobra-helptext, knack-helptext, clap-helptext");
-            std::process::exit(1);
-        }
-        None => {
-            eprintln!("usage: helptext-parser <format>");
-            eprintln!("reads content from stdin");
-            eprintln!("supported formats: usage-kdl, cobra-helptext, knack-helptext, clap-helptext");
-            std::process::exit(1);
-        }
-    };
+    let cli = Cli::parse();
 
     let mut content = String::new();
-    std::io::stdin().read_to_string(&mut content).unwrap_or_else(|e| {
+    if let Err(e) = std::io::stdin().read_to_string(&mut content) {
         eprintln!("failed to read stdin: {e}");
         std::process::exit(1);
-    });
+    }
 
-    match parse(format, &content) {
+    match parse(cli.format, &content) {
         Ok(spec) => println!("{spec:#?}"),
         Err(e) => {
             eprintln!("parse error: {e}");
             std::process::exit(1);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    #[test]
+    fn cli_definition_is_valid() {
+        Cli::command().debug_assert();
     }
 }

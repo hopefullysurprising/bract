@@ -1,4 +1,5 @@
 pub mod app;
+pub mod cli;
 mod clipboard;
 pub mod data;
 pub mod event;
@@ -14,12 +15,13 @@ use ratatui::crossterm::event as term_event;
 use ratatui::Terminal;
 
 use app::{App, AppResult};
+use cli::Cli;
 use data::source;
 use ui::miller::MillerView;
 
 const TICK: Duration = Duration::from_millis(80);
 
-pub fn run_main() -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_main(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     // bract is a full-screen TUI; it must own an interactive terminal. Bail with a
     // clear hint rather than rendering into a void if stdout/stdin isn't a TTY.
     if let Some(hint) = terminal_unavailable(std::io::stdout().is_terminal(), std::io::stdin().is_terminal()) {
@@ -44,7 +46,7 @@ pub fn run_main() -> Result<(), Box<dyn std::error::Error>> {
             let line = shell_quote::quote_command(&tokens);
 
             eprintln!("→ {line}");
-            match clipboard::copy_command(&line) {
+            match clipboard::copy_command(&line, cli.clipboard_enabled()) {
                 clipboard::CopyOutcome::Confirmed => {
                     eprintln!("  copied to clipboard — paste to run it again");
                 }

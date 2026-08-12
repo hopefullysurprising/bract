@@ -23,14 +23,14 @@ pub enum CopyOutcome {
     /// Only OSC 52 was emitted; it works if the terminal honors it (and is how
     /// SSH sessions reach the local clipboard), but we can't confirm it.
     BestEffort,
-    /// Copying was turned off via `BRACT_NO_CLIPBOARD`.
+    /// Copying was turned off via `--no-clipboard`.
     Disabled,
 }
 
 /// Copy `line` to the clipboard via OSC 52 plus a native tool, returning what we
 /// could confirm.
-pub fn copy_command(line: &str) -> CopyOutcome {
-    if std::env::var_os("BRACT_NO_CLIPBOARD").is_some() {
+pub fn copy_command(line: &str, enabled: bool) -> CopyOutcome {
+    if !enabled {
         return CopyOutcome::Disabled;
     }
     // OSC 52 first (cheap, and the only thing that reaches a local terminal over
