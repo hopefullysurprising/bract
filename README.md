@@ -10,15 +10,20 @@
 | ![Reading kubectl --help after --help, then hitting a required-flag error](docs/demo-bare.gif) | ![Searching and filling a guided kubectl form in bract](docs/demo-bract.gif) |
 
 A modern dev setup spans many CLIs — mise, gh, az, kubectl, … — each with its own
-flags and docs. bract discovers the tools [mise](https://mise.jdx.dev) manages,
-parses their `--help` **per framework** (so one parser covers many tools), and lets
-you browse commands in file-explorer-style columns and fill in arguments through a
-form. No memorising flags — and it remembers what you build, so the next run is quick.
+flags and docs. bract works out which framework a CLI was built with by inspecting
+the binary, parses its `--help` **per framework** (so one parser covers many tools),
+and lets you browse commands in file-explorer-style columns and fill in arguments
+through a form. No memorising flags — and it remembers what you build, so the next
+run is quick.
+
+Point it at a single CLI, or let it pick up a whole toolchain from
+[mise](https://mise.jdx.dev).
 
 ## Requirements
 
-bract drives mise — it needs [`mise`](https://mise.jdx.dev) installed with some
-tools active in the current directory. Cross-platform (macOS, Linux, Windows).
+Cross-platform (macOS, Linux, Windows). [`mise`](https://mise.jdx.dev) is needed
+only to discover a toolchain automatically — naming a CLI with `--tool` doesn't
+consult it at all.
 
 ## Install
 
@@ -34,7 +39,13 @@ Prebuilt binaries are also on the [Releases](https://github.com/hopefullysurpris
 
 ## Use
 
-Run `bract` in a project. Navigate, pick a command, fill the form, run it.
+```sh
+bract                          # the tools mise makes active here
+bract --tool kubectl           # just this CLI — a name on PATH or a path
+bract --tool gh --tool cargo   # several at once
+```
+
+Navigate, pick a command, fill the form, run it.
 
 | Key | Action |
 |-----|--------|
@@ -48,7 +59,9 @@ Run `bract` in a project. Navigate, pick a command, fill the form, run it.
 In a form: `↹` moves between fields, `→` accepts the greyed suggestion (your last
 value), `space` toggles a flag, `^r` runs.
 
-Icons: `▸` group · `◆` command that is also a group · `•` runnable command.
+Icons: `▸` group · `◆` command that is also a group · `•` runnable command ·
+`·` not read yet, so bract doesn't yet know which. A greyed `•` is a dead end —
+usually a tool whose `--help` couldn't be read.
 
 ## Less typing, every time
 
@@ -82,20 +95,41 @@ BRACT_GH_REPO_VIEW__JSON=name    # --json for `gh repo view` only
 ## How it works
 
 - **Lazy Miller columns** over your toolchain — a subtree's `--help` is fetched
-  only when you open it, on a background thread, then cached per tool version, so
-  startup is instant and revisits are immediate.
+  only when you open it, on a background thread, then cached against a fingerprint
+  of the binary itself, so revisits are immediate and replacing a tool re-reads it.
 - **Parsers per framework, not per tool.** One [Cobra](https://github.com/spf13/cobra)
-  parser covers any Cobra CLI; [Knack](https://github.com/microsoft/knack) covers
-  Azure CLI; [Usage](https://usage.jdx.dev) covers mise and usage-based CLIs. New
-  frameworks are added once and light up every tool built on them.
-- **mise is the backbone** for tool versions, task definitions, and environment.
+  parser covers any Cobra CLI; [Clap](https://docs.rs/clap) covers Rust CLIs;
+  [Knack](https://github.com/microsoft/knack) covers Azure CLI;
+  [Usage](https://usage.jdx.dev) covers mise and usage-based CLIs. New frameworks
+  are added once and light up every tool built on them.
+- **The framework is read from the binary**, not guessed from its name — following
+  a multi-call proxy (the `rustup` shims in `~/.cargo/bin`) through to the program
+  that actually runs.
+- **mise is the backbone** for tool versions, task definitions, and environment —
+  when you use it.
+
+## Headless
+
+`bract --spec` walks the whole tree and prints it as a
+[Usage](https://usage.jdx.dev) spec instead of opening the TUI, so a script — or
+another program — gets one document describing everything a CLI can do:
+
+```sh
+bract --tool kubectl --spec
+```
+
+Every subcommand's `--help` is fetched, so this is deliberately thorough rather
+than fast.
 
 ## Works with
 
 Any CLI built on a supported framework — plus mise's own tasks and CLI. Verified
 end-to-end against the real specs of:
 
-- **Cobra** — `kubectl`, `helm`, `hugo`, `rclone`, `gh`, and [hundreds more](https://github.com/spf13/cobra/blob/main/site/content/projects_using_cobra.md).
+- **Cobra** — `kubectl`, `helm`, `hugo`, `rclone`, `gh`, `devspace`, `mani`, and
+  [hundreds more](https://github.com/spf13/cobra/blob/main/site/content/projects_using_cobra.md).
+- **Clap** — `cargo`, `bat`, `fd`, `hyperfine`, `zoxide`, `starship`, `samply`,
+  `atlassian-cli`, and most of the Rust CLI ecosystem.
 - **Knack** — `az` (Azure CLI).
 - **Usage** — `mise` itself and the [`usage`](https://usage.jdx.dev) CLI.
 
