@@ -296,6 +296,23 @@ fn enrich_arg(arg: &mut SpecArg) {
     arg.choices = choices;
 }
 
+/// Split a command row's definition into its name and aliases. Clap renders a
+/// command with aliases as `build, b` — one command, not two, and never a command
+/// literally called `build,`.
+///
+/// Returns `None` for a row that names no command: cargo closes its curated list
+/// with `...  See all commands with --list`, an elision marker that fails with
+/// "no such command" if invoked. Anything without an alphanumeric character is
+/// punctuation standing in for commands, not a command.
+fn split_command_names(def: &str) -> Option<(String, Vec<String>)> {
+    let mut names = def
+        .split(',')
+        .filter_map(|n| n.split_whitespace().next())
+        .filter(|n| n.chars().any(char::is_alphanumeric));
+    let name = names.next()?.to_string();
+    Some((name, names.map(str::to_string).collect()))
+}
+
 /// A usage token that is clap's generic subcommand placeholder (`<COMMAND>` /
 /// `[COMMAND]`), as opposed to a real positional.
 fn is_command_placeholder(token: &str) -> bool {
@@ -328,7 +345,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
     let mut flags: Vec<SpecFlag> = Vec::new();
     // Commands are collected as (name, raw help, aliases) and built after their
     // help is fully assembled and annotations stripped.
-    let mut commands: Vec<(String, Option<String>)> = Vec::new();
+    let mut commands: Vec<(String, Vec<String>, Option<String>)> = Vec::new();
 
     for line in content.lines() {
         let is_col0 = !line.is_empty() && !line.starts_with(char::is_whitespace);
@@ -404,16 +421,18 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
                 let (def, desc) = split_def_and_description(t);
                 match desc {
                     Some(d) => {
-                        let name = def.split_whitespace().next().unwrap_or(&def).to_string();
+                        let Some((name, aliases)) = split_command_names(&def) else {
+                            continue;
+                        };
                         // The auto-generated `help` subcommand is a clap artifact,
                         // never a real workflow — keep it out of the tree.
                         if name == "help" && d.starts_with("Print this message") {
                             continue;
                         }
-                        commands.push((name, Some(d)));
+                        commands.push((name, aliases, Some(d)));
                     }
                     None => {
-                        if let Some((_, last)) = commands.last_mut() {
+                        if let Some((_, _, last)) = commands.last_mut() {
                             append_help(last, &def);
                         }
                     }
@@ -432,16 +451,18 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
 
     let subcommands: Vec<SpecCommand> = commands
         .into_iter()
-        .map(|(name, raw_help)| {
+        .map(|(name, mut aliases, raw_help)| {
             let mut builder = SpecCommand::builder().name(name);
             if let Some(help) = raw_help {
                 let (clean, anns) = extract_annotations(&help);
                 if !clean.is_empty() {
                     builder = builder.help(clean);
                 }
-                builder = builder.aliases(ann_aliases(&anns));
+                // Aliases reach us two ways: inline in the command row (`build, b`)
+                // and as a help annotation (`[aliases: b]`). Keep both.
+                aliases.extend(ann_aliases(&anns));
             }
-            builder.build()
+            builder.aliases(aliases).build()
         })
         .collect();
 

@@ -1,3 +1,4 @@
+mod dispatcher;
 mod go_buildinfo;
 pub mod help_cache;
 mod python_introspect;

@@ -224,3 +224,38 @@ fn bat_0_26_1_recovers_verbose_possible_values() {
     let style = choices_of("style");
     assert!(style.contains(&"default".to_string()) && style.contains(&"full".to_string()), "{style:?}");
 }
+
+// --- cargo: aliased command rows and clap's curated-list elision --------------
+
+#[test]
+fn cargo_1_96_0_aliased_rows_yield_a_clean_name_and_keep_the_alias() {
+    let spec = clap("cargo_1.96.0_root.txt");
+
+    // `build, b` is one command with an alias, not a command called "build,".
+    let build = spec.cmd.subcommands.get("build").expect("root has `build`");
+    assert_eq!(build.aliases, ["b"], "the alias is preserved, not discarded");
+
+    let trailing: Vec<&String> =
+        spec.cmd.subcommands.keys().filter(|k| k.ends_with(',')).collect();
+    assert!(trailing.is_empty(), "no name keeps its separator: {trailing:?}");
+}
+
+#[test]
+fn cargo_1_96_0_unaliased_rows_are_unaffected() {
+    let spec = clap("cargo_1.96.0_root.txt");
+    let clean = spec.cmd.subcommands.get("clean").expect("root has `clean`");
+    assert!(clean.aliases.is_empty());
+    assert_eq!(clean.help.as_deref(), Some("Remove the target directory"));
+}
+
+// Cargo ends its command list with `...  See all commands with --list`. That row
+// is an elision marker, and invoking it fails with "no such command: `...`".
+#[test]
+fn cargo_1_96_0_elision_marker_is_not_a_subcommand() {
+    let spec = clap("cargo_1.96.0_root.txt");
+    assert!(!spec.cmd.subcommands.contains_key("..."), "`...` is not a command");
+    assert!(
+        spec.cmd.subcommands.contains_key("publish"),
+        "real commands around it still parse"
+    );
+}

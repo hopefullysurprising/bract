@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::data::node::{Children, Node, NodeKind};
 
 use super::{
-    convert_args, convert_flags, go_buildinfo, help_cache, python_introspect,
+    convert_args, convert_flags, dispatcher, go_buildinfo, help_cache, python_introspect,
     rust_clap_introspect, usage_source, HelpProvider, Loaded, Source,
 };
 
@@ -47,6 +47,10 @@ struct MiseToolVersion {
 /// via clap's embedded registry-path strings (Clap); Python entry points via
 /// their virtualenv's installed packages.
 fn classify_binary(binary_path: &Path) -> Option<InputFormat> {
+    // Introspect the program that actually runs. A multi-call dispatcher would
+    // otherwise lend its own framework to every name it serves, and a name it
+    // cannot resolve is dropped here rather than failing later at `--help`.
+    let binary_path = &dispatcher::program_for(binary_path)?;
     if let Some(deps) = go_buildinfo::read_deps(binary_path)
         && deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
             return Some(InputFormat::CobraHelptext);
@@ -140,7 +144,11 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                         )),
                         None => Box::new(MiseHelpProvider),
                     };
-                    Some(Box::new(HelpToolSource::new(binary, format, provider)) as Box<dyn Source>)
+                    // Scoped by the mise tool that led here: the same binary name
+                    // can be reached through two tools whose bin dirs differ.
+                    let tool_id = format!("{key}::{binary}");
+                    Some(Box::new(HelpToolSource::with_tool_id(tool_id, binary, format, provider))
+                        as Box<dyn Source>)
                 })
                 .collect();
             Some(sources)
@@ -154,14 +162,30 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
 /// (Cobra, Knack, …) — the framework only changes how `--help` is parsed and how
 /// a child's expandability is inferred.
 pub struct HelpToolSource {
+    tool_id: String,
     binary: String,
     format: InputFormat,
     help_provider: Box<dyn HelpProvider>,
 }
 
 impl HelpToolSource {
+    /// Identified by its binary name — correct wherever a binary is reached once.
     pub fn new(binary: String, format: InputFormat, help_provider: Box<dyn HelpProvider>) -> Self {
-        Self { binary, format, help_provider }
+        Self::with_tool_id(binary.clone(), binary, format, help_provider)
+    }
+
+    /// Identified explicitly, for a binary reachable through more than one mise
+    /// tool — `cargo-sweep` is installed by the `cargo:` backend and again sits in
+    /// the shared `~/.cargo/bin` that `rust` exposes. The id keys both the loader's
+    /// source table and every node in the tree, so two tools sharing one would
+    /// collide: one copy would never load, and the other would respin forever.
+    pub fn with_tool_id(
+        tool_id: String,
+        binary: String,
+        format: InputFormat,
+        help_provider: Box<dyn HelpProvider>,
+    ) -> Self {
+        Self { tool_id, binary, format, help_provider }
     }
 
     fn child_node(&self, command_path: &[String], name: &str, cmd: &SpecCommand) -> Node {
@@ -183,14 +207,14 @@ impl HelpToolSource {
         };
 
         Node {
-            id: format!("{}/{}", self.binary, child_path.join("/")),
+            id: format!("{}/{}", self.tool_id, child_path.join("/")),
             name: name.to_string(),
             description: cmd.help.clone().unwrap_or_default(),
             kind,
             runnable,
             flags: vec![],
             args: vec![],
-            tool_id: self.binary.clone(),
+            tool_id: self.tool_id.clone(),
             command_path: child_path,
             children: Children::Unloaded,
         }
@@ -199,7 +223,7 @@ impl HelpToolSource {
 
 impl Source for HelpToolSource {
     fn tool_id(&self) -> &str {
-        &self.binary
+        &self.tool_id
     }
 
     fn tool_name(&self) -> &str {
@@ -236,5 +260,105 @@ impl Source for HelpToolSource {
             args: convert_args(&spec.cmd.args),
             children,
         })
+    }
+}
+
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
+
+    struct NoHelp;
+    impl HelpProvider for NoHelp {
+        fn fetch_help(&self, _b: &str, _p: &[&str]) -> Result<String, Box<dyn std::error::Error>> {
+            Err("not needed: identity is decided before any help is fetched".into())
+        }
+    }
+
+    // `cargo-sweep` arrives twice — from the `cargo:` backend, and again from the
+    // shared `~/.cargo/bin` that `rust` exposes. The id keys the loader's source
+    // table and every tree node, so one shared id left the second copy permanently
+    // unreachable while the first respun forever.
+    #[test]
+    fn two_tools_sharing_a_binary_name_stay_distinct() {
+        let build = |tool_id: &str| {
+            HelpToolSource::with_tool_id(
+                tool_id.to_string(),
+                "cargo-sweep".to_string(),
+                InputFormat::ClapHelptext,
+                Box::new(NoHelp),
+            )
+        };
+        let backend = build("cargo:cargo-sweep::cargo-sweep");
+        let shared_dir = build("rust::cargo-sweep");
+
+        assert_ne!(backend.tool_id(), shared_dir.tool_id());
+
+        // Identity is all that differs: both are still the same tool to the user,
+        // shown under one name and run by one command.
+        assert_eq!(backend.tool_name(), shared_dir.tool_name());
+        assert_eq!(backend.tool_bin(), shared_dir.tool_bin());
+
+        let cmd = SpecCommand::default();
+        let from_backend = backend.child_node(&[], "sweep", &cmd);
+        let from_shared_dir = shared_dir.child_node(&[], "sweep", &cmd);
+        assert_ne!(from_backend.id, from_shared_dir.id, "child nodes collide too");
+        assert_ne!(from_backend.tool_id, from_shared_dir.tool_id);
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::ffi::OsStr;
+    use std::fs;
+    use std::os::unix::fs::{symlink, PermissionsExt};
+
+    /// A stand-in for `~/.cargo/bin`: one multi-call dispatcher carrying a clap
+    /// marker of its own (as the real rustup does), reached under two names — one
+    /// it can resolve to a real clap binary, one it cannot resolve at all.
+    fn dispatcher_farm() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let served = dir.path().join("served-binary");
+        fs::write(&served, "padding clap_builder-4.6.0 padding").expect("write served");
+
+        let dispatcher = dir.path().join("rustup");
+        fs::write(
+            &dispatcher,
+            format!(
+                "#!/bin/sh\n# clap_builder-4.5.60\n[ \"$2\" = served ] && echo '{}' || exit 1\n",
+                served.display()
+            ),
+        )
+        .expect("write dispatcher");
+        fs::set_permissions(&dispatcher, fs::Permissions::from_mode(0o755)).expect("chmod");
+
+        symlink("rustup", dir.path().join("served")).expect("symlink served");
+        symlink("rustup", dir.path().join("absent")).expect("symlink absent");
+        dir
+    }
+
+    // The `rust-gdb` case: a proxy for a program that was never installed must not
+    // become a browsable tool. Classifying the dispatcher's bytes instead lends it
+    // rustup's own framework, and the failure only surfaces later as `help failed`.
+    #[test]
+    fn a_proxy_the_dispatcher_cannot_resolve_is_not_classified() {
+        let dir = dispatcher_farm();
+        assert_eq!(classify_binary(&dir.path().join("absent")), None);
+    }
+
+    // The `cargo` case: a resolvable proxy is classified from the program that
+    // actually runs, not from the router that dispatches to it. Both markers say
+    // clap, so the format alone cannot tell the two apart — assert the binary
+    // reached, or this passes on the dispatcher's marker exactly as it did before
+    // the resolution step existed.
+    #[test]
+    fn a_resolvable_proxy_is_classified_from_the_program_it_serves() {
+        let dir = dispatcher_farm();
+        let proxy = dir.path().join("served");
+        assert_eq!(
+            dispatcher::program_for(&proxy).as_deref().and_then(Path::file_name),
+            Some(OsStr::new("served-binary"))
+        );
+        assert_eq!(classify_binary(&proxy), Some(InputFormat::ClapHelptext));
     }
 }
