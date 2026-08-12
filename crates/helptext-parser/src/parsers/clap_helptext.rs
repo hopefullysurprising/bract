@@ -144,6 +144,19 @@ fn parse_flag_def(def: &str) -> Option<SpecFlag> {
 
     for token in def.split_whitespace() {
         if let Some(rest) = token.strip_prefix("--") {
+            // Clap attaches an optional value to the name itself:
+            // `--include-args[=<INCLUDE_ARGS>]`. Split it off, or the bracketed
+            // spec becomes part of the flag's name.
+            let (rest, optional_value) = match rest.split_once("[=") {
+                Some((name, value)) => (name, Some(value.trim_end_matches(']'))),
+                None => (rest, None),
+            };
+            if let Some(value) = optional_value {
+                let mut a = SpecArg::builder().name(metavar_name(value)).build();
+                a.required = false;
+                a.var = value.contains("...");
+                arg = Some(a);
+            }
             // A trailing `...` on a switch (`-u, --unrestricted...`) marks a
             // repeatable count flag, not a value flag.
             match rest.strip_suffix("...") {

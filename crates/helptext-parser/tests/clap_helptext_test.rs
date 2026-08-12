@@ -259,3 +259,26 @@ fn cargo_1_96_0_elision_marker_is_not_a_subcommand() {
         "real commands around it still parse"
     );
 }
+
+// --- samply: an optional-value long flag ---------------------------------------
+
+// Clap renders a flag whose value is optional as `--include-args[=<INCLUDE_ARGS>]`.
+// Taking the whole token as the name yields a flag literally called
+// `include-args[=<INCLUDE_ARGS>]`, which is both wrong in the tree and unusable
+// as a usage spec — the bracket makes the rendered spec unparseable.
+#[test]
+fn samply_0_13_1_optional_value_flag_keeps_a_clean_long_name() {
+    let spec = clap("samply_0.13.1_record.txt");
+    let flag = spec
+        .cmd
+        .flags
+        .iter()
+        .find(|f| f.long.iter().any(|l| l.starts_with("include-args")))
+        .expect("record has --include-args");
+
+    assert_eq!(flag.long, ["include-args"], "the value spec is not part of the name");
+    assert_eq!(flag.name, "include-args");
+    let arg = flag.arg.as_ref().expect("it takes a value");
+    assert_eq!(arg.name, "INCLUDE_ARGS");
+    assert!(!arg.required, "the value is optional — clap wrote it in brackets");
+}
