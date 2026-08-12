@@ -325,7 +325,22 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
         .trim()
         .to_string();
 
-    let help = preamble.lines().next().map(|l| l.to_string());
+    /// A rule of banner characters, whether bare (`#####`) or wrapped around a
+    /// title (`##### devspace run ####`). Three or more in a row is decoration, not
+    /// prose — one or two could open a real sentence ("-- a note", "# comment").
+    fn is_decoration(line: &str) -> bool {
+        let mut chars = line.trim_start().chars();
+        let Some(first) = chars.next().filter(|c| "#=*~".contains(*c)) else {
+            return false;
+        };
+        chars.take_while(|c| *c == first).count() >= 2
+    }
+
+    // Cobra puts the description first, so the first line is the summary — unless
+    // the tool decorates its help. devspace banners every subcommand with three
+    // rows of `#`, which would otherwise become the command's description and
+    // replace its real summary in the tree.
+    let help = preamble.lines().find(|l| !is_decoration(l)).map(|l| l.to_string());
     let help_long = if preamble.contains('\n') {
         Some(preamble.clone())
     } else {

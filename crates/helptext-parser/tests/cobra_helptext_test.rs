@@ -214,3 +214,39 @@ fn rclone_1_74_3_lowercase_template_parses() {
     assert!(copy.cmd.subcommands.is_empty(), "rclone copy is a leaf");
     assert!(!copy.cmd.flags.is_empty(), "rclone copy exposes flags");
 }
+
+// --- devspace: a decorative banner ahead of the real description --------------
+
+// devspace prefixes every subcommand's help with three lines of `#`, so taking
+// the first preamble line makes the description a row of hashes. In the TUI that
+// banner replaces the command's real summary once its help is read.
+#[test]
+fn devspace_6_3_20_run_description_skips_the_banner() {
+    let spec = cobra("devspace_6.3.20_run.txt");
+    assert_eq!(
+        spec.cmd.help.as_deref(),
+        Some("Executes a predefined command from the devspace.yaml")
+    );
+}
+
+// Every other Cobra tool puts its description on the first line — skipping
+// decoration must not start skipping prose.
+#[test]
+fn ordinary_first_line_descriptions_are_untouched() {
+    assert_eq!(
+        cobra("mani_0.32.0_root.txt").cmd.help.as_deref(),
+        Some("repositories manager and task runner")
+    );
+    assert_eq!(
+        cobra("mani_0.32.0_run.txt").cmd.help.as_deref(),
+        Some("Run tasks.")
+    );
+}
+
+// `devspace list --help` is nothing but a banner. Skipping decoration must leave
+// no description at all rather than a row of hashes — the tree then keeps the
+// summary it already had from the parent's command listing.
+#[test]
+fn devspace_6_3_20_list_help_of_pure_decoration_yields_no_description() {
+    assert_eq!(cobra("devspace_6.3.20_list.txt").cmd.help, None);
+}
