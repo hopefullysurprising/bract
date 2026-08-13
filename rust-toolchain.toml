@@ -1,0 +1,14 @@
+# Pin the toolchain where rustup itself will find it, so the pin reaches builds
+# mise never sees: release CI, and a bare `cargo install --git`.
+#
+# One release job cross-compiles inside the `messense/cargo-xwin` container, and
+# the generated workflow only installs Rust "if not already installed" — so that
+# container's bundled 1.89.0 survives, and the build fails on kdl, which needs
+# 1.95. Every other target builds on a native runner with a current toolchain.
+#
+# `targets` covers that one cross-compile: a freshly installed toolchain carries
+# only the host's std. Locally this file is inert — mise sets RUSTUP_TOOLCHAIN,
+# which rustup honours ahead of a toolchain file.
+[toolchain]
+channel = "1.96.0"
+targets = ["aarch64-pc-windows-msvc"]
