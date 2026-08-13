@@ -28,14 +28,15 @@ consult it at all.
 ## Install
 
 ```sh
-# via mise (recommended)
 mise use "github:hopefullysurprising/bract@latest"
-
-# or with cargo
-cargo install --git https://github.com/hopefullysurprising/bract --locked bract
 ```
 
-Prebuilt binaries are also on the [Releases](https://github.com/hopefullysurprising/bract/releases) page.
+Or grab a binary for your platform from the
+[Releases](https://github.com/hopefullysurprising/bract/releases) page — macOS,
+Linux and Windows, on both Arm and x86-64.
+
+Either way bract is a single self-contained executable: no toolchain, no runtime,
+nothing to install alongside it.
 
 ## Use
 
