@@ -124,3 +124,18 @@ Cargo workspace with crates in `crates/`. Current crates:
 - `mise tasks --usage` — get Usage KDL spec for mise tasks (not `mise usage` which exports the entire mise CLI)
 - `cat file.kdl | cargo run -- usage-kdl` — pipe content into the helptext-parser binary
 - `mise bin-paths TOOL@VERSION` — get resolved bin directory for a specific tool (handles all backend-specific path resolution)
+
+## Repo conventions
+
+- **Trunk-based.** Releases and fixes land directly on `main`; the history has no
+  feature branches. Commit there rather than branching, unless asked otherwise.
+- **Not rustfmt-clean, deliberately.** The house style is more compact than
+  rustfmt's defaults. Never run `cargo fmt` across the repo — it rewrites ~200
+  files. Match the surrounding file by eye instead.
+
+## Releasing
+
+Run `/release <patch|minor|major>`. It bumps `crates/tui/Cargo.toml`, refreshes
+`Cargo.lock`, adds the `## [X.Y.Z]` section that dist publishes as the GitHub
+Release body, commits as `chore: release X.Y.Z`, then tags `vX.Y.Z` and pushes.
+The tag push is what triggers the build.
