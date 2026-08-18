@@ -9,8 +9,13 @@
 //! bypassed. See `fingerprint` for how one is derived, and why not from a version.
 
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::HelpProvider;
+
+/// Distinguishes concurrent writers inside one process. The pid alone stopped
+/// being enough once fetches became a pool of threads rather than one worker.
+static WRITE_SEQ: AtomicU64 = AtomicU64::new(0);
 
 pub struct CachingHelpProvider {
     inner: Box<dyn HelpProvider>,
@@ -55,7 +60,11 @@ impl HelpProvider for CachingHelpProvider {
         // Publish atomically: write to a unique temp file, then rename into place.
         // A crash or interrupt mid-write must never leave a truncated help text
         // that would parse wrong (and stay wrong until the program changes).
-        let tmp = path.with_extension(format!("tmp.{}", std::process::id()));
+        let tmp = path.with_extension(format!(
+            "tmp.{}.{}",
+            std::process::id(),
+            WRITE_SEQ.fetch_add(1, Ordering::Relaxed)
+        ));
         if std::fs::write(&tmp, &fresh).is_ok() && std::fs::rename(&tmp, &path).is_err() {
             let _ = std::fs::remove_file(&tmp);
         }

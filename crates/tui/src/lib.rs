@@ -34,7 +34,7 @@ pub fn run_main(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if cli.spec {
-        for spec in data::export::usage_specs(&sources) {
+        for spec in data::export::usage_specs(sources) {
             println!("{spec}");
         }
         return Ok(());
