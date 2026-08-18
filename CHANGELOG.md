@@ -4,6 +4,29 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.6.1] - 2026-08-18
+
+### Changed
+
+- **Discovery walks the tree in parallel.** Every `--help` was fetched one at a
+  time: the headless walk recursed on the calling thread, and the TUI's
+  speculative peeks drained through a single worker. Both now share a pool sized
+  to the machine, where each fetch that comes back drops its own children in
+  behind it. A cold `bract --spec` across five tools falls from 10.2s to 2.2s,
+  and a wide column of a large CLI settles in the TUI by the same measure.
+
+### Fixed
+
+- **`--spec` no longer hollows out tools that describe themselves in one go.**
+  Mise's tasks, Mise's own CLI and any Usage-spec tool hand over their whole
+  tree at once. The walk asked for each subcommand a second time, was told
+  "you already have that", and believed there was nothing there — so those
+  subcommands came out as bare names with no description, no flags and nothing
+  nested, each wrongly marked as requiring a subcommand it does not have. Mise
+  now emits all 123 of its commands where it had emitted 65 empty ones, and
+  nested tasks such as `cc:launch` are reachable again.
+
+
 ## [0.6.0] - 2026-08-13
 
 ### Added
