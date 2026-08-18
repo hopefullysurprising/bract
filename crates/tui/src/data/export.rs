@@ -1,9 +1,11 @@
 //! Emit a tool's whole command tree as a usage spec, for reading without the TUI.
 //!
 //! The tree the TUI browses lazily is walked eagerly here, so every subcommand's
-//! own `--help` is fetched. That is the cost of the mode: the point is to hand a
-//! reader — often another program — one document describing everything a CLI can
-//! do, rather than making it drive an interactive session to find out.
+//! own `--help` is fetched — bar the subtrees a source has already handed over,
+//! which are taken as given rather than asked for twice. That is the cost of the
+//! mode: the point is to hand a reader — often another program — one document
+//! describing everything a CLI can do, rather than making it drive an interactive
+//! session to find out.
 //!
 //! The walk runs through the shared loader pool, so those fetches overlap. It is a
 //! bag of tasks: each fetch that comes back drops its children into the bag, and
@@ -21,7 +23,7 @@ use std::collections::{HashMap, HashSet};
 use helptext_parser::{Spec, SpecArg, SpecChoices, SpecCommand, SpecFlag};
 
 use crate::data::loader::{BackgroundLoader, LoadRequest, Loader, Priority};
-use crate::data::node::{Arg, Flag, FlagKind, Node};
+use crate::data::node::{Arg, Children, Flag, FlagKind, Node};
 use crate::data::source::Source;
 
 /// A tool that reports itself among its own subcommands would otherwise recurse
@@ -154,6 +156,19 @@ impl Walk {
             // happens to be in flight just now".
             if node.depth < MAX_DEPTH {
                 for child in &loaded.children {
+                    // A source that delivers its whole tree in one dump — mise's
+                    // tasks, mise's own CLI, any usage spec — has already handed
+                    // over this child and everything beneath it. Asking for it
+                    // again answers with nothing, which is the source saying "you
+                    // have it", not "there is nothing there".
+                    if let Children::Loaded(_) = child.children {
+                        if self.visited.insert((node.tool, child.command_path.clone())) {
+                            self.record_child(node.tool, &node.path, child);
+                            self.commands[node.tool]
+                                .insert(child.command_path.clone(), command_from_node(child));
+                        }
+                        continue;
+                    }
                     let accepted = self.submit(
                         loader,
                         node.tool,
@@ -165,13 +180,7 @@ impl Walk {
                     if !accepted {
                         continue;
                     }
-                    self.order[node.tool]
-                        .entry(node.path.clone())
-                        .or_default()
-                        .push(Child {
-                            name: child.name.clone(),
-                            path: child.command_path.clone(),
-                        });
+                    self.record_child(node.tool, &node.path, child);
                     self.stubs[node.tool].insert(child.command_path.clone(), stub(child));
                 }
             }
@@ -179,6 +188,13 @@ impl Walk {
         }
 
         self.outstanding -= 1;
+    }
+
+    fn record_child(&mut self, tool: usize, parent: &[String], child: &Node) {
+        self.order[tool]
+            .entry(parent.to_vec())
+            .or_default()
+            .push(Child { name: child.name.clone(), path: child.command_path.clone() });
     }
 
     fn spec_for(&mut self, index: usize, tool: &Tool) -> Option<Spec> {
@@ -208,6 +224,25 @@ impl Walk {
         }
         cmd
     }
+}
+
+/// A command, and everything under it, from a subtree the source already
+/// delivered — no fetch, because nothing here is missing.
+fn command_from_node(node: &Node) -> SpecCommand {
+    let mut cmd = SpecCommand::builder().name(node.name.clone()).build();
+    if !node.description.is_empty() {
+        cmd.help = Some(node.description.clone());
+    }
+    cmd.flags = node.flags.iter().map(spec_flag).collect();
+    cmd.args = node.args.iter().map(spec_arg).collect();
+    cmd.subcommand_required = !node.runnable;
+    if let Children::Loaded(children) = &node.children {
+        for child in children {
+            let sub = command_from_node(child);
+            cmd.subcommands.insert(sub.name.clone(), sub);
+        }
+    }
+    cmd
 }
 
 /// All that is known about a command whose own help could not be fetched.

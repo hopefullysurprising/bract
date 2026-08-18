@@ -1,7 +1,7 @@
 mod common;
 
 use bract::data::export::usage_specs;
-use common::{gomplate_source, kubectl_source, mani_source, samply_source};
+use common::{gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source};
 use helptext_parser::InputFormat;
 
 #[test]
@@ -94,4 +94,33 @@ fn every_tool_is_walked_to_its_leaves_in_one_pass() {
 
     let mani = specs.iter().find(|s| s.name == "mani").expect("mani emitted");
     assert!(mani.cmd.subcommands.contains_key("run"), "a second tool's tree survives too");
+}
+
+// Mise Tasks, mise's own CLI and usage-lib tools hand over their whole tree in
+// one dump, every child already loaded. The walk asked the source for each child
+// regardless, got the empty "you already have that" answer, and believed it —
+// emitting bare names with no nesting, no help, no flags, and every command
+// marked as needing a subcommand it does not have.
+#[test]
+fn a_tree_delivered_in_one_dump_survives_intact() {
+    let specs = usage_specs(vec![mise_self_source()]);
+    let spec = specs.first().expect("mise produces a spec");
+
+    let generate = spec.cmd.subcommands.get("generate").expect("mise generate");
+    assert_eq!(
+        generate.help.as_deref(),
+        Some("Generate completions, documentation, and other artifacts from usage specs"),
+        "a group keeps the description its dump carried"
+    );
+    assert!(
+        generate.subcommands.contains_key("completion"),
+        "a nested subcommand is not dropped"
+    );
+
+    let lint = spec.cmd.subcommands.get("lint").expect("mise lint");
+    assert!(!lint.subcommand_required, "a runnable leaf is not marked as needing a subcommand");
+    assert!(
+        lint.flags.iter().any(|f| f.long.iter().any(|l| l == "format")),
+        "a leaf keeps its own flags"
+    );
 }
