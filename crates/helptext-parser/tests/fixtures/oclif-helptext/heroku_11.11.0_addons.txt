@@ -1,0 +1,43 @@
+Lists your add-ons and attachments.
+
+USAGE
+  $ heroku addons [--all|--app APP]
+
+FLAGS
+  -A, --all             show add-ons and attachments for all accessible apps
+  -a, --app=<value>     [env: HEROKU_APP] app to run command against
+  -r, --remote=<value>  git remote of app to use
+      --json            return add-ons in json format
+      --no-wrap         disable wrapped table cells for easier copy/paste
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  Lists your add-ons and attachments.
+
+  The default filter applied depends on whether you are in a Heroku app
+  directory. If so, the --app flag is implied. If not, the default of --all
+  is implied. Explicitly providing either flag overrides the default
+  behavior.
+
+
+EXAMPLES
+   $ heroku addons --all 
+
+   $ heroku addons --app acme-inc-www 
+
+COMMANDS
+  addons:attach    attach an existing add-on resource to an app
+  addons:create    Create a new add-on resource.
+  addons:destroy   permanently destroy an add-on resource
+  addons:detach    detach an existing add-on resource from an app
+  addons:docs      open an add-on's Dev Center documentation in your browser
+  addons:info      show detailed add-on resource and attachment information
+  addons:open      open an add-on's dashboard in your browser
+  addons:plans     list all available plans for an add-on service
+  addons:rename    rename an add-on
+  addons:services  list all available add-on services
+  addons:upgrade   change add-on plan.
+  addons:wait      show provisioning status of the add-ons on the app
+

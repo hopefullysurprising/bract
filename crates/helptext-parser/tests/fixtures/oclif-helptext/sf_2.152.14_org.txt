@@ -1,0 +1,27 @@
+Commands to create and manage orgs and scratch org users.
+
+USAGE
+  $ sf org COMMAND
+
+TOPICS
+  org assign    Used to assign permissions to a user
+  org auth      Commands for printing sensitive auth info.
+  org create    Used to create a user
+  org delete    Delete scratch orgs, sandboxes, org shapes, and org snapshots.
+  org disable   Disable source tracking in an org.
+  org display   Used to display a user
+  org enable    Enable source tracking in an org.
+  org generate  Generate commands for a user
+  org get       Get details about a scratch org snapshot.
+  org list      Used to list users
+  org login     Authorize an org for use with Salesforce CLI.
+  org open      Open your default scratch org, or another specified org, in a browser.
+  org refresh   Refresh a sandbox org using the sandbox name.
+  org resume    Resume an org creation that was started asynchronously, timed out, or was interrupted.
+
+COMMANDS
+  org display  Display information about an org.
+  org list     List all orgs you’ve created or authenticated to.
+  org logout   Log out of a Salesforce org.
+  org open     Open your default scratch org, or another specified org, in a browser.
+

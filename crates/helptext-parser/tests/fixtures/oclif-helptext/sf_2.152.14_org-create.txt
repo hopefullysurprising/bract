@@ -1,0 +1,13 @@
+Used to create a user
+
+USAGE
+  $ sf org create COMMAND
+
+COMMANDS
+  org create agent-user  Create the default Salesforce user that is used to run an agent.
+  org create sandbox     Create a sandbox org.
+  org create scratch     Create a scratch org.
+  org create shape       Create a scratch org configuration (shape) based on the specified source org.
+  org create snapshot    Create a snapshot of a scratch org.
+  org create user        Create a user for a scratch org.
+

@@ -1,0 +1,29 @@
+Build Shopify apps.
+
+USAGE
+  $ shopify app COMMAND
+
+TOPICS
+  app bulk      Run, check, and cancel bulk Admin API operations for an app on a store.
+  app config    Manage app configuration.
+  app dev       Run the app.
+  app env       Manage environment variables.
+  app function  Manage Shopify Functions.
+  app generate  Generate a new app Extension.
+  app logs      Stream detailed logs for your Shopify app.
+  app versions  List deployed versions of your app.
+  app webhook   Trigger delivery of a sample webhook topic payload to a designated address.
+
+COMMANDS
+  app build                           Build the app, including extensions.
+  app deploy                          Deploy your Shopify app.
+  app dev                             Run the app.
+  app execute                         Execute GraphQL queries and mutations.
+  app graphiql                        Open a local GraphiQL UI for your app and store.
+  app import-custom-data-definitions  Import metafield and metaobject definitions.
+  app import-extensions               Import dashboard-managed extensions into your app.
+  app info                            Print basic information about your app and extensions.
+  app init                            Create a new app project
+  app logs                            Stream detailed logs for your Shopify app.
+  app release                         Release an app version.
+

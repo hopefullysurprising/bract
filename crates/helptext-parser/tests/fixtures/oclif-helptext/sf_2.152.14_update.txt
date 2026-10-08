@@ -1,0 +1,32 @@
+update the sf CLI
+
+USAGE
+  $ sf update [CHANNEL] [--force |  | [-a | -v <value> | -i]] [-b ]
+
+FLAGS
+  -a, --available        See available versions.
+  -b, --verbose          Show more details about the available versions.
+  -i, --interactive      Interactively select version to install. This is ignored if a channel is provided.
+  -v, --version=<value>  Install a specific version.
+      --force            Force a re-download of the requested version.
+
+DESCRIPTION
+  update the sf CLI
+
+EXAMPLES
+  Update to the stable channel:
+
+    $ sf update stable
+
+  Update to a specific version:
+
+    $ sf update --version 1.0.0
+
+  Interactively select version:
+
+    $ sf update --interactive
+
+  See available versions:
+
+    $ sf update --available
+

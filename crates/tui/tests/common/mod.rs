@@ -2,13 +2,14 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use bract::app::{App, AppResult};
 use bract::data::loader::SyncLoader;
 use bract::data::node::Node;
 use bract::data::source::mise_tasks::nodes_from_spec;
 use bract::data::source::mise_tools::HelpToolSource;
-use bract::data::source::usage_source::nodes_from_nested_spec;
+use bract::data::source::usage_source::{nodes_from_nested_spec, SpecProvider};
 use bract::data::source::{HelpProvider, Loaded, Source};
 use bract::ui::form::FormView;
 use bract::ui::miller::MillerView;
@@ -44,7 +45,7 @@ impl HelpProvider for FixtureHelpProvider {
         let suffix = if subcommand_path.is_empty() {
             "root".to_string()
         } else {
-            subcommand_path.join("_")
+            subcommand_path.join("_").replace(':', "-")
         };
         let path = self.dir.join(format!("{}_{suffix}.txt", self.prefix));
         fs::read_to_string(&path).map_err(|e| format!("read fixture {}: {e}", path.display()).into())
@@ -119,6 +120,44 @@ pub fn atlassian_source() -> Box<dyn Source> {
 pub fn az_source() -> Box<dyn Source> {
     let provider = FixtureHelpProvider::new(fixtures_dir().join("knack-help"), "az_2.87.0");
     Box::new(HelpToolSource::new("az".to_string(), InputFormat::KnackHelptext, Box::new(provider)))
+}
+
+pub fn sf_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "sf_2.152.14");
+    Box::new(HelpToolSource::new("sf".to_string(), InputFormat::OclifHelptext, Box::new(provider)).with_separator(" "))
+}
+
+pub fn heroku_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "heroku_11.11.0");
+    Box::new(HelpToolSource::new("heroku".to_string(), InputFormat::OclifHelptext, Box::new(provider)).with_separator(":"))
+}
+
+/// Serves a whole-tree dump from a fixture.
+pub struct FixtureSpecProvider(pub PathBuf);
+
+impl SpecProvider for FixtureSpecProvider {
+    fn fetch_spec(&self) -> Result<String, Box<dyn std::error::Error>> {
+        Ok(fs::read_to_string(&self.0)?)
+    }
+}
+
+/// Fails any `--help` fetch, for a source that must be read some other way.
+pub struct NoHelp;
+
+impl HelpProvider for NoHelp {
+    fn fetch_help(&self, binary: &str, path: &[&str]) -> Result<String, Box<dyn std::error::Error>> {
+        Err(format!("{binary} {} --help was fetched", path.join(" ")).into())
+    }
+}
+
+/// sf as `--spec` meets it: `--help` is off limits, `commands --json` is not.
+pub fn sf_dump_source() -> Box<dyn Source> {
+    let dump = fixtures_dir().join("oclif-commands-json/sf_2.152.14_org-list-create-plugins-install.json");
+    Box::new(
+        HelpToolSource::new("sf".to_string(), InputFormat::OclifHelptext, Box::new(NoHelp))
+            .with_separator(" ")
+            .with_whole_tree(InputFormat::OclifCommandsJson, Arc::new(FixtureSpecProvider(dump))),
+    )
 }
 
 pub fn task_source() -> Box<dyn Source> {

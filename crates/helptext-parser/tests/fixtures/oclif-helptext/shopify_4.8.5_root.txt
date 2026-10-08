@@ -1,0 +1,26 @@
+A CLI tool to build for the Shopify platform
+
+VERSION
+  @shopify/cli/4.8.5 darwin-arm64 node-v22.14.0
+
+USAGE
+  $ shopify [COMMAND]
+
+TOPICS
+  app           Build Shopify apps.
+  auth          Auth operations.
+  config        CLI configuration options.
+  doc           Search and fetch documentation from shopify.dev.
+  hydrogen      Build Hydrogen storefronts.
+  organization  List Shopify organizations you have access to.
+  store         Work directly with Shopify stores.
+  theme         Build Liquid themes.
+  upgrade       Upgrades Shopify CLI.
+
+COMMANDS
+  commands  List all shopify commands.
+  help      Display help for Shopify CLI
+  search    Search shopify.dev for the most relevant content matching a query. Best for discovery — surfacing the relevant pieces of documentation for a topic, rather than retrieving a whole document. To download a full document verbatim, use `doc fetch`.
+  upgrade   Upgrades Shopify CLI.
+  version   Shopify CLI version currently installed.
+

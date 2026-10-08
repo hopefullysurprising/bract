@@ -29,7 +29,11 @@ impl HelpProvider for DirectHelpProvider {
         binary: &str,
         subcommand_path: &[&str],
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let output = Command::new(binary).args(subcommand_path).arg("--help").output()?;
+        let output = Command::new(binary)
+            .args(subcommand_path)
+            .arg("--help")
+            .env(super::OCLIF_COLUMNS.0, super::OCLIF_COLUMNS.1)
+            .output()?;
         super::help_from_output(output)
     }
 }
@@ -84,7 +88,7 @@ fn one_source(arg: &str, cache_dir: Option<&Path>) -> Result<Box<dyn Source>, St
     // collision. Displayed and run as given, so the printed command is the one the
     // user could have typed.
     let tool_id = invocation.to_string_lossy().into_owned();
-    Ok(Box::new(HelpToolSource::with_tool_id(tool_id, arg.to_string(), format, provider)))
+    Ok(Box::new(HelpToolSource::for_program(tool_id, arg.to_string(), format, &program, provider, vec![arg.to_string()])))
 }
 
 #[cfg(all(test, unix))]

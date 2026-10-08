@@ -1,0 +1,21 @@
+Displays installation properties of a plugin.
+
+USAGE
+  $ sf plugins inspect PLUGIN...
+
+ARGUMENTS
+  PLUGIN...  [default: .] Plugin to inspect.
+
+FLAGS
+  -h, --help     Show CLI help.
+  -v, --verbose
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Displays installation properties of a plugin.
+
+EXAMPLES
+  $ sf plugins inspect @salesforce/plugin-packaging 
+

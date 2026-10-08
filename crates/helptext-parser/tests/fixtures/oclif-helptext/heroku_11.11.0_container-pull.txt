@@ -1,0 +1,23 @@
+pulls an image from an app's process type
+
+USAGE
+  $ heroku container:pull -a APP [-v] PROCESS_TYPE...
+
+FLAGS
+  -a, --app=<value>     (required) [env: HEROKU_APP] app to run command against
+  -r, --remote=<value>  git remote of app to use
+  -v, --verbose
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  pulls an image from an app's process type
+
+EXAMPLES
+   $ heroku container:pull web         # Pulls the web image from the app
+
+   $ heroku container:pull web worker  # Pulls both the web and worker images from the app
+
+   $ heroku container:pull web:latest  # Pulls the latest tag from the web image
+

@@ -1,0 +1,51 @@
+Release an app version.
+
+USAGE
+  $ shopify app release --version <version>
+
+FLAGS
+  -c, --config=<value>
+      The name of the app configuration.
+      [env: SHOPIFY_FLAG_APP_CONFIG]
+
+  --allow-deletes
+      Allows removing extensions and configuration without requiring user confirmation. For CI/CD environments, the recommended flag is --allow-updates. Required in non-interactive environments unless --allow-updates is provided.
+      [env: SHOPIFY_FLAG_ALLOW_DELETES]
+
+  --allow-updates
+      Allows adding and updating extensions and configuration without requiring user confirmation. Recommended option for CI/CD environments. Required in non-interactive environments unless --allow-deletes is provided.
+      [env: SHOPIFY_FLAG_ALLOW_UPDATES]
+
+  --auth-alias=<value>
+      Alias of the Shopify account to use for authentication.
+      [env: SHOPIFY_FLAG_AUTH_ALIAS]
+
+  --client-id=<value>
+      The Client ID of your app.
+      [env: SHOPIFY_FLAG_CLIENT_ID]
+
+  --no-color
+      Disable color output.
+      [env: SHOPIFY_FLAG_NO_COLOR]
+
+  --path=<value>
+      The path to your app directory.
+      [env: SHOPIFY_FLAG_PATH]
+
+  --reset
+      Reset all your settings.
+      [env: SHOPIFY_FLAG_RESET]
+
+  --verbose
+      Increase the verbosity of the output. May include sensitive data.
+      [env: SHOPIFY_FLAG_VERBOSE]
+
+  --version=<value>
+      (required) The name of the app version to release.
+      [env: SHOPIFY_FLAG_VERSION]
+
+DESCRIPTION
+  Release an app version.
+
+  Releases an existing app version. Pass the name of the version that you want to release using the `--version` flag.
+

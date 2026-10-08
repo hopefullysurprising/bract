@@ -1,0 +1,21 @@
+list who has access to an app
+
+USAGE
+  $ heroku access -a <value> [--prompt] [--json] [-r <value>]
+
+FLAGS
+  -a, --app=<value>     (required) [env: HEROKU_APP] app to run command against
+  -r, --remote=<value>  git remote of app to use
+      --json            output in json format
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  list who has access to an app
+
+COMMANDS
+  access:add     add new users to your app
+  access:remove  remove users from a team app
+  access:update  update existing collaborators on an team app
+

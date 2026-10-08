@@ -1,0 +1,41 @@
+list dynos for an app
+
+USAGE
+  $ heroku ps [TYPE [TYPE ...]]
+
+FLAGS
+  -a, --app=<value>     (required) [env: HEROKU_APP] app to run command against
+  -r, --remote=<value>  git remote of app to use
+      --json            display as json
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  list dynos for an app
+
+EXAMPLES
+   $ heroku ps 
+  === run: one-off dyno
+  run.1: up for 5m: bash
+  === web: bundle exec thin start -p $PORT
+  web.1: created for 30s
+
+   $ heroku ps run  # specifying types
+  === run: one-off dyno
+  run.1: up for 5m: bash
+
+TOPICS
+  ps:autoscale  disable web dyno autoscaling
+
+COMMANDS
+  ps:copy     Copy a file from a dyno to the local filesystem
+  ps:exec     Create an SSH session to a dyno
+  ps:forward  Forward traffic on a local port to a dyno
+  ps:restart  restart an app dyno or process type
+  ps:scale    scale dyno quantity up or down
+  ps:socks    Launch a SOCKS proxy into a dyno
+  ps:stop     stop an app dyno or process type
+  ps:type     manage dyno sizes
+  ps:wait     wait for all dynos to be running latest version after a release
+

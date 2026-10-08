@@ -1,0 +1,2388 @@
+[
+  {
+    "aliases": [
+      "force:cmdt:field:create",
+      "cmdt:field:create"
+    ],
+    "args": {},
+    "deprecateAliases": true,
+    "description": "Similar to a custom object, a custom metadata type has a list of custom fields that represent aspects of the metadata.\n\nThis command creates a metadata file that describes the new custom metadata type field. By default, the file is created in a \"fields\" directory in the current directory. Use the --output-directory to generate the file in the directory that contains the custom metadata type metdata files, such as \"force-app/main/default/objects/MyCmdt__mdt\" for the custom metadata type called MyCmdt.",
+    "examples": [
+      "Generate a metadata file for a custom checkbox field and add the file to the MyCmdt__mdt/fields directory:\n<%= config.bin %> <%= command.id %> --name MyCheckboxField --type Checkbox --output-directory force-app/main/default/objects/MyCmdt__mdt",
+      "Generate a metadata file for a custom picklist field and add a few values:\n<%= config.bin %> <%= command.id %> --name MyPicklistField --type Picklist --picklist-values A --picklist-values B --picklist-values C --output-directory force-app/main/default/objects/MyCmdt__mdt",
+      "Generate a metadata file for a custom number field and specify 2 decimal places:\n<%= config.bin %> <%= command.id %> --name MyNumberField --type Number --decimal-places 2 --output-directory force-app/main/default/objects/MyCmdt__mdt"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "aliases": [
+          "fieldname"
+        ],
+        "char": "n",
+        "name": "name",
+        "required": true,
+        "summary": "Unique name for the field.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "type": {
+        "aliases": [
+          "fieldtype"
+        ],
+        "char": "f",
+        "description": "You can't use this command to create a custom metadata type field of type \"Metadata Relationship\". Use the Salesforce Setup UI instead.",
+        "name": "type",
+        "required": true,
+        "summary": "Type of the field.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "Checkbox",
+          "Date",
+          "DateTime",
+          "Email",
+          "Number",
+          "Percent",
+          "Phone",
+          "Picklist",
+          "Text",
+          "TextArea",
+          "LongTextArea",
+          "Url"
+        ],
+        "type": "option"
+      },
+      "picklist-values": {
+        "aliases": [
+          "picklistvalues"
+        ],
+        "char": "p",
+        "name": "picklist-values",
+        "summary": "Picklist values; required for picklist fields.",
+        "delimiter": ",",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "decimal-places": {
+        "aliases": [
+          "decimalplaces"
+        ],
+        "char": "s",
+        "description": "The value must be greater than or equal to zero. Default value is 0.",
+        "name": "decimal-places",
+        "summary": "Number of decimal places to use for number or percent fields.",
+        "default": 0,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "label": {
+        "char": "l",
+        "name": "label",
+        "summary": "Label for the field.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "output-directory": {
+        "aliases": [
+          "outputdir",
+          "outputdirectory"
+        ],
+        "char": "d",
+        "description": "New files are automatically created in the \"fields\" directory. The location can be an absolute path or relative to the current working directory. The default is the current directory.",
+        "name": "output-directory",
+        "summary": "Directory to store newly-created field definition files.",
+        "default": "",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "id": "cmdt:generate:field",
+    "pluginAlias": "@salesforce/cli",
+    "pluginName": "@salesforce/plugin-custom-metadata",
+    "pluginType": "jit",
+    "strict": true,
+    "summary": "Generate a field for a custom metadata type based on the provided field type.",
+    "enableJsonFlag": true,
+    "requiresProject": true,
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "cmdt",
+      "generate",
+      "field.js"
+    ],
+    "aliasPermutations": [
+      "force:cmdt:field:create",
+      "cmdt:force:field:create",
+      "cmdt:field:force:create",
+      "cmdt:field:create:force",
+      "force:field:cmdt:create",
+      "field:force:cmdt:create",
+      "field:cmdt:force:create",
+      "field:cmdt:create:force",
+      "force:field:create:cmdt",
+      "field:force:create:cmdt",
+      "field:create:force:cmdt",
+      "field:create:cmdt:force",
+      "force:cmdt:create:field",
+      "cmdt:force:create:field",
+      "cmdt:create:force:field",
+      "cmdt:create:field:force",
+      "force:create:cmdt:field",
+      "create:force:cmdt:field",
+      "create:cmdt:force:field",
+      "create:cmdt:field:force",
+      "force:create:field:cmdt",
+      "create:force:field:cmdt",
+      "create:field:force:cmdt",
+      "create:field:cmdt:force",
+      "cmdt:field:create",
+      "field:cmdt:create",
+      "field:create:cmdt",
+      "cmdt:create:field",
+      "create:cmdt:field",
+      "create:field:cmdt"
+    ],
+    "permutations": [
+      "cmdt:generate:field",
+      "generate:cmdt:field",
+      "generate:field:cmdt",
+      "cmdt:field:generate",
+      "field:cmdt:generate",
+      "field:generate:cmdt"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "summary": "Create the default Salesforce user that is used to run an agent.",
+    "description": "You specify this user in the agent's Agent Script file using the \"default_agent_user\" parameter in the \"config\" block.\n\nBy default, this command:\n\n- Generates a user called \"Agent User\" with a globally unique username. Use flags to change these default names.\n- Sets the user's email to the new username.\n- Assigns the user the \"Einstein Agent User\" profile.\n- Assigns the user these required permission sets: AgentforceServiceAgentBase, AgentforceServiceAgentUser,\n  EinsteinGPTPromptTemplateUser\n- Checks that the user licenses required by the profile and permission sets are available in your org.\n\nThe generated user doesn't have a password. You can’t log into Salesforce using the agent user's username. Only\nSalesforce users with admin permissions can view or edit an agent user in Setup.\n\nTo assign additional permission sets or licenses after the user was created, use the \"org assign permset\" or \"org assign\npermsetlicense\" commands.\n\nWhen the command completes, it displays a summary of what it did, including the new agent user's username and ID, the\navailable licenses associated with the Einstein Agent User profile, and the profile and permission sets assigned to the\nagent user.",
+    "examples": [
+      "Create an agent user with an auto-generated username; create the user in the org with alias \"myorg\":\n<%= config.bin %> <%= command.id %> --target-org myorg",
+      "Create an agent user by specifying a base username pattern; to make the username unique, the command appends a unique\nidentifier:\n<%= config.bin %> <%= command.id %> --base-username service-agent@corp.com --target-org myorg",
+      "Create an agent user with an auto-generated username but the custom name \"Service Agent\"; create the user in your\ndefault org:\n<%= config.bin %> <%= command.id %> --first-name Service --last-name Agent"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-org": {
+        "char": "o",
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "base-username": {
+        "description": "Specify a base username in email format, such as \"service-agent@corp.com\". The command then appends a 12-character\nglobally unique ID (GUID) to the name before the \"@\" sign, which ensures that the username is globally unique across all\nSalesforce orgs and sandboxes.\n\nFor example, if you specify \"service-agent@corp.com\", then the username might be \"service-agent.a1b2c3d4e5f6@corp.com\".\n\nIf not specified, the command auto-generates the username using this pattern: \"agent.user.<GUID>@your-org-domain.com\".",
+        "name": "base-username",
+        "summary": "Base username pattern. A unique ID is appended to ensure global uniqueness of the usename.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "first-name": {
+        "name": "first-name",
+        "summary": "First name for the agent user.",
+        "default": "Agent",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "last-name": {
+        "name": "last-name",
+        "summary": "Last name for the agent user.",
+        "default": "User",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:create:agent-user",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "create",
+      "agent-user.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-org",
+    "pluginName": "@salesforce/plugin-org",
+    "pluginType": "core",
+    "aliasPermutations": [],
+    "permutations": [
+      "org:create:agent-user",
+      "create:org:agent-user",
+      "create:agent-user:org",
+      "org:agent-user:create",
+      "agent-user:org:create",
+      "agent-user:create:org"
+    ]
+  },
+  {
+    "summary": "Create a sandbox org.",
+    "description": "There are two ways to create a sandbox org: specify a definition file that contains the sandbox options or use the --name and --license-type flags to specify the two required options. If you want to set an option other than name or license type, such as apexClassId, you must use a definition file.\n\nYou can also use this command to clone an existing sandbox. Use the --source-sandbox-name flag to specify the existing sandbox name and the --name flag to the name of the new sandbox.",
+    "examples": [
+      "Create a sandbox org using a definition file and give it the alias \"MyDevSandbox\". The production org that contains the sandbox license has the alias \"prodOrg\".\n<%= config.bin %> <%= command.id %> --definition-file config/dev-sandbox-def.json --alias MyDevSandbox --target-org prodOrg",
+      "Create a sandbox org by directly specifying its name and type of license (Developer) instead of using a definition file. Set the sandbox org as your default.\n<%= config.bin %> <%= command.id %> --name mysandbox --license-type Developer --alias MyDevSandbox --target-org prodOrg --set-default",
+      "Clone the existing sandbox with name \"ExistingSandbox\" and name the new sandbox \"NewClonedSandbox\". Set the new sandbox as your default org. Wait for 30 minutes for the sandbox creation to complete.\n<%= config.bin %> <%= command.id %> --source-sandbox-name ExistingSandbox --name NewClonedSandbox --target-org prodOrg --alias MyDevSandbox --set-default --wait 30",
+      "Clone the existing sandbox with ID \"0GQB0000000TVobOAG\" and do not wait.\n<%= config.bin %> <%= command.id %> --source-id 0GQB0000000TVobOAG --name SbxClone --target-org prodOrg --async"
+    ],
+    "aliases": [
+      "env:create:sandbox"
+    ],
+    "deprecateAliases": true,
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "definition-file": {
+        "char": "f",
+        "description": "The sandbox definition file is a blueprint for the sandbox. You can create different definition files for each sandbox type that you use in the development process. See <https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_sandbox_definition.htm> for all the options you can specify in the definition file.",
+        "name": "definition-file",
+        "summary": "Path to a sandbox definition file.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "set-default": {
+        "char": "s",
+        "name": "set-default",
+        "summary": "Set the sandbox org as your default org.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "alias": {
+        "char": "a",
+        "description": "When you create a sandbox, the generated usernames are based on the usernames present in the production org. To ensure uniqueness, the new usernames are appended with the name of the sandbox. For example, the username \"user@example.com\" in the production org results in the username \"user@example.com.mysandbox\" in a sandbox named \"mysandbox\". When you set an alias for a sandbox org, it's assigned to the resulting username of the user running this command.",
+        "name": "alias",
+        "summary": "Alias for the sandbox org.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "wait": {
+        "char": "w",
+        "description": "If the command continues to run after the wait period, the CLI returns control of the terminal to you and displays the \"<%= config.bin %> org resume sandbox\" command you run to check the status of the create. The displayed command includes the job ID for the running sandbox creation.",
+        "exclusive": [
+          "async"
+        ],
+        "name": "wait",
+        "summary": "Number of minutes to wait for the sandbox org to be ready.",
+        "hasDynamicHelp": true,
+        "helpValue": "<minutes>",
+        "multiple": false,
+        "type": "option"
+      },
+      "poll-interval": {
+        "char": "i",
+        "exclusive": [
+          "async"
+        ],
+        "name": "poll-interval",
+        "summary": "Number of seconds to wait between retries.",
+        "hasDynamicHelp": true,
+        "helpValue": "<seconds>",
+        "multiple": false,
+        "type": "option"
+      },
+      "async": {
+        "description": "The command immediately displays the job ID and returns control of the terminal to you. This way, you can continue to use the CLI. To check the status of the sandbox creation, run \"<%= config.bin %> org resume sandbox\".",
+        "exclusive": [
+          "wait",
+          "poll-interval"
+        ],
+        "name": "async",
+        "summary": "Request the sandbox creation, but don't wait for it to complete.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "name": {
+        "char": "n",
+        "description": "The name must be a unique alphanumeric string (10 or fewer characters) to identify the sandbox. You can’t reuse a name while a sandbox is in the process of being deleted.",
+        "name": "name",
+        "summary": "Name of the sandbox org.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "source-sandbox-name": {
+        "aliases": [
+          "clone",
+          "c"
+        ],
+        "deprecateAliases": true,
+        "description": "The value of --source-sandbox-name must be an existing sandbox. The existing sandbox, and the new sandbox specified with the --name flag, must both be associated with the production org (--target-org) that contains the sandbox licenses.\n\nYou can specify either --source-sandbox-name or --source-id when cloning an existing sandbox, but not both.",
+        "exclusive": [
+          "license-type",
+          "source-id"
+        ],
+        "name": "source-sandbox-name",
+        "summary": "Name of the sandbox org to clone.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "source-id": {
+        "description": "The value of --source-id must be an existing sandbox (SandboxInfo.Id). The existing sandbox, and the new sandbox specified with the --name flag, must both be associated with the production org (--target-org) that contains the sandbox licenses.\n\nYou can specify either --source-sandbox-name or --source-id when cloning an existing sandbox, but not both.",
+        "exclusive": [
+          "license-type",
+          "source-sandbox-name"
+        ],
+        "name": "source-id",
+        "summary": "ID of the sandbox org to clone.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "license-type": {
+        "char": "l",
+        "exclusive": [
+          "source-sandbox-name",
+          "source-id"
+        ],
+        "name": "license-type",
+        "summary": "Type of sandbox license.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "Developer",
+          "Developer_Pro",
+          "Partial",
+          "Full"
+        ],
+        "type": "option"
+      },
+      "target-org": {
+        "char": "o",
+        "description": "When it creates the sandbox org, Salesforce copies the metadata, and optionally data, from your production org to the new sandbox org.",
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the production org that contains the sandbox license.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-prompt": {
+        "name": "no-prompt",
+        "summary": "Don't prompt for confirmation about the sandbox configuration.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "no-track-source": {
+        "description": "We recommend you enable source tracking in Developer and Developer Pro sandbox, which is why it's the default behavior. Source tracking allows you to track the changes you make to your metadata, both in your local project and in the sandbox, and to detect any conflicts between the two.\n\nTo disable source tracking in the new sandbox, specify the --no-track-source flag. The main reason to disable source tracking is for performance. For example, while you probably want to deploy metadata and run Apex tests in your CI/CD jobs, you probably don't want to incur the costs of source tracking (checking for conflicts, polling the SourceMember object, various file system operations.) This is a good use case for disabling source tracking in the sandbox.",
+        "name": "no-track-source",
+        "summary": "Do not use source tracking for this sandbox.",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "id": "org:create:sandbox",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "create",
+      "sandbox.js"
+    ],
+    "args": {},
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "@salesforce/plugin-org",
+    "pluginName": "@salesforce/plugin-org",
+    "pluginType": "core",
+    "strict": true,
+    "aliasPermutations": [
+      "env:create:sandbox",
+      "create:env:sandbox",
+      "create:sandbox:env",
+      "env:sandbox:create",
+      "sandbox:env:create",
+      "sandbox:create:env"
+    ],
+    "permutations": [
+      "org:create:sandbox",
+      "create:org:sandbox",
+      "create:sandbox:org",
+      "org:sandbox:create",
+      "sandbox:org:create",
+      "sandbox:create:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "env:create:scratch"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "summary": "Create a scratch org.",
+    "description": "There are four ways to create a scratch org:\n\n    * Specify a definition file that contains the scratch org options.\n    * Use the --edition flag to specify the one required option; this method doesn't require a defintion file.\n    * Use the --snapshot flag to create a scratch org from a snapshot. Snapshots are a point-in-time copy of a scratch org; you create a snapshot with the \"sf org create snapshot\" command.\n    * Use the --source-org flag to create a scratch org from an org shape. Org shapes mimic the baseline setup of a source org without the extraneous data and metadata; you create an org shape with the \"sf org create shape\" command.\n\nThe --edition, --snapshot, and --source-org flags are mutually exclusive, which means if you specify one, you can't also specify the others.\n\nFor any of the methods, you can also use these flags; if you use them with --definition-file, they override their equivalent option in the scratch org definition file:\n\n    * --description\n    * --name  (equivalent to the \"orgName\" option)\n    * --username\n    * --release\n    * --admin-email (equivalent to the \"adminEmail\" option)\n\nIf you want to set options such as org features or settings, you must use a definition file.\n\nYou must specify a Dev Hub to create a scratch org, either with the --target-dev-hub flag or by setting your default Dev Hub with the target-dev-hub configuration variable.",
+    "examples": [
+      "Create a Developer edition scratch org using your default Dev Hub and give the scratch org an alias:\n<%= config.bin %> <%= command.id %> --edition developer --alias my-scratch-org",
+      "Create a scratch org with a definition file. Specify the Dev Hub using its alias, set the scratch org as your default, and specify that it expires in 3 days:\n<%= config.bin %> <%= command.id %> --target-dev-hub MyHub --definition-file config/project-scratch-def.json --set-default --duration-days 3",
+      "Create a preview Enterprise edition scratch org; for use only during Salesforce release transition periods:\n<%= config.bin %> <%= command.id %> --edition enterprise --alias my-scratch-org --target-dev-hub MyHub --release preview",
+      "Create a scratch org from a snapshot called \"NightlyBranch\"; be sure you specify the same Dev Hub org associated with the snapshot. We recommend you increase the --wait time because creating a scratch org from a snapshot can take a while:\n<%= config.bin %> <%= command.id %> --alias my-scratch-org --target-dev-hub MyHub --snapshot NightlyBranch --wait 10"
+    ],
+    "deprecateAliases": true,
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "alias": {
+        "char": "a",
+        "description": "New scratch orgs include one administrator by default. The admin user's username is auto-generated and looks something like test-wvkpnfm5z113@example.com. When you set an alias for a new scratch org, it's assigned this username.",
+        "name": "alias",
+        "summary": "Alias for the scratch org.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "async": {
+        "description": "The command immediately displays the job ID and returns control of the terminal to you. This way, you can continue to use the CLI. To resume the scratch org creation, run \"<%= config.bin %> org resume scratch\".",
+        "name": "async",
+        "summary": "Request the org, but don't wait for it to complete.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "set-default": {
+        "char": "d",
+        "name": "set-default",
+        "summary": "Set the scratch org as your default org",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "definition-file": {
+        "char": "f",
+        "description": "The scratch org definition file is a blueprint for the scratch org. It mimics the shape of an org that you use in the development life cycle, such as acceptance testing, packaging, or production. See <https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm> for all the option you can specify in the definition file.",
+        "name": "definition-file",
+        "summary": "Path to a scratch org definition file.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-dev-hub": {
+        "char": "v",
+        "description": "Overrides the value of the target-dev-hub configuration variable, if set.",
+        "name": "target-dev-hub",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the Dev Hub org.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-ancestors": {
+        "char": "c",
+        "helpGroup": "Packaging",
+        "name": "no-ancestors",
+        "summary": "Don't include second-generation managed package (2GP) ancestors in the scratch org.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "edition": {
+        "char": "e",
+        "description": "The editions that begin with \"partner-\" are available only if the Dev Hub org is a Partner Business Org.",
+        "exclusive": [
+          "snapshot",
+          "source-org"
+        ],
+        "helpGroup": "Definition File Override",
+        "name": "edition",
+        "summary": "Salesforce edition of the scratch org. Overrides the value of the \"edition\" option in the definition file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "developer",
+          "enterprise",
+          "group",
+          "professional",
+          "partner-developer",
+          "partner-enterprise",
+          "partner-group",
+          "partner-professional"
+        ],
+        "type": "option"
+      },
+      "snapshot": {
+        "char": "s",
+        "description": "To view the names of the available snapshots for a given Dev Hub org, run the \"sf org list snapshot\" command.",
+        "exclusive": [
+          "edition",
+          "source-org"
+        ],
+        "helpGroup": "Definition File Override",
+        "name": "snapshot",
+        "summary": "Name of the snapshot to use when creating this scratch org. Overrides the value of the \"snapshot\" option in the defintion file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-namespace": {
+        "char": "m",
+        "helpGroup": "Packaging",
+        "name": "no-namespace",
+        "summary": "Create the scratch org with no namespace, even if the Dev Hub has a namespace.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "duration-days": {
+        "char": "y",
+        "name": "duration-days",
+        "summary": "Number of days before the org expires.",
+        "hasDynamicHelp": true,
+        "helpValue": "<days>",
+        "multiple": false,
+        "type": "option"
+      },
+      "wait": {
+        "char": "w",
+        "description": "If the command continues to run after the wait period, the CLI returns control of the terminal to you and displays the job ID. To resume the scratch org creation, run the org resume scratch command and pass it the job ID.",
+        "name": "wait",
+        "summary": "Number of minutes to wait for the scratch org to be ready.",
+        "hasDynamicHelp": true,
+        "helpValue": "<minutes>",
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "client-id": {
+        "char": "i",
+        "name": "client-id",
+        "summary": "Consumer key of the Dev Hub connected app.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "track-source": {
+        "char": "t",
+        "description": "We recommend you enable source tracking in scratch orgs, which is why it's the default behavior. Source tracking allows you to track the changes you make to your metadata, both in your local project and in the scratch org, and to detect any conflicts between the two.\n\nTo disable source tracking in the new scratch org, specify the --no-track-source flag. The main reason to disable source tracking is for performance. For example, while you probably want to deploy metadata and run Apex tests in your CI/CD jobs, you probably don't want to incur the costs of source tracking (checking for conflicts, polling the SourceMember object, various file system operations.) This is a good use case for disabling source tracking in the scratch org.",
+        "name": "track-source",
+        "summary": "Use source tracking for this scratch org. Set --no-track-source to disable source tracking.",
+        "allowNo": true,
+        "type": "boolean"
+      },
+      "username": {
+        "description": "The username must be unique within the entire scratch org and sandbox universe. You must add your own logic to ensure uniqueness.\n\nOmit this flag to have Salesforce generate a unique username for your org.",
+        "helpGroup": "Definition File Override",
+        "name": "username",
+        "summary": "Username of the scratch org admin user. Overrides the value of the \"username\" option in the definition file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "description": {
+        "helpGroup": "Definition File Override",
+        "name": "description",
+        "summary": "Description of the scratch org in the Dev Hub. Overrides the value of the \"description\" option in the definition file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "helpGroup": "Definition File Override",
+        "name": "name",
+        "summary": "Name of the org, such as \"Acme Company\". Overrides the value of the \"orgName\" option in the definition file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "release": {
+        "description": "By default, scratch orgs are on the same release as the Dev Hub. During Salesforce release transition periods, you can override this default behavior and opt in or out of the new release.",
+        "helpGroup": "Definition File Override",
+        "name": "release",
+        "summary": "Release of the scratch org as compared to the Dev Hub release.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "preview",
+          "previous"
+        ],
+        "type": "option"
+      },
+      "admin-email": {
+        "helpGroup": "Definition File Override",
+        "name": "admin-email",
+        "summary": "Email address that will be applied to the org's admin user. Overrides the value of the \"adminEmail\" option in the definition file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "source-org": {
+        "description": "To view the names of the available org shapes for a given Dev Hub org, run the \"sf org list shape\" command.",
+        "exclusive": [
+          "edition",
+          "snapshot"
+        ],
+        "helpGroup": "Definition File Override",
+        "name": "source-org",
+        "summary": "15-character ID of the org shape that the new scratch org is based on. Overrides the value of the \"sourceOrg\" option in the definition file, if set.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:create:scratch",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "create",
+      "scratch.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-org",
+    "pluginName": "@salesforce/plugin-org",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "env:create:scratch",
+      "create:env:scratch",
+      "create:scratch:env",
+      "env:scratch:create",
+      "scratch:env:create",
+      "scratch:create:env"
+    ],
+    "permutations": [
+      "org:create:scratch",
+      "create:org:scratch",
+      "create:scratch:org",
+      "org:scratch:create",
+      "scratch:org:create",
+      "scratch:create:org"
+    ]
+  },
+  {
+    "aliases": [
+      "force:org:shape:create"
+    ],
+    "args": {},
+    "deprecateAliases": true,
+    "description": "Scratch org shapes mimic the baseline setup (features, limits, edition, and Metadata API settings) of a source org without the extraneous data and metadata.\n\nRun \"sf org list shape\" to view the available org shapes and their IDs.\n\nTo create a scratch org from an org shape, include the \"sourceOrg\" property in the scratch org definition file and set it to the org ID of the source org. Then create a scratch org with the \"sf org create scratch\" command.",
+    "examples": [
+      "Create an org shape for the source org with alias SourceOrg:\n<%= config.bin %> <%= command.id %> --target-org SourceOrg"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "id": "org:create:shape",
+    "pluginAlias": "@salesforce/cli",
+    "pluginName": "@salesforce/plugin-signups",
+    "pluginType": "jit",
+    "strict": true,
+    "summary": "Create a scratch org configuration (shape) based on the specified source org.",
+    "enableJsonFlag": true,
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "create",
+      "shape.js"
+    ],
+    "aliasPermutations": [
+      "force:org:shape:create",
+      "org:force:shape:create",
+      "org:shape:force:create",
+      "org:shape:create:force",
+      "force:shape:org:create",
+      "shape:force:org:create",
+      "shape:org:force:create",
+      "shape:org:create:force",
+      "force:shape:create:org",
+      "shape:force:create:org",
+      "shape:create:force:org",
+      "shape:create:org:force",
+      "force:org:create:shape",
+      "org:force:create:shape",
+      "org:create:force:shape",
+      "org:create:shape:force",
+      "force:create:org:shape",
+      "create:force:org:shape",
+      "create:org:force:shape",
+      "create:org:shape:force",
+      "force:create:shape:org",
+      "create:force:shape:org",
+      "create:shape:force:org",
+      "create:shape:org:force"
+    ],
+    "permutations": [
+      "org:create:shape",
+      "create:org:shape",
+      "create:shape:org",
+      "org:shape:create",
+      "shape:org:create",
+      "shape:create:org"
+    ]
+  },
+  {
+    "aliases": [
+      "force:org:snapshot:create"
+    ],
+    "args": {},
+    "deprecateAliases": true,
+    "description": "A snapshot is a point-in-time copy of a scratch org. The copy is referenced by its unique name in a scratch org definition file.\n\nUse \"sf org get snapshot\" to get details, including status, about a snapshot creation request.\n\nTo create a scratch org from a snapshot, include the \"snapshot\" option (instead of \"edition\") in the scratch org definition file and set it to the name of the snapshot. Then use \"sf org create scratch\" to create the scratch org.",
+    "examples": [
+      "Create a snapshot called \"Dependencies\" using the source scratch org ID and your default Dev Hub org:\n<%= config.bin %> <%= command.id %> --source-org 00Dxx0000000000 --name Dependencies --description 'Contains PackageA v1.1.0'",
+      "Create a snapshot called \"NightlyBranch\" using the source scratch org username and a Dev Hub org with alias NightlyDevHub:\n<%= config.bin %> <%= command.id %> --source-org myuser@myorg --name NightlyBranch --description 'Contains PkgA v2.1.0 and PkgB 3.3.0' --target-dev-hub NightlyDevHub"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-dev-hub": {
+        "aliases": [
+          "targetdevhubusername"
+        ],
+        "char": "v",
+        "deprecateAliases": true,
+        "name": "target-dev-hub",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "source-org": {
+        "aliases": [
+          "sourceorg"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "source-org",
+        "required": true,
+        "summary": "ID or locally authenticated username or alias of scratch org to snapshot.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "aliases": [
+          "snapshotname"
+        ],
+        "char": "n",
+        "deprecateAliases": true,
+        "name": "name",
+        "required": true,
+        "summary": "Unique name of snapshot.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "description": {
+        "char": "d",
+        "description": "Use this description to document the contents of the snapshot. We suggest that you include a reference point, such as a version control system tag or commit ID.",
+        "name": "description",
+        "summary": "Description of snapshot.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "id": "org:create:snapshot",
+    "pluginAlias": "@salesforce/cli",
+    "pluginName": "@salesforce/plugin-signups",
+    "pluginType": "jit",
+    "strict": true,
+    "summary": "Create a snapshot of a scratch org.",
+    "enableJsonFlag": true,
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "create",
+      "snapshot.js"
+    ],
+    "aliasPermutations": [
+      "force:org:snapshot:create",
+      "org:force:snapshot:create",
+      "org:snapshot:force:create",
+      "org:snapshot:create:force",
+      "force:snapshot:org:create",
+      "snapshot:force:org:create",
+      "snapshot:org:force:create",
+      "snapshot:org:create:force",
+      "force:snapshot:create:org",
+      "snapshot:force:create:org",
+      "snapshot:create:force:org",
+      "snapshot:create:org:force",
+      "force:org:create:snapshot",
+      "org:force:create:snapshot",
+      "org:create:force:snapshot",
+      "org:create:snapshot:force",
+      "force:create:org:snapshot",
+      "create:force:org:snapshot",
+      "create:org:force:snapshot",
+      "create:org:snapshot:force",
+      "force:create:snapshot:org",
+      "create:force:snapshot:org",
+      "create:snapshot:force:org",
+      "create:snapshot:org:force"
+    ],
+    "permutations": [
+      "org:create:snapshot",
+      "create:org:snapshot",
+      "create:snapshot:org",
+      "org:snapshot:create",
+      "snapshot:org:create",
+      "snapshot:create:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:user:create"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": false,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "deprecateAliases": true,
+    "summary": "Create a user for a scratch org.",
+    "description": "A scratch org includes one administrator user by default. For testing purposes, however, you sometimes need to create additional users.\n\nThe easiest way to create a user is to let this command assign default or generated characteristics to the new user. If you want to customize your new user, create a definition file and specify it with the --definition-file flag. In the file, you can include all the User sObject (Salesforce object) fields and Salesforce DX-specific options, as described in \"User Definition File for Customizing a Scratch Org User\" (https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_users_def_file.htm). You can also specify these options on the command line.\n\nIf you don't customize your new user, this command creates a user with the following default characteristics:\n\n    * The username is the existing administrator’s username prepended with a timestamp, such as 1505759162830_test-wvkpnfm5z113@example.com.\n    * The user’s profile is Standard User.\n    * The values of the required fields of the User sObject are the corresponding values of the administrator user.\n    * The user has no password.\n\nUse the --set-alias flag to assign a simple name to the user that you can reference in later CLI commands. This alias is local and different from the Alias field of the User sObject record of the new user, which you set in the Setup UI.\n\nWhen this command completes, it displays the new username and user ID. Run the \"org display user\" command to get more information about the new user.\n\nAfter the new user has been created, Salesforce CLI automatically authenticates it to the scratch org so the new user can immediately start using the scratch org. The CLI uses the same authentication method that was used on the associated Dev Hub org.\n\nFor more information about user limits, defaults, and other considerations when creating a new scratch org user, see https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_users.htm.",
+    "examples": [
+      "Create a user for your default scratch org and let this command generate a username, user ID, and other characteristics:\n<%= config.bin %> <%= command.id %>",
+      "Create a user with alias \"testuser1\" using a user definition file. Set the \"profileName\" option to \"Chatter Free User\", which overrides the value in the defintion file if it also exists there. Create the user for the scratch org with alias \"my-scratch\":\n<%= config.bin %> <%= command.id %> --set-alias testuser1 --definition-file config/project-user-def.json profileName='Chatter Free User' --target-org my-scratch",
+      "Create a user by specifying the username, email, and perm set assignment at the command line; command fails if the username already exists in Salesforce:\n<%= config.bin %> <%= command.id %> username=testuser1@my.org email=me@my.org permsets=DreamHouse",
+      "Create a user with a definition file, set the email value as specified (overriding any value in the definition file), and generate a password for the user. If the username in the definition file isn't unique, the command appends the org ID to make it unique:\n<%= config.bin %> <%= command.id %> --definition-file config/project-user-def.json email=me@my.org generatepassword=true --set-unique-username"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "set-alias": {
+        "aliases": [
+          "setalias"
+        ],
+        "char": "a",
+        "deprecateAliases": true,
+        "name": "set-alias",
+        "summary": "Set an alias for the created username to reference in other CLI commands.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "definition-file": {
+        "aliases": [
+          "definitionfile"
+        ],
+        "char": "f",
+        "deprecateAliases": true,
+        "description": "The user definition file uses JSON format and can include any Salesforce User sObject field and Salesforce DX-specific options. See https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_users_def_file.htm for more information.",
+        "name": "definition-file",
+        "summary": "File path to a user definition file for customizing the new user.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "set-unique-username": {
+        "aliases": [
+          "setuniqueusername"
+        ],
+        "char": "s",
+        "deprecateAliases": true,
+        "description": "The new user’s username must be unique across all Salesforce orgs and in the form of an email address. If you let this command generate a username for you, it's guaranteed to be unique. If you specify an existing username in a definition file, the command fails. Set this flag to force the username to be unique; as a result, the username might be different than what you specify in the definition file.",
+        "name": "set-unique-username",
+        "summary": "Force the username, if specified in the definition file or at the command line, to be unique by appending the org ID.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:create:user",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "create",
+      "user.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-user",
+    "pluginName": "@salesforce/plugin-user",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:user:create",
+      "user:force:create",
+      "user:create:force",
+      "force:create:user",
+      "create:force:user",
+      "create:user:force"
+    ],
+    "permutations": [
+      "org:create:user",
+      "create:org:user",
+      "create:user:org",
+      "org:user:create",
+      "user:org:create",
+      "user:create:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:org:list"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "summary": "List all orgs you’ve created or authenticated to.",
+    "examples": [
+      "List all orgs you've created or authenticated to:\n$ <%= config.bin %> <%= command.id %>",
+      "List all orgs, including expired, deleted, and unknown-status orgs; don't include the connection status:\n$ <%= config.bin %> <%= command.id %> --skip-connection-status --all",
+      "List orgs and remove local org authorization info about non-active scratch orgs:\n$ <%= config.bin %> <%= command.id %> --clean"
+    ],
+    "deprecateAliases": true,
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "verbose": {
+        "name": "verbose",
+        "summary": "List more information about each org.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all": {
+        "name": "all",
+        "summary": "Include expired, deleted, and unknown-status scratch orgs.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "clean": {
+        "name": "clean",
+        "summary": "Remove all local org authorizations for non-active scratch orgs. Use \"org logout\" to remove non-scratch orgs.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "no-prompt": {
+        "aliases": [
+          "noprompt"
+        ],
+        "char": "p",
+        "deprecateAliases": true,
+        "name": "no-prompt",
+        "relationships": [
+          {
+            "type": "some",
+            "flags": [
+              {
+                "name": "clean"
+              }
+            ]
+          }
+        ],
+        "summary": "Don't prompt for confirmation.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "skip-connection-status": {
+        "aliases": [
+          "skipconnectionstatus"
+        ],
+        "deprecateAliases": true,
+        "name": "skip-connection-status",
+        "summary": "Skip retrieving the connection status of non-scratch orgs.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:list",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-org",
+    "pluginName": "@salesforce/plugin-org",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:org:list",
+      "org:force:list",
+      "org:list:force",
+      "force:list:org",
+      "list:force:org",
+      "list:org:force"
+    ],
+    "permutations": [
+      "org:list",
+      "list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:auth:list",
+      "auth:list"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "summary": "List authorization information about the orgs you created or logged into.",
+    "description": "This command uses local authorization information that Salesforce CLI caches when you create a scratch org or log into an org. The command doesn't actually connect to the orgs to verify that they're still active. As a result, this command executes very quickly. If you want to view live information about your authorized orgs, such as their connection status, use the \"org list\" command.",
+    "examples": [
+      "List local authorization information about your orgs:\n<%= config.bin %> <%= command.id %>"
+    ],
+    "deprecateAliases": true,
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:list:auth",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "auth.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-auth",
+    "pluginName": "@salesforce/plugin-auth",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:auth:list",
+      "auth:force:list",
+      "auth:list:force",
+      "force:list:auth",
+      "list:force:auth",
+      "list:auth:force",
+      "auth:list",
+      "list:auth"
+    ],
+    "permutations": [
+      "org:list:auth",
+      "list:org:auth",
+      "list:auth:org",
+      "org:auth:list",
+      "auth:org:list",
+      "auth:list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:limits:api:display",
+      "limits:api:display"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "deprecateAliases": true,
+    "summary": "Display information about limits in your org.",
+    "description": "For each limit, this command returns the maximum allocation and the remaining allocation based on usage. See this topic for a description of each limit: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_limits.htm.",
+    "examples": [
+      "Display limits in your default org:\n<%= config.bin %> <%= command.id %>",
+      "Display limits in the org with alias \"my-scratch-org\":\n<%= config.bin %> <%= command.id %> --target-org my-scratch-org"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:list:limits",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "limits.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-limits",
+    "pluginName": "@salesforce/plugin-limits",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:limits:api:display",
+      "limits:force:api:display",
+      "limits:api:force:display",
+      "limits:api:display:force",
+      "force:api:limits:display",
+      "api:force:limits:display",
+      "api:limits:force:display",
+      "api:limits:display:force",
+      "force:api:display:limits",
+      "api:force:display:limits",
+      "api:display:force:limits",
+      "api:display:limits:force",
+      "force:limits:display:api",
+      "limits:force:display:api",
+      "limits:display:force:api",
+      "limits:display:api:force",
+      "force:display:limits:api",
+      "display:force:limits:api",
+      "display:limits:force:api",
+      "display:limits:api:force",
+      "force:display:api:limits",
+      "display:force:api:limits",
+      "display:api:force:limits",
+      "display:api:limits:force",
+      "limits:api:display",
+      "api:limits:display",
+      "api:display:limits",
+      "limits:display:api",
+      "display:limits:api",
+      "display:api:limits"
+    ],
+    "permutations": [
+      "org:list:limits",
+      "list:org:limits",
+      "list:limits:org",
+      "org:limits:list",
+      "limits:org:list",
+      "limits:list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:mdapi:listmetadata"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "summary": "List the metadata components and properties of a specified type.",
+    "description": "Use this command to identify individual components in your manifest file or if you want a high-level view of particular metadata types in your org. For example, you can use this command to return a list of names of all the CustomObject or Layout components in your org, then use this information in a retrieve command that returns a subset of these components.\n\nThe username that you use to connect to the org must have the Modify All Data or Modify Metadata Through Metadata API Functions permission.",
+    "examples": [
+      "List the CustomObject components, and their properties, in the org with alias \"my-dev-org\":\n$ <%= config.bin %> <%= command.id %> --metadata-type CustomObject --target-org my-dev-org",
+      "List the CustomObject components in your default org, write the output to the specified file, and use API version 57.0:\n$ <%= config.bin %> <%= command.id %> --metadata-type CustomObject --api-version 57.0 --output-file /path/to/outputfilename.txt",
+      "List the Dashboard components in your default org that are contained in the \"folderSales\" folder, write the output to the specified file, and use API version 57.0:\n$ <%= config.bin %> <%= command.id %> --metadata-type Dashboard --folder folderSales --api-version 57.0 --output-file /path/to/outputfilename.txt"
+    ],
+    "deprecateAliases": true,
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion",
+          "a"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "summary": "API version to use; default is the most recent API version.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "output-file": {
+        "aliases": [
+          "resultfile"
+        ],
+        "char": "f",
+        "deprecateAliases": true,
+        "name": "output-file",
+        "summary": "Pathname of the file in which to write the results.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "metadata-type": {
+        "aliases": [
+          "metadatatype"
+        ],
+        "char": "m",
+        "deprecateAliases": true,
+        "name": "metadata-type",
+        "required": true,
+        "summary": "Metadata type to be retrieved, such as CustomObject; metadata type names are case-sensitive.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "folder": {
+        "description": "Examples of metadata types that use folders are Dashboard, Document, EmailTemplate, and Report.",
+        "name": "folder",
+        "summary": "Folder associated with the component; required for components that use folders; folder names are case-sensitive.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:list:metadata",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "metadata.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-org",
+    "pluginName": "@salesforce/plugin-org",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:mdapi:listmetadata",
+      "mdapi:force:listmetadata",
+      "mdapi:listmetadata:force",
+      "force:listmetadata:mdapi",
+      "listmetadata:force:mdapi",
+      "listmetadata:mdapi:force"
+    ],
+    "permutations": [
+      "org:list:metadata",
+      "list:org:metadata",
+      "list:metadata:org",
+      "org:metadata:list",
+      "metadata:org:list",
+      "metadata:list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:mdapi:describemetadata"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "summary": "Display details about the metadata types that are enabled for your org.",
+    "description": "The information includes Apex classes and triggers, custom objects, custom fields on standard objects, tab sets that define an app, and many other metadata types. Use this information to identify the syntax needed for a <name> element in a manifest file (package.xml).\n\nThe username that you use to connect to the org must have the Modify All Data or Modify Metadata Through Metadata API Functions permission.",
+    "examples": [
+      "Display information about all known and enabled metadata types in the org with alias \"my-dev-org\" using API version 57.0:\n$ <%= config.bin %> <%= command.id %> --api-version 57.0 --target-org my-dev-org",
+      "Display only the metadata types that aren't yet supported by Salesforce CLI in your default org and write the results to the specified file:\n$ <%= config.bin %> <%= command.id %> --output-file /path/to/outputfilename.txt --filter-known"
+    ],
+    "deprecateAliases": true,
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion",
+          "a"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "summary": "API version to use; default is the most recent API version.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "output-file": {
+        "aliases": [
+          "resultfile"
+        ],
+        "char": "f",
+        "deprecateAliases": true,
+        "description": "Directing the output to a file makes it easier to extract relevant information for your package.xml manifest file. The default output destination is the terminal or command window console.",
+        "name": "output-file",
+        "summary": "Pathname of the file in which to write the results.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "filter-known": {
+        "aliases": [
+          "filterknown"
+        ],
+        "char": "k",
+        "deprecateAliases": true,
+        "hidden": true,
+        "name": "filter-known",
+        "summary": "Filter the known metadata types from the result to display only the types not yet fully supported by Salesforce CLI.\n\nfilter metadata known by the CLI",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "id": "org:list:metadata-types",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "metadata-types.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-org",
+    "pluginName": "@salesforce/plugin-org",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:mdapi:describemetadata",
+      "mdapi:force:describemetadata",
+      "mdapi:describemetadata:force",
+      "force:describemetadata:mdapi",
+      "describemetadata:force:mdapi",
+      "describemetadata:mdapi:force"
+    ],
+    "permutations": [
+      "org:list:metadata-types",
+      "list:org:metadata-types",
+      "list:metadata-types:org",
+      "org:metadata-types:list",
+      "metadata-types:org:list",
+      "metadata-types:list:org"
+    ]
+  },
+  {
+    "aliases": [
+      "force:org:shape:list"
+    ],
+    "args": {},
+    "deprecateAliases": true,
+    "description": "The output includes the alias, username, and ID of the source org, the status of the org shape creation, and more. Use the org ID to update your scratch org configuration file so you can create a scratch org based on this org shape.",
+    "examples": [
+      "List all org shapes you've created:\n<%= config.bin %> <%= command.id %>",
+      "List all org shapes in JSON format and write the output to a file:\n<%= config.bin %> <%= command.id %> --json > tmp/MyOrgShapeList.json"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "verbose": {
+        "hidden": true,
+        "name": "verbose",
+        "summary": "List more information about each org shape.",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "id": "org:list:shape",
+    "pluginAlias": "@salesforce/cli",
+    "pluginName": "@salesforce/plugin-signups",
+    "pluginType": "jit",
+    "strict": true,
+    "summary": "List all org shapes you’ve created.",
+    "enableJsonFlag": true,
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "shape.js"
+    ],
+    "aliasPermutations": [
+      "force:org:shape:list",
+      "org:force:shape:list",
+      "org:shape:force:list",
+      "org:shape:list:force",
+      "force:shape:org:list",
+      "shape:force:org:list",
+      "shape:org:force:list",
+      "shape:org:list:force",
+      "force:shape:list:org",
+      "shape:force:list:org",
+      "shape:list:force:org",
+      "shape:list:org:force",
+      "force:org:list:shape",
+      "org:force:list:shape",
+      "org:list:force:shape",
+      "org:list:shape:force",
+      "force:list:org:shape",
+      "list:force:org:shape",
+      "list:org:force:shape",
+      "list:org:shape:force",
+      "force:list:shape:org",
+      "list:force:shape:org",
+      "list:shape:force:org",
+      "list:shape:org:force"
+    ],
+    "permutations": [
+      "org:list:shape",
+      "list:org:shape",
+      "list:shape:org",
+      "org:shape:list",
+      "shape:org:list",
+      "shape:list:org"
+    ]
+  },
+  {
+    "aliases": [
+      "force:org:snapshot:list"
+    ],
+    "args": {},
+    "deprecateAliases": true,
+    "description": "You can view all the snapshots in a Dev Hub that you have access to. If you’re an admin, you can see all snapshots associated with the Dev Hub org. If you’re a user, you can see only your snapshots unless a Dev Hub admin gives you View All permissions.\n\nTo create a snapshot, use the \"sf org create snapshot\" command. To get details about a snapshot request, use \"sf org get snapshot\".",
+    "examples": [
+      "List snapshots in the default Dev Hub:\n<%= config.bin %> <%= command.id %>",
+      "List snapshots in the Dev Hub with alias SnapshotDevHub:\n<%= config.bin %> <%= command.id %> --target-dev-hub SnapshotDevHub"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-dev-hub": {
+        "aliases": [
+          "targetdevhubusername"
+        ],
+        "char": "v",
+        "deprecateAliases": true,
+        "name": "target-dev-hub",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "id": "org:list:snapshot",
+    "pluginAlias": "@salesforce/cli",
+    "pluginName": "@salesforce/plugin-signups",
+    "pluginType": "jit",
+    "strict": true,
+    "summary": "List scratch org snapshots.",
+    "enableJsonFlag": true,
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "snapshot.js"
+    ],
+    "aliasPermutations": [
+      "force:org:snapshot:list",
+      "org:force:snapshot:list",
+      "org:snapshot:force:list",
+      "org:snapshot:list:force",
+      "force:snapshot:org:list",
+      "snapshot:force:org:list",
+      "snapshot:org:force:list",
+      "snapshot:org:list:force",
+      "force:snapshot:list:org",
+      "snapshot:force:list:org",
+      "snapshot:list:force:org",
+      "snapshot:list:org:force",
+      "force:org:list:snapshot",
+      "org:force:list:snapshot",
+      "org:list:force:snapshot",
+      "org:list:snapshot:force",
+      "force:list:org:snapshot",
+      "list:force:org:snapshot",
+      "list:org:force:snapshot",
+      "list:org:snapshot:force",
+      "force:list:snapshot:org",
+      "list:force:snapshot:org",
+      "list:snapshot:force:org",
+      "list:snapshot:org:force"
+    ],
+    "permutations": [
+      "org:list:snapshot",
+      "list:org:snapshot",
+      "list:snapshot:org",
+      "org:snapshot:list",
+      "snapshot:org:list",
+      "snapshot:list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:limits:recordcounts:display",
+      "limits:recordcounts:display"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "deprecateAliases": true,
+    "summary": "Display record counts for the specified standard or custom objects.",
+    "description": "Use this command to get an approximate count of the records in standard or custom objects in your org. These record counts are the same as the counts listed in the Storage Usage page in the Setup UI. The record counts are approximate because they're calculated asynchronously and your org's storage usage isn't updated immediately. To display all available record counts, run the command without the --sobject flag.",
+    "examples": [
+      "Display all available record counts in your default org:\n<%= config.bin %> <%= command.id %>",
+      "Display record counts for the Account, Contact, Lead, and Opportunity objects in your default org:\n<%= config.bin %> <%= command.id %> --sobject Account --sobject Contact --sobject Lead --sobject Opportunity",
+      "Display record counts for the Account and Lead objects for the org with alias \"my-scratch-org\":\n<%= config.bin %> <%= command.id %> --sobject Account --sobject Lead --target-org my-scratch-org"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "sobject": {
+        "aliases": [
+          "sobjecttype"
+        ],
+        "char": "s",
+        "name": "sobject",
+        "summary": "API name of the standard or custom object for which to display record counts.",
+        "default": [],
+        "delimiter": ",",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:list:sobject:record-counts",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "sobject",
+      "record-counts.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-limits",
+    "pluginName": "@salesforce/plugin-limits",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:limits:recordcounts:display",
+      "limits:force:recordcounts:display",
+      "limits:recordcounts:force:display",
+      "limits:recordcounts:display:force",
+      "force:recordcounts:limits:display",
+      "recordcounts:force:limits:display",
+      "recordcounts:limits:force:display",
+      "recordcounts:limits:display:force",
+      "force:recordcounts:display:limits",
+      "recordcounts:force:display:limits",
+      "recordcounts:display:force:limits",
+      "recordcounts:display:limits:force",
+      "force:limits:display:recordcounts",
+      "limits:force:display:recordcounts",
+      "limits:display:force:recordcounts",
+      "limits:display:recordcounts:force",
+      "force:display:limits:recordcounts",
+      "display:force:limits:recordcounts",
+      "display:limits:force:recordcounts",
+      "display:limits:recordcounts:force",
+      "force:display:recordcounts:limits",
+      "display:force:recordcounts:limits",
+      "display:recordcounts:force:limits",
+      "display:recordcounts:limits:force",
+      "limits:recordcounts:display",
+      "recordcounts:limits:display",
+      "recordcounts:display:limits",
+      "limits:display:recordcounts",
+      "display:limits:recordcounts",
+      "display:recordcounts:limits"
+    ],
+    "permutations": [
+      "org:list:sobject:record-counts",
+      "list:org:sobject:record-counts",
+      "list:sobject:org:record-counts",
+      "list:sobject:record-counts:org",
+      "org:sobject:list:record-counts",
+      "sobject:org:list:record-counts",
+      "sobject:list:org:record-counts",
+      "sobject:list:record-counts:org",
+      "org:sobject:record-counts:list",
+      "sobject:org:record-counts:list",
+      "sobject:record-counts:org:list",
+      "sobject:record-counts:list:org",
+      "org:list:record-counts:sobject",
+      "list:org:record-counts:sobject",
+      "list:record-counts:org:sobject",
+      "list:record-counts:sobject:org",
+      "org:record-counts:list:sobject",
+      "record-counts:org:list:sobject",
+      "record-counts:list:org:sobject",
+      "record-counts:list:sobject:org",
+      "org:record-counts:sobject:list",
+      "record-counts:org:sobject:list",
+      "record-counts:sobject:org:list",
+      "record-counts:sobject:list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "force:user:list"
+    ],
+    "args": {},
+    "enableJsonFlag": true,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "flags-dir": {
+        "summary": "Import flag values from a directory.",
+        "helpGroup": "GLOBAL",
+        "input": [],
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "deprecateAliases": true,
+    "summary": "List all locally-authenticated users of an org.",
+    "description": "For scratch orgs, the list includes any users you've created with the \"org create user\" command; the original scratch org admin user is marked with \"(A)\". For other orgs, the list includes the users you used to authenticate to the org.",
+    "examples": [
+      "List the locally-authenticated users of your default org:\n<%= config.bin %> <%= command.id %>",
+      "List the locally-authenticated users of the specified org:\n<%= config.bin %> <%= command.id %> --target-org me@my.org"
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "flags-dir": {
+        "helpGroup": "GLOBAL",
+        "name": "flags-dir",
+        "summary": "Import flag values from a directory.",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "target-org": {
+        "aliases": [
+          "targetusername",
+          "u"
+        ],
+        "char": "o",
+        "deprecateAliases": true,
+        "name": "target-org",
+        "noCacheDefault": true,
+        "required": true,
+        "summary": "Username or alias of the target org. Not required if the `target-org` configuration variable is already set.",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "api-version": {
+        "aliases": [
+          "apiversion"
+        ],
+        "deprecateAliases": true,
+        "description": "Override the api version used for api requests made by this command",
+        "name": "api-version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "loglevel": {
+        "deprecated": {
+          "message": "The loglevel flag is no longer in use on this command. You may use it without error, but it will be ignored.\nSet the log level using the `SF_LOG_LEVEL` environment variable."
+        },
+        "hidden": true,
+        "name": "loglevel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "org:list:users",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "org",
+      "list",
+      "users.js"
+    ],
+    "pluginAlias": "@salesforce/plugin-user",
+    "pluginName": "@salesforce/plugin-user",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "force:user:list",
+      "user:force:list",
+      "user:list:force",
+      "force:list:user",
+      "list:force:user",
+      "list:user:force"
+    ],
+    "permutations": [
+      "org:list:users",
+      "list:org:users",
+      "list:users:org",
+      "org:users:list",
+      "users:org:list",
+      "users:list:org"
+    ]
+  },
+  {
+    "_base": "@oclif/core@5.0.0",
+    "aliases": [
+      "plugins:add"
+    ],
+    "args": {
+      "plugin": {
+        "description": "Plugin to install.",
+        "name": "plugin",
+        "required": true
+      }
+    },
+    "enableJsonFlag": true,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "strict": false,
+    "description": "Uses npm to install plugins.\n\nInstallation of a user-installed plugin will override a core plugin.\n\nUse the SF_NPM_LOG_LEVEL environment variable to set the npm loglevel.\nUse the SF_NPM_REGISTRY environment variable to set the npm registry.",
+    "examples": [
+      {
+        "command": "<%= config.bin %> <%= command.id %> <%- config.pjson.oclif.examplePlugin || \"myplugin\" %> ",
+        "description": "Install a plugin from npm registry."
+      },
+      {
+        "command": "<%= config.bin %> <%= command.id %> https://github.com/someuser/someplugin",
+        "description": "Install a plugin from a github url."
+      },
+      {
+        "command": "<%= config.bin %> <%= command.id %> someuser/someplugin",
+        "description": "Install a plugin from a github slug."
+      }
+    ],
+    "flags": {
+      "json": {
+        "description": "Format output as json.",
+        "helpGroup": "GLOBAL",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "force": {
+        "char": "f",
+        "description": "Force npm to fetch remote resources even if a local copy exists on disk.",
+        "name": "force",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "help": {
+        "char": "h",
+        "description": "Show CLI help.",
+        "name": "help",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "jit": {
+        "hidden": true,
+        "name": "jit",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "silent": {
+        "char": "s",
+        "description": "Silences npm output.",
+        "exclusive": [
+          "verbose"
+        ],
+        "name": "silent",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "verbose": {
+        "char": "v",
+        "description": "Show verbose npm output.",
+        "exclusive": [
+          "silent"
+        ],
+        "name": "verbose",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "summary": "Installs a plugin into sf.",
+    "id": "plugins:install",
+    "isESM": true,
+    "relativePath": [
+      "lib",
+      "commands",
+      "plugins",
+      "install.js"
+    ],
+    "pluginAlias": "@oclif/plugin-plugins",
+    "pluginName": "@oclif/plugin-plugins",
+    "pluginType": "core",
+    "aliasPermutations": [
+      "plugins:add",
+      "add:plugins"
+    ],
+    "permutations": [
+      "plugins:install",
+      "install:plugins"
+    ]
+  }
+]

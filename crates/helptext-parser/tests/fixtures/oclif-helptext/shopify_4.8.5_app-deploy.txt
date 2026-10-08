@@ -1,0 +1,72 @@
+Deploy your Shopify app.
+
+USAGE
+  $ shopify app deploy [--auth-alias <value>] [--no-color] [--verbose] [--path <value>] [--client-id <value> | -c <value>] [--reset | ] [--no-release | --allow-updates | --allow-deletes] [--no-build] [--message <value>] [--version <value>] [--source-control-url <value>]
+
+FLAGS
+  -c, --config=<value>
+      The name of the app configuration.
+      [env: SHOPIFY_FLAG_APP_CONFIG]
+
+  --allow-deletes
+      Allows removing extensions and configuration without requiring user confirmation. For CI/CD environments, the recommended flag is --allow-updates. In non-interactive environments, provide this flag, --allow-updates, or --no-release.
+      [env: SHOPIFY_FLAG_ALLOW_DELETES]
+
+  --allow-updates
+      Allows adding and updating extensions and configuration without requiring user confirmation. Recommended option for CI/CD environments. In non-interactive environments, provide this flag, --allow-deletes, or --no-release.
+      [env: SHOPIFY_FLAG_ALLOW_UPDATES]
+
+  --auth-alias=<value>
+      Alias of the Shopify account to use for authentication.
+      [env: SHOPIFY_FLAG_AUTH_ALIAS]
+
+  --client-id=<value>
+      The Client ID of your app.
+      [env: SHOPIFY_FLAG_CLIENT_ID]
+
+  --message=<value>
+      Optional message that will be associated with this version. This is for internal use only and won't be available externally.
+      [env: SHOPIFY_FLAG_MESSAGE]
+
+  --no-build
+      Use with caution: Skips building any elements of the app that require building. You should ensure your app has been prepared in advance, such as by running `shopify app build` or by caching build artifacts.
+      [env: SHOPIFY_FLAG_NO_BUILD]
+
+  --no-color
+      Disable color output.
+      [env: SHOPIFY_FLAG_NO_COLOR]
+
+  --no-release
+      Creates a version but doesn't release it - it's not made available to merchants. With this flag, a user confirmation is not required. In non-interactive environments, provide this flag, --allow-updates, or --allow-deletes.
+      [env: SHOPIFY_FLAG_NO_RELEASE]
+
+  --path=<value>
+      The path to your app directory.
+      [env: SHOPIFY_FLAG_PATH]
+
+  --reset
+      Reset all your settings.
+      [env: SHOPIFY_FLAG_RESET]
+
+  --source-control-url=<value>
+      URL associated with the new app version.
+      [env: SHOPIFY_FLAG_SOURCE_CONTROL_URL]
+
+  --verbose
+      Increase the verbosity of the output. May include sensitive data.
+      [env: SHOPIFY_FLAG_VERBOSE]
+
+  --version=<value>
+      Optional version tag that will be associated with this app version. If not provided, an auto-generated identifier will be generated for this app version.
+      [env: SHOPIFY_FLAG_VERSION]
+
+DESCRIPTION
+  Deploy your Shopify app.
+
+  "Builds the app" (https://shopify.dev/docs/api/shopify-cli/app/app-build), then deploys your app configuration and extensions.
+
+  This command creates an app version, which is a snapshot of your app configuration and all extensions. This version is then released to users.
+
+  This command doesn't deploy your "web app" (https://shopify.dev/docs/apps/tools/cli/structure#web-components). You need to "deploy your web app" (https://shopify.dev/docs/apps/deployment/web) to your own hosting solution.
+
+

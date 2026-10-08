@@ -1,0 +1,41 @@
+list your apps
+
+USAGE
+  $ heroku apps [--prompt] [-A] [-j] [-p] [-s <value>] [-t <value>]
+
+FLAGS
+  -A, --all            include apps in all teams
+  -j, --json           output in json format
+  -p, --personal       list apps in personal account when a default team is set
+  -s, --space=<value>  filter by space
+  -t, --team=<value>   team to use
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  list your apps
+
+EXAMPLES
+   $ heroku apps 
+
+TOPICS
+  apps:favorites  list favorited apps
+  apps:stacks     show the list of available stacks
+
+COMMANDS
+  apps:create     creates a new app
+  apps:destroy    permanently destroy an app
+  apps:diff       diffs two apps
+  apps:errors     view app errors
+  apps:favorites  list favorited apps
+  apps:info       show detailed app information
+  apps:join       add yourself to a team app
+  apps:leave      remove yourself from a team app
+  apps:lock       prevent team members from joining an app
+  apps:open       open the app in a web browser
+  apps:rename     rename an app
+  apps:stacks     show the list of available stacks
+  apps:transfer   transfer applications to another user or team
+  apps:unlock     unlock an app so any team member can join
+

@@ -1,0 +1,26 @@
+log_statement controls which SQL statements are logged.
+
+USAGE
+  $ heroku pg:settings:log-statement [DATABASE] [VALUE] -a <value> [--prompt] [-r <value>]
+
+ARGUMENTS
+  [DATABASE]  config var containing the connection string, unique name, ID, or alias of the database. To access another app's database, prepend the app name to the config var or alias with `APP_NAME::` . If omitted, we use DATABASE_URL.
+  [VALUE]     (none|ddl|mod|all) type of SQL statements to log
+              <options: none|ddl|mod|all>
+
+FLAGS
+  -a, --app=<value>     (required) [env: HEROKU_APP] app to run command against
+  -r, --remote=<value>  git remote of app to use
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  log_statement controls which SQL statements are logged.
+  Valid values for VALUE:
+  none - No statements are logged
+  ddl  - All data definition statements, such as CREATE, ALTER and DROP will be logged
+  mod  - Includes all statements from ddl as well as data-modifying statements such as INSERT, UPDATE, DELETE, TRUNCATE, COPY
+  all  - All statements are logged
+
+

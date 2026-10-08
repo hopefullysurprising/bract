@@ -1,8 +1,8 @@
 mod common;
 
 use common::{
-    atlassian_source, az_source, broken_source, cli_source, gomplate_source, kubectl_source,
-    mani_source, mise_self_source, task_source, Session,
+    atlassian_source, az_source, broken_source, cli_source, gomplate_source, heroku_source,
+    kubectl_source, mani_source, mise_self_source, sf_source, task_source, Session,
 };
 
 // --- Root ordering: Mise Tasks pinned on top, the rest alphabetical -----------
@@ -113,6 +113,56 @@ fn knack_leaf_runs_with_full_command_path() {
     let spec = session.run();
     assert_eq!(spec.bin, vec!["az"]);
     assert_eq!(spec.args, vec!["account", "list"]);
+}
+
+// --- oclif: topics, commands that are both, and the CLI's own separator ------
+
+#[test]
+fn oclif_topic_is_an_unrunnable_branch() {
+    let mut session = Session::new(vec![sf_source()], 100, 30);
+    session.navigate(&["sf", "org"]);
+    assert!(session.focused_expandable());
+    assert!(!session.focused_runnable(), "org is only a topic");
+}
+
+#[test]
+fn oclif_command_with_subcommands_runs_itself() {
+    let mut session = Session::new(vec![sf_source()], 100, 30);
+    session.navigate(&["sf", "org", "list"]);
+    assert!(session.focused_expandable(), "org list has subcommands");
+    assert!(session.focused_runnable(), "org list runs itself");
+
+    session.open_run_form();
+    let spec = session.run();
+    assert_eq!(spec.args[..2], ["org", "list"]);
+}
+
+// oclif's `help` command answers `sf help --help` with the root page. Taken at
+// its word, `help` holds the whole tree again, and so does every level below it —
+// a `--spec` walk of shopify ran past ten minutes down `help theme delete …`.
+#[test]
+fn oclif_help_command_does_not_hold_the_tree_again() {
+    let mut session = Session::new(vec![sf_source()], 100, 30);
+    session.navigate(&["sf", "help"]);
+    session.pump();
+    assert!(!session.focused_expandable(), "help is a leaf");
+}
+
+// heroku joins commands with `:`. Asked for `heroku apps create --help`, it shows
+// the help for `heroku apps` and takes `create` as an argument — so help is
+// fetched, and the command run, as `apps:create`.
+#[test]
+fn oclif_colon_separated_command_is_one_token() {
+    let mut session = Session::new(vec![heroku_source()], 100, 30);
+    session.navigate(&["heroku", "apps", "create"]);
+    assert!(session.focused_runnable());
+
+    session.open_run_form();
+    let fields = session.form_field_names();
+    assert!(fields.iter().any(|f| f == "--remote"), "apps:create's own help was read: {fields:?}");
+    let spec = session.run();
+    assert_eq!(spec.bin, vec!["heroku"]);
+    assert_eq!(spec.args, vec!["apps:create"]);
 }
 
 // --- Cobra / mani: lazy discovery + run assembly ------------------------------

@@ -1,0 +1,103 @@
+CLI to interact with Heroku
+
+VERSION
+  heroku/11.11.0 darwin-arm64 node-v22.14.0
+
+USAGE
+  $ heroku [COMMAND]
+
+TOPICS
+  access          manage user access to apps
+  accounts        list the Heroku accounts in your cache
+  addons          tools and services for developing, extending, and operating your app
+  apps            manage apps on Heroku
+  auth            manage authentication for your Heroku account
+  authorizations  OAuth authorizations
+  buildpacks      scripts used to compile apps
+  certs           SSL certificates
+  ci              test runner for Heroku Pipelines
+  clients         OAuth clients on the platform
+  config          environment variables of apps
+  container       deploy your Docker-based app to Heroku
+  data            list maintenances for an app's data addons
+  domains         custom domains for apps
+  drains          forward logs to syslog or HTTPS
+  features        add/remove app features
+  git             set git remote and clone Heroku repository
+  keys            add/remove account ssh keys
+  labs            add/remove experimental features
+  local           run Heroku app locally
+  maintenance     enable/disable access to app
+  mcp             starts the Heroku platform MCP server in stdio mode
+  members         manage organization members
+  orgs            manage organizations
+  pg              manage postgresql databases
+  pipelines       manage pipelines
+  plugins         List installed plugins.
+  ps              manage app dynos
+  redis           manage heroku redis instances
+  releases        display the releases for an app
+  reviewapps      manage reviewapps in pipelines
+  run             run a one-off process inside a Heroku dyno
+  sessions        OAuth sessions
+  spaces          list available spaces
+  telemetry       list telemetry drains
+  usage           list usage for metered add-ons attached to an app or apps within a team
+  version         display changelog information for a specific CLI version
+  webhooks        list webhooks on an app
+
+COMMANDS
+  2fa             check 2fa status
+  access          list who has access to an app
+  accounts        list the Heroku accounts in your cache
+  addons          Lists your add-ons and attachments.
+  apps            list your apps
+  authorizations  list OAuth authorizations
+  autocomplete    display autocomplete installation instructions
+  buildpacks      list the buildpacks on an app
+  certs           list SSL certificates for an app
+  ci              display the most recent CI runs for the given pipeline
+  clients         list your OAuth clients
+  commands        List all heroku commands.
+  config          display the config vars for an app
+  domains         list domains for an app
+  drains          display the log drains of an app
+  features        list available app features
+  help            Display help for heroku.
+  join            add yourself to a team app
+  keys            display your SSH keys
+  labs            list experimental features
+  leave           remove yourself from a team app
+  local           run heroku app locally
+  lock            prevent team members from joining an app
+  login           login with your Heroku credentials
+  logout          clears local login credentials and invalidates API session
+  logs            display recent log output
+  maintenance     display the current maintenance status of app
+  members         list members of a team
+  notifications   display notifications
+  orgs            list the teams that you are a member of
+  pg              show database information
+  pipelines       list pipelines you have access to
+  plugins         List installed plugins.
+  ps              list dynos for an app
+  psql            open a psql shell to the database
+  redis           gets information about redis
+  regions         list available regions for deployment
+  releases        display the releases for an app
+  repl            enter an interactive REPL session to run Heroku CLI commands
+  run             run a one-off process inside a heroku dyno
+  search          Search for a command.
+  sessions        list your OAuth sessions
+  spaces          list available spaces
+  status          display current status of the Heroku platform
+  teams           list the teams that you are a member of
+  telemetry       list telemetry drains
+  twofactor       check 2fa status
+  unlock          unlock an app so any team member can join
+  update          update the heroku CLI
+  version
+  webhooks        list webhooks on an app
+  which           Show which plugin a command is in.
+  whoami          display the current logged in user
+

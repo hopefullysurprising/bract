@@ -40,6 +40,7 @@ struct Tool {
 
 /// Walk every source to its leaves and render each as a usage spec.
 pub fn usage_specs(sources: Vec<Box<dyn Source>>) -> Vec<Spec> {
+    let sources: Vec<Box<dyn Source>> = sources.into_iter().map(|s| s.whole_tree().unwrap_or(s)).collect();
     let tools: Vec<Tool> = sources
         .iter()
         .map(|s| Tool {

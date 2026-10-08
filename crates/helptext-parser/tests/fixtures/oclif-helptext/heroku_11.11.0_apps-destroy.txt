@@ -1,0 +1,16 @@
+permanently destroy an app
+
+USAGE
+  $ heroku apps:destroy [--prompt] [-a <value>] [-c <value>] [-r <value>]
+
+FLAGS
+  -a, --app=<value>      [env: HEROKU_APP] app to run command against
+  -c, --confirm=<value>
+  -r, --remote=<value>   git remote of app to use
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  permanently destroy an app
+

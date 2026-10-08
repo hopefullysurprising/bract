@@ -11,6 +11,8 @@ pub enum InputFormat {
     CobraHelptext,
     KnackHelptext,
     ClapHelptext,
+    OclifHelptext,
+    OclifCommandsJson,
 }
 
 impl InputFormat {
@@ -20,6 +22,8 @@ impl InputFormat {
             InputFormat::CobraHelptext => parsers::cobra_helptext::parse(content),
             InputFormat::KnackHelptext => parsers::knack_helptext::parse(content),
             InputFormat::ClapHelptext => parsers::clap_helptext::parse(content),
+            InputFormat::OclifHelptext => parsers::oclif_helptext::parse(content),
+            InputFormat::OclifCommandsJson => parsers::oclif_commands_json::parse(content),
         }
     }
 }
@@ -39,7 +43,7 @@ mod tests {
             .collect();
         assert_eq!(
             values,
-            ["usage-kdl", "cobra-helptext", "knack-helptext", "clap-helptext"]
+            ["usage-kdl", "cobra-helptext", "knack-helptext", "clap-helptext", "oclif-helptext", "oclif-commands-json"]
         );
     }
 }

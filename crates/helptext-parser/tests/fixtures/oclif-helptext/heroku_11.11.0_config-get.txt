@@ -1,0 +1,24 @@
+display a single config value for an app
+
+USAGE
+  $ heroku config:get KEY...
+
+ARGUMENTS
+  KEY...  key name of the config var value
+
+FLAGS
+  -a, --app=<value>     (required) [env: HEROKU_APP] app to run command against
+  -j, --json            output in json format
+  -r, --remote=<value>  git remote of app to use
+  -s, --shell           output config vars in shell format
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  display a single config value for an app
+
+EXAMPLES
+   $ heroku config:get RAILS_ENV
+  production 
+

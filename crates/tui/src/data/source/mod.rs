@@ -4,6 +4,7 @@ mod dispatcher;
 mod fingerprint;
 mod go_buildinfo;
 pub mod help_cache;
+mod node_introspect;
 mod python_introspect;
 mod rust_clap_introspect;
 pub mod mise_tasks;
@@ -49,7 +50,17 @@ pub trait Source: Send + Sync {
     fn cached(&self, _command_path: &[String]) -> bool {
         false
     }
+
+    /// A source reading the same tool's whole tree in one call, for a reader that
+    /// wants all of it at once. `None` means walking it is the only way.
+    fn whole_tree(&self) -> Option<Box<dyn Source>> {
+        None
+    }
 }
+
+/// oclif wraps help at 80 columns when it isn't writing to a terminal, splitting
+/// words mid-token (`TextArea|Lon` / `gTextArea`); this widens it.
+pub(crate) const OCLIF_COLUMNS: (&str, &str) = ("OCLIF_COLUMNS", "400");
 
 pub trait HelpProvider: Send + Sync {
     fn fetch_help(

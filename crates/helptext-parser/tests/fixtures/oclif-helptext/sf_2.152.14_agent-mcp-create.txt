@@ -1,0 +1,38 @@
+This command is in preview.
+
+Create an MCP server in the API Catalog.
+
+USAGE
+  $ sf agent mcp create -o <value> -n <value> --server-url <value> [--json] [--flags-dir <value>] [--api-version <value>] [--label <value>] [--description <value>] [--auth-type OAUTH|NO_AUTH] [--identity-provider <value>] [--client-id <value>] [--client-secret <value>] [--scope <value>]
+
+FLAGS
+  -n, --name=<value>               (required) Unique name of the MCP server.
+  -o, --target-org=<value>         (required) Username or alias of the target org. Not required if the `target-org` configuration variable is already set.
+      --api-version=<value>        Override the api version used for api requests made by this command
+      --auth-type=<option>         [default: NO_AUTH] Authorization type to use when connecting to the MCP server.
+                                   <options: OAUTH|NO_AUTH>
+      --client-id=<value>          OAuth client ID. Required when auth-type is OAUTH.
+      --client-secret=<value>      OAuth client secret. Required when auth-type is OAUTH. Pass "-" to read it from stdin (piped) and keep it out of shell history.
+      --description=<value>        Description of the MCP server.
+      --identity-provider=<value>  Identity provider to use for OAuth authorization. Required when auth-type is OAUTH.
+      --label=<value>              Human-readable label for the MCP server.
+      --scope=<value>              OAuth scope to request. Required when auth-type is OAUTH.
+      --server-url=<value>         (required) URL of the external MCP server.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Create an MCP server in the API Catalog.
+
+  Registers an external Model Context Protocol (MCP) server with the API Catalog and discovers its assets (tools, prompts, and resources). Provide the server URL and, when the server requires it, OAuth authorization details. When the authorization type is OAUTH you must supply the identity provider, client ID, client secret, and scope.
+
+EXAMPLES
+  Create an MCP server with no authentication:
+
+    $ sf agent mcp create --name myServer --server-url https://mcp.example.com --target-org myOrg
+
+  Create an MCP server that uses OAuth authentication, piping the client secret from stdin to keep it out of shell history:
+  cat secret.txt | sf agent mcp create --name myServer --server-url https://mcp.example.com --auth-type OAUTH --identity-provider myIdp --client-id abc123 --client-secret - --scope "read write" --target-org myOrg
+

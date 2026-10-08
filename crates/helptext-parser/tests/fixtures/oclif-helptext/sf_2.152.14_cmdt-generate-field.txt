@@ -1,0 +1,55 @@
+Generate a field for a custom metadata type based on the provided field type.
+
+USAGE
+  $ sf cmdt generate field -n <value> -f Checkbox|Date|DateTime|Email|Number|Percent|Phone|Picklist|Text|TextArea|LongTextArea|Url [--json] [--flags-dir <value>] [-p <value>...] [-s <value>] [-l <value>] [-d <value>]
+
+FLAGS
+  -d, --output-directory=<value>    Directory to store newly-created field definition files.
+  -f, --type=<option>               (required) Type of the field.
+                                    <options: Checkbox|Date|DateTime|Email|Number|Percent|Phone|Picklist|Text|TextArea|LongTextArea|Url>
+  -l, --label=<value>               Label for the field.
+  -n, --name=<value>                (required) Unique name for the field.
+  -p, --picklist-values=<value>...  Picklist values; required for picklist fields.
+  -s, --decimal-places=<value>      Number of decimal places to use for number or percent fields.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+DESCRIPTION
+  Generate a field for a custom metadata type based on the provided field type.
+
+  Similar to a custom object, a custom metadata type has a list of custom fields that represent aspects of the metadata.
+
+  This command creates a metadata file that describes the new custom metadata type field. By default, the file is created in a "fields" directory in the current directory. Use the --output-directory to generate the file in the directory that contains the custom metadata type metdata files, such as "force-app/main/default/objects/MyCmdt__mdt" for the custom metadata type called MyCmdt.
+
+ALIASES
+  $ sf force cmdt field create
+  $ sf cmdt field create
+
+EXAMPLES
+  Generate a metadata file for a custom checkbox field and add the file to the MyCmdt__mdt/fields directory:
+
+    $ sf cmdt generate field --name MyCheckboxField --type Checkbox --output-directory force-app/main/default/objects/MyCmdt__mdt
+
+  Generate a metadata file for a custom picklist field and add a few values:
+
+    $ sf cmdt generate field --name MyPicklistField --type Picklist --picklist-values A --picklist-values B --picklist-values C --output-directory force-app/main/default/objects/MyCmdt__mdt
+
+  Generate a metadata file for a custom number field and specify 2 decimal places:
+
+    $ sf cmdt generate field --name MyNumberField --type Number --decimal-places 2 --output-directory force-app/main/default/objects/MyCmdt__mdt
+
+FLAG DESCRIPTIONS
+  -d, --output-directory=<value>  Directory to store newly-created field definition files.
+
+    New files are automatically created in the "fields" directory. The location can be an absolute path or relative to the current working directory. The default is the current directory.
+
+  -f, --type=Checkbox|Date|DateTime|Email|Number|Percent|Phone|Picklist|Text|TextArea|LongTextArea|Url  Type of the field.
+
+    You can't use this command to create a custom metadata type field of type "Metadata Relationship". Use the Salesforce Setup UI instead.
+
+  -s, --decimal-places=<value>  Number of decimal places to use for number or percent fields.
+
+    The value must be greater than or equal to zero. Default value is 0.
+

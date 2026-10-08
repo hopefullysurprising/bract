@@ -1,0 +1,44 @@
+List all orgs you’ve created or authenticated to.
+
+USAGE
+  $ sf org list [--json] [--flags-dir <value>] [--verbose] [--all] [--clean] [-p] [--skip-connection-status]
+
+FLAGS
+  -p, --no-prompt               Don't prompt for confirmation.
+      --all                     Include expired, deleted, and unknown-status scratch orgs.
+      --clean                   Remove all local org authorizations for non-active scratch orgs. Use "org logout" to remove non-scratch orgs.
+      --skip-connection-status  Skip retrieving the connection status of non-scratch orgs.
+      --verbose                 List more information about each org.
+
+GLOBAL FLAGS
+  --flags-dir=<value>  Import flag values from a directory.
+  --json               Format output as json.
+
+ALIASES
+  $ sf force org list
+
+EXAMPLES
+  List all orgs you've created or authenticated to:
+
+    $ sf org list
+
+  List all orgs, including expired, deleted, and unknown-status orgs; don't include the connection status:
+
+    $ sf org list --skip-connection-status --all
+
+  List orgs and remove local org authorization info about non-active scratch orgs:
+
+    $ sf org list --clean
+
+TOPICS
+  org list sobject  Display record counts for the specified standard or custom objects.
+
+COMMANDS
+  org list auth            List authorization information about the orgs you created or logged into.
+  org list limits          Display information about limits in your org.
+  org list metadata        List the metadata components and properties of a specified type.
+  org list metadata-types  Display details about the metadata types that are enabled for your org.
+  org list shape           List all org shapes you’ve created.
+  org list snapshot        List scratch org snapshots.
+  org list users           List all locally-authenticated users of an org.
+

@@ -1,0 +1,12 @@
+list maintenances for an app's data addons
+
+USAGE
+  $ heroku data:COMMAND
+
+TOPICS
+  data:maintenances  list maintenances for an app's data addons
+  data:pg            list attachments on a Postgres Advanced database
+
+COMMANDS
+  data:maintenances  list maintenances for an app's data addons
+

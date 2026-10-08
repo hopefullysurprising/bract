@@ -1,0 +1,3841 @@
+[
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {},
+    "enableJsonFlag": false,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [
+      "list",
+      "apps:list"
+    ],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "list your apps",
+    "examples": [
+      " $ heroku apps "
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all": {
+        "char": "A",
+        "description": "include apps in all teams",
+        "name": "all",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "internal-routing": {
+        "char": "i",
+        "description": "filter to Internal Web Apps",
+        "hidden": true,
+        "name": "internal-routing",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "json": {
+        "char": "j",
+        "description": "output in json format",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "personal": {
+        "char": "p",
+        "description": "list apps in personal account when a default team is set",
+        "name": "personal",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "space": {
+        "char": "s",
+        "description": "filter by space",
+        "name": "space",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "team": {
+        "char": "t",
+        "description": "team to use",
+        "name": "team",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "topic": "apps",
+    "id": "apps",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "apps",
+      "index.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {
+      "app": {
+        "description": "name of app to create",
+        "name": "app",
+        "required": false
+      }
+    },
+    "enableJsonFlag": false,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [
+      "create"
+    ],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "creates a new app",
+    "examples": [
+      "\n $ heroku apps:create \nCreating app... done, stack is heroku-24\nhttps://floating-dragon-42.heroku.com/ | https://git.heroku.com/floating-dragon-42.git",
+      "\n# or just\n $ heroku create ",
+      "\n# use a heroku.yml manifest file\n $ heroku apps:create --manifest ",
+      "\n# specify a buildpack\n $ heroku apps:create --buildpack https://github.com/some/buildpack.git ",
+      "\n# specify a name\n $ heroku apps:create example ",
+      "\n# create a staging app\n $ heroku apps:create example-staging --remote staging ",
+      "\n# create an app in the eu region\n $ heroku apps:create --region eu "
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "addons": {
+        "description": "comma-delimited list of addons to install",
+        "name": "addons",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "app": {
+        "hidden": true,
+        "name": "app",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "buildpack": {
+        "char": "b",
+        "description": "buildpack url to use for this app",
+        "name": "buildpack",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "features": {
+        "hidden": true,
+        "name": "features",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "internal-routing": {
+        "description": "private space-only. create as an Internal Web App that is only routable in the local network.",
+        "hidden": true,
+        "name": "internal-routing",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "json": {
+        "description": "output in json format",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "kernel": {
+        "hidden": true,
+        "name": "kernel",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "locked": {
+        "hidden": true,
+        "name": "locked",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "manifest": {
+        "char": "m",
+        "description": "use heroku.yml settings for this app",
+        "hidden": true,
+        "name": "manifest",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "no-remote": {
+        "char": "n",
+        "description": "do not create a git remote",
+        "name": "no-remote",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "region": {
+        "description": "specify region for the app to run in",
+        "name": "region",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "the git remote to create, default \"heroku\"",
+        "name": "remote",
+        "default": "heroku",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "space": {
+        "description": "the private space to create the app in",
+        "name": "space",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "stack": {
+        "char": "s",
+        "description": "the stack to create the app on",
+        "name": "stack",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "team": {
+        "char": "t",
+        "description": "team to use",
+        "name": "team",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "apps:create",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "apps",
+      "create.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {
+      "app": {
+        "hidden": true,
+        "name": "app"
+      }
+    },
+    "enableJsonFlag": false,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [
+      "destroy",
+      "apps:delete"
+    ],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "permanently destroy an app",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "help": "This will also destroy all add-ons on the app.",
+    "id": "apps:destroy",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "apps",
+      "destroy.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {},
+    "enableJsonFlag": false,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "list favorited apps",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "json": {
+        "char": "j",
+        "description": "output in json format",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "topic": "apps",
+    "id": "apps:favorites",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "apps",
+      "favorites",
+      "index.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {},
+    "enableJsonFlag": false,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "favorites an app",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "topic": "apps",
+    "id": "apps:favorites:add",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "apps",
+      "favorites",
+      "add.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {},
+    "enableJsonFlag": false,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "unfavorites an app",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "topic": "apps",
+    "id": "apps:favorites:remove",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "apps",
+      "favorites",
+      "remove.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "description": "list maintenances for an app's data addons",
+    "examples": [
+      "$ heroku data:maintenances --app production-app",
+      "$ heroku data:maintenances --app production-app --json"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to list addon maintenances for",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "columns": {
+        "description": "only show provided columns (comma-separated)",
+        "name": "columns",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "csv": {
+        "char": "c",
+        "description": "output in csv format",
+        "name": "csv",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "extended": {
+        "char": "x",
+        "description": "show extra columns",
+        "name": "extended",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "filter": {
+        "description": "filter property by partial string matching, ex: name=foo",
+        "name": "filter",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "json": {
+        "char": "j",
+        "description": "output result in json",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "sort": {
+        "description": "sort by property",
+        "name": "sort",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "index.js"
+    ],
+    "aliases": [],
+    "args": {},
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "data addon",
+        "name": "addon",
+        "required": true
+      }
+    },
+    "description": "show details of the most recent maintenances for an addon",
+    "examples": [
+      "$ heroku data:maintenances:history postgresql-sinuous-92834",
+      "$ heroku data:maintenances:history postgresql-sinuous-92834 --num 10",
+      "$ heroku data:maintenances:history postgresql-sinuous-92834 --json",
+      "$ heroku data:maintenances:history DATABASE --app production-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "columns": {
+        "description": "only show provided columns (comma-separated)",
+        "name": "columns",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "csv": {
+        "char": "c",
+        "description": "output in csv format",
+        "name": "csv",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "filter": {
+        "description": "filter property by partial string matching, ex: name=foo",
+        "name": "filter",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "json": {
+        "char": "j",
+        "description": "show result formatted in json",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "num": {
+        "char": "n",
+        "description": "number of maintenances to show (maximum is 20)",
+        "name": "num",
+        "default": "5",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "sort": {
+        "description": "sort by property",
+        "name": "sort",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances:history",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "history.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "data addon to show maintenance for",
+        "name": "addon",
+        "required": true
+      }
+    },
+    "description": "display details of the most recent maintenance for an addon",
+    "examples": [
+      "$ heroku data:maintenances:info postgresql-sinuous-83720",
+      "$ heroku data:maintenances:info postgresql-sinuous-83720 --json",
+      "$ heroku data:maintenances:info DATABASE --app test-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to list addon maintenances for",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "json": {
+        "char": "j",
+        "description": "output result in json",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances:info",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "info.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "data addon to run maintenance on",
+        "name": "addon",
+        "required": true
+      }
+    },
+    "description": "triggers a scheduled maintenance for a data add-on",
+    "examples": [
+      "$ heroku data:maintenances:run postgresql-sinuous-92834",
+      "$ heroku data:maintenances:run postgresql-sinuous-92834 --confirm production-app",
+      "$ heroku data:maintenances:run postgresql-sinuous-92834 --wait",
+      "$ heroku data:maintenances:run DATABASE --app production-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run addon maintenance for",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "confirms running maintenance without entering application maintenance mode if the app name matches",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "force": {
+        "char": "f",
+        "description": "start maintenance without entering application maintenance mode",
+        "hidden": true,
+        "name": "force",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "wait": {
+        "char": "w",
+        "description": "wait for maintenance to complete before exiting",
+        "name": "wait",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "id": "data:maintenances:run",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "run.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "addon to schedule or re-schedule maintenance for",
+        "name": "addon",
+        "required": true
+      }
+    },
+    "description": "schedule or re-schedule maintenance for an add-on",
+    "examples": [
+      "$ heroku data:maintenances:schedule postgresql-sinuous-83910",
+      "$ heroku data:maintenances:schedule postgresql-sinuous-83910 --weeks 3",
+      "$ heroku data:maintenances:schedule postgresql-sinuous-83910 --weeks -2",
+      "$ heroku data:maintenances:schedule postgresql-sinuous-83910 --week 2020-02-23",
+      "$ heroku data:maintenances:schedule HEROKU_POSTGRESQL_RED --app test-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "week": {
+        "description": "desired week to run maintenance in",
+        "exclusive": [
+          "weeks"
+        ],
+        "name": "week",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "weeks": {
+        "description": "the number of weeks to delay maintenance for",
+        "exclusive": [
+          "week"
+        ],
+        "name": "weeks",
+        "default": "2",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances:schedule",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "schedule.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "data addon",
+        "name": "addon",
+        "required": true
+      }
+    },
+    "description": "blocks until the maintenance process has completed",
+    "examples": [
+      "$ heroku data:maintenances:wait postgresql-sinuous-83720",
+      "$ heroku data:maintenances:wait DATABASE --app production-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances:wait",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "wait.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "addon to show window for",
+        "name": "addon",
+        "required": true
+      }
+    },
+    "description": "describe the maintenance window on an add-on",
+    "examples": [
+      "$ heroku data:maintenances:window postgresql-sinuous-92834",
+      "$ heroku data:maintenances:window DATABASE --app production-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to show addon maintenance window for",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "json": {
+        "char": "j",
+        "description": "output result in json",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances:window",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "window",
+      "index.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "addon": {
+        "description": "addon to change window for",
+        "name": "addon",
+        "required": true
+      },
+      "day_of_week": {
+        "description": "UTC maintenance window day of the week",
+        "name": "day_of_week",
+        "required": true
+      },
+      "time_of_day": {
+        "description": "UTC maintenance window time of day",
+        "name": "time_of_day",
+        "required": true
+      }
+    },
+    "description": "update maintenance window on an add-on",
+    "examples": [
+      "$ heroku data:maintenances:window postgresql-sinuous-92834 sunday 13:30",
+      "$ heroku data:maintenances:window postgresql-sinuous-92834 sunday 1:30PM",
+      "$ heroku data:maintenances:window DATABASE sunday 1:30PM --app production-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to update addon maintenance window for",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "json": {
+        "char": "j",
+        "description": "output result in json",
+        "name": "json",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:maintenances:window:update",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "maintenances",
+      "window",
+      "update.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "list attachments on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name -a example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:attachments",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "attachments",
+      "index.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "baseFlags": {},
+    "description": "attach an existing Postgres Advanced database to an app",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name --app example-app"
+    ],
+    "flags": {
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "as": {
+        "description": "name for Postgres database attachment",
+        "name": "as",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "credential": {
+        "description": "credential to use for database",
+        "name": "credential",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "pool": {
+        "description": "instance pool to attach",
+        "name": "pool",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "promptFlagActive": false,
+    "id": "data:pg:attachments:create",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "attachments",
+      "create.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "attachment_name": {
+        "description": "unique identifier of the database attachment",
+        "name": "attachment_name",
+        "required": true
+      }
+    },
+    "description": "detach an existing database attachment from an app",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:attachments:destroy",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "attachments",
+      "destroy.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "baseFlags": {},
+    "description": "create a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> --level 4G-Performance -a example-app"
+    ],
+    "flags": {
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "as": {
+        "description": "name for the initial database attachment",
+        "name": "as",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "followers": {
+        "dependsOn": [
+          "level"
+        ],
+        "description": "provision a follower instance pool with the specified number of instances",
+        "name": "followers",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "high-availability": {
+        "dependsOn": [
+          "level"
+        ],
+        "description": "enable or disable high availability on the leader pool by provisioning a warm standby instance",
+        "name": "high-availability",
+        "allowNo": true,
+        "type": "boolean"
+      },
+      "level": {
+        "description": "set compute scale",
+        "name": "level",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name for the database",
+        "name": "name",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "network": {
+        "description": "set network for the database",
+        "name": "network",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "private",
+          "shield"
+        ],
+        "type": "option"
+      },
+      "provision-option": {
+        "description": "additional options for provisioning in KEY:VALUE or KEY format, and VALUE defaults to \"true\" (example: 'foo:bar' or 'foo')",
+        "name": "provision-option",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "version": {
+        "description": "Postgres version for the database",
+        "name": "version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "wait": {
+        "dependsOn": [
+          "level"
+        ],
+        "description": "watch database creation status and exit when complete",
+        "name": "wait",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": false,
+    "id": "data:pg:create",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "create.js"
+    ],
+    "aliases": [],
+    "args": {},
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "list credentials on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name -a example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-wrap": {
+        "description": "disable wrapped table cells for easier copy/paste",
+        "name": "no-wrap",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:credentials",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "credentials",
+      "index.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "create credentials for a Postgres database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name my-credential --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "char": "n",
+        "description": "name for the credential",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:credentials:create",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "credentials",
+      "create.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "destroy credentials on a Postgres database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name my-credential --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "char": "n",
+        "description": "name of credential",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:credentials:destroy",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "credentials",
+      "destroy.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "rotate credentials on a Postgres database",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all": {
+        "description": "rotate all credentials",
+        "exclusive": [
+          "name"
+        ],
+        "name": "all",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "force": {
+        "description": "force rotate the targeted credentials",
+        "name": "force",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "name": {
+        "char": "n",
+        "description": "[default: owner or default credential, if not specified and --all isn't used] credential to rotate",
+        "name": "name",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:credentials:rotate",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "credentials",
+      "rotate.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "show information on a Postgres database credential",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app myapp"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "char": "n",
+        "description": "[default: owner or default credential, if not specified] credential to show",
+        "name": "name",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:credentials:url",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "credentials",
+      "url.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "destroy a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "force": {
+        "char": "f",
+        "description": "destroy even if connected to other apps",
+        "name": "force",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:destroy",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "destroy.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "defaultUrl": "https://devcenter.heroku.com/categories/heroku-postgres",
+    "description": "open documentation for Heroku Postgres in your web browser",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "browser": {
+        "description": "browser to open docs with (example: \"firefox\", \"safari\")",
+        "name": "browser",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:docs",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "docs.js"
+    ],
+    "aliases": [],
+    "args": {},
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "fork or rollback a Postgres Advanced database",
+    "examples": [
+      "# Create a fork for an existing database\n<%= config.bin %> <%= command.id %> DATABASE --app my-app --as DATABASE_COPY\n",
+      "# Create a point-in-time recovery fork with a timestamp:\n<%= config.bin %> <%= command.id %> DATABASE --app my-app --as RESTORED --rollback-to '2025-08-11T12:35:00'\n",
+      "# Create a point-in-time recovery fork with a time interval:\n<%= config.bin %> <%= command.id %> DATABASE --app my-app --as RESTORED --rollback-by '1 day 3 hours 20 minutes'\n"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "as": {
+        "description": "name for the initial database attachment",
+        "name": "as",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "level": {
+        "description": "set compute scale",
+        "name": "level",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "char": "n",
+        "description": "name for the database",
+        "name": "name",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "provision-option": {
+        "description": "additional options for provisioning in KEY:VALUE or KEY format, and VALUE defaults to \"true\" (example: 'foo:bar' or 'foo')",
+        "name": "provision-option",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "rollback-by": {
+        "description": "time interval to rollback (example: '3 days', '2 hours', '3 days 7 hours 22 minutes')",
+        "name": "rollback-by",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "rollback-to": {
+        "description": "explicit timestamp for rollback database with the format '2025-11-17T15:20:00'",
+        "exclusive": [
+          "rollback-by"
+        ],
+        "name": "rollback-to",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "wait": {
+        "description": "watch database fork creation status and exit when complete",
+        "name": "wait",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "id": "data:pg:fork",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "fork.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {},
+    "enableJsonFlag": false,
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "download the RDS CA bundle for a Heroku region",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> --region virginia",
+      "<%= config.bin %> <%= command.id %> --region global"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "region": {
+        "description": "Heroku region or global for the AWS global CA bundle",
+        "name": "region",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:get-ca",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "get-ca.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "get details on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:info",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "info.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "baseFlags": {},
+    "description": "show available levels for Heroku Postgres Advanced databases",
+    "promptFlagActive": false,
+    "id": "data:pg:levels",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "levels.js"
+    ],
+    "aliases": [],
+    "args": {},
+    "flags": {},
+    "hasDynamicHelp": false,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "list logical replication publications on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-wrap": {
+        "description": "disable wrapped table cells for easier copy/paste",
+        "name": "no-wrap",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:publications",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "index.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:create"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "create a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --table public.orders --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --schema public --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --all-schemas --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all-schemas": {
+        "description": "include all current customer schemas",
+        "exclusive": [
+          "schema",
+          "table"
+        ],
+        "name": "all-schemas",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name for publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "schema": {
+        "description": "schema to include, including new tables created in the schema",
+        "name": "schema",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "table": {
+        "description": "fully qualified table to include",
+        "name": "table",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:publications:create",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "create.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:destroy"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "destroy a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --app example-app --confirm example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name of publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:publications:destroy",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "destroy.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:info"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "show details of a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name of publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:publications:info",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "info.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:update"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "replace the target of a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --table public.orders --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --schema public --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --all-schemas --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all-schemas": {
+        "description": "include all current customer schemas",
+        "exclusive": [
+          "schema",
+          "table"
+        ],
+        "name": "all-schemas",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name of publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "schema": {
+        "description": "schema to include, including new tables created in the schema",
+        "name": "schema",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "table": {
+        "description": "fully qualified table to include",
+        "name": "table",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:publications:update",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "update.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publishing:enable"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "enable logical replication publishing for a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:publishing:enable",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publishing",
+      "enable.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:subscribing:enable"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "enable logical replication subscribing for a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:logical-replication:subscribing:enable",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "subscribing",
+      "enable.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "list logical replication publications on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-wrap": {
+        "description": "disable wrapped table cells for easier copy/paste",
+        "name": "no-wrap",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:publications",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "index.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:create"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "create a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --table public.orders --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --schema public --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --all-schemas --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all-schemas": {
+        "description": "include all current customer schemas",
+        "exclusive": [
+          "schema",
+          "table"
+        ],
+        "name": "all-schemas",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name for publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "schema": {
+        "description": "schema to include, including new tables created in the schema",
+        "name": "schema",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "table": {
+        "description": "fully qualified table to include",
+        "name": "table",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:publications:create",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "create.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:destroy"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "destroy a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --app example-app --confirm example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name of publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:publications:destroy",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "destroy.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:info"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "show details of a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name of publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:publications:info",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "info.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publications:update"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "replace the target of a logical replication publication on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --name orders --table public.orders --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --schema public --app example-app",
+      "<%= config.bin %> <%= command.id %> DATABASE --name application --all-schemas --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "all-schemas": {
+        "description": "include all current customer schemas",
+        "exclusive": [
+          "schema",
+          "table"
+        ],
+        "name": "all-schemas",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "name": {
+        "description": "name of publication",
+        "name": "name",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "schema": {
+        "description": "schema to include, including new tables created in the schema",
+        "name": "schema",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      },
+      "table": {
+        "description": "fully qualified table to include",
+        "name": "table",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:publications:update",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publications",
+      "update.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "aliases": [
+      "data:pg:lr:publishing:enable"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "enable logical replication publishing for a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:publishing:enable",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "publishing",
+      "enable.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "aliases": [
+      "data:pg:lr:subscribing:enable"
+    ],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "enable logical replication subscribing for a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> DATABASE --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:lr:subscribing:enable",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "logical-replication",
+      "subscribing",
+      "enable.js"
+    ],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true,
+    "hidden": false
+  },
+  {
+    "description": "migrate an existing classic Postgres database to an Advanced database",
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "method": {
+        "hidden": true,
+        "name": "method",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "snapshot",
+          "streaming"
+        ],
+        "type": "option"
+      },
+      "no-wrap": {
+        "description": "disable wrapped table cells for easier copy/paste",
+        "name": "no-wrap",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:migrate",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "migrate.js"
+    ],
+    "aliases": [],
+    "args": {},
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "enableJsonFlag": false,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "description": "open a psql shell to the database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name -a example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "channel-binding": {
+        "description": "override the default channel binding behavior (required). Can be \"disable\" to disable channel binding if you run into compatibility issues with your libpq version or if it was compiled without SSL support.",
+        "hidden": true,
+        "name": "channel-binding",
+        "default": "require",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "disable",
+          "require"
+        ],
+        "type": "option"
+      },
+      "command": {
+        "char": "c",
+        "description": "SQL command to run",
+        "name": "command",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "file": {
+        "char": "f",
+        "description": "SQL file to run",
+        "name": "file",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:psql",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "psql.js"
+    ],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "display quotas set on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> database_name --app example-app"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "type": {
+        "description": "type of quota",
+        "name": "type",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "storage"
+        ],
+        "type": "option"
+      }
+    },
+    "id": "data:pg:quotas",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "quotas",
+      "index.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "update quota settings on a Postgres Advanced database",
+    "examples": [
+      "<%= config.bin %> <%= command.id %> --app example-app --type storage --warning 12 --critical 15 --enforcement-action notify"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "critical": {
+        "description": "set critical threshold in GB, set to \"none\" to remove threshold",
+        "name": "critical",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "enforcement-action": {
+        "description": "set enforcement action for when database surpasses the critical threshold",
+        "name": "enforcement-action",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "notify",
+          "restrict",
+          "none"
+        ],
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "type": {
+        "description": "type of quota to update",
+        "name": "type",
+        "required": true,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "options": [
+          "storage"
+        ],
+        "type": "option"
+      },
+      "warning": {
+        "description": "set warning threshold in GB, set to \"none\" to remove threshold",
+        "name": "warning",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:quotas:update",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "quotas",
+      "update.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "get or update the settings of a Postgres Advanced database",
+    "examples": [
+      "# Get database settings\n<%= config.bin %> <%= command.id %> database_name -a app_name",
+      "# Change ‘log_min_duration_statement’ and ‘log_statement’ settings for database\n<%= config.bin %> <%= command.id %> database_name --set=log_min_duration_statement:2000 --set=log_statement:ddl -a app_name"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "set": {
+        "description": "Postgres setting to change in SETTING_NAME:VALUE format (example: 'track_functions:pl' or 'log_lock_waits:1')",
+        "name": "set",
+        "hasDynamicHelp": false,
+        "multiple": true,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:settings",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "settings.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database"
+      }
+    },
+    "baseFlags": {},
+    "description": "update a Postgres Advanced database through interactive prompts",
+    "flags": {
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "promptFlagActive": false,
+    "id": "data:pg:update",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "update.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "upgrade the Postgres version on a Postgres Advanced database",
+    "examples": [
+      "# Upgrade a Postgres Advanced database to version 17\n<%= config.bin %> <%= command.id %> DATABASE --version 17 --app my-app\n"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "confirm": {
+        "char": "c",
+        "description": "pass in the app name to skip confirmation prompts",
+        "name": "confirm",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "version": {
+        "char": "v",
+        "description": "Postgres version to upgrade to",
+        "name": "version",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:upgrade:run",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "upgrade",
+      "run.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "shows status of an upgrade until it's complete",
+    "examples": [
+      "# Wait for upgrade to complete\n<%= config.bin %> <%= command.id %> DATABASE --app myapp\n",
+      "# Wait with custom polling interval (to avoid rate limiting)\n<%= config.bin %> <%= command.id %> DATABASE --app myapp --wait-interval 10\n"
+    ],
+    "flags": {
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-notify": {
+        "description": "do not show OS notification",
+        "name": "no-notify",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "wait-interval": {
+        "description": "how frequently to poll in seconds (to avoid rate limiting)",
+        "name": "wait-interval",
+        "default": 5,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:upgrade:wait",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "upgrade",
+      "wait.js"
+    ],
+    "baseFlags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "allowNo": false,
+        "type": "boolean"
+      }
+    },
+    "promptFlagActive": true,
+    "_base": "@oclif/core@4.14.0",
+    "aliases": [],
+    "enableJsonFlag": false,
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "strict": true,
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core"
+  },
+  {
+    "args": {
+      "database": {
+        "description": "database name, database attachment name, or related config var on an app",
+        "name": "database",
+        "required": true
+      }
+    },
+    "description": "show status of an operation until it's complete",
+    "examples": [
+      "# Wait for database to be available\n<%= config.bin %> <%= command.id %> DATABASE --app myapp\n"
+    ],
+    "flags": {
+      "prompt": {
+        "description": "interactively prompt for command arguments and flags",
+        "helpGroup": "GLOBAL",
+        "name": "prompt",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "app": {
+        "char": "a",
+        "description": "app to run command against",
+        "env": "HEROKU_APP",
+        "name": "app",
+        "required": true,
+        "hasDynamicHelp": true,
+        "multiple": false,
+        "type": "option"
+      },
+      "no-notify": {
+        "description": "do not show OS notification",
+        "name": "no-notify",
+        "allowNo": false,
+        "type": "boolean"
+      },
+      "remote": {
+        "char": "r",
+        "description": "git remote of app to use",
+        "name": "remote",
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      },
+      "wait-interval": {
+        "description": "how frequently to poll in seconds (to avoid rate limiting)",
+        "name": "wait-interval",
+        "default": 5,
+        "hasDynamicHelp": false,
+        "multiple": false,
+        "type": "option"
+      }
+    },
+    "id": "data:pg:wait",
+    "isESM": true,
+    "relativePath": [
+      "dist",
+      "commands",
+      "data",
+      "pg",
+      "wait.js"
+    ],
+    "aliases": [],
+    "hasDynamicHelp": true,
+    "hiddenAliases": [],
+    "pluginAlias": "heroku",
+    "pluginName": "heroku",
+    "pluginType": "core",
+    "strict": true
+  }
+]

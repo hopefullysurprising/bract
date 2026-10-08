@@ -1,0 +1,18 @@
+list favorited apps
+
+USAGE
+  $ heroku apps:favorites [--prompt] [-j]
+
+FLAGS
+  -j, --json  output in json format
+
+GLOBAL FLAGS
+  --prompt  interactively prompt for command arguments and flags
+
+DESCRIPTION
+  list favorited apps
+
+COMMANDS
+  apps:favorites:add     favorites an app
+  apps:favorites:remove  unfavorites an app
+

@@ -1,0 +1,19 @@
+invokes Lightning Web Components Jest unit tests.
+
+USAGE
+  $ sf force lightning lwc test run [-d | --watch] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+FLAGS
+  -d, --debug                                                                           run tests in debug mode
+      --json                                                                            format output as json
+      --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for this command invocation
+      --watch                                                                           run tests in watch mode
+
+DESCRIPTION
+  invokes Lightning Web Components Jest unit tests.
+
+EXAMPLES
+  $ sfdx force:lightning:lwc:test:run
+
+  $ sfdx force:lightning:lwc:test:run -w
+

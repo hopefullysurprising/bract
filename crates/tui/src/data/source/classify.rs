@@ -7,22 +7,28 @@ use std::path::{Path, PathBuf};
 
 use helptext_parser::InputFormat;
 
+use super::node_introspect::OclifPackage;
 use super::{dispatcher, go_buildinfo, python_introspect, rust_clap_introspect};
 
-/// The framework of the program at `path`, together with the program the
-/// framework was read from.
+/// The framework of the program at `path`, together with the file the framework
+/// was read from.
 ///
 /// Callers need that path as well as the format: it is what a fingerprint must
 /// cover, and it is not the path passed in whenever a multi-call dispatcher
-/// stands between the two. `None` means nothing browsable is here — an
-/// unrecognised framework, or a name the dispatcher cannot resolve at all.
+/// stands between the two — nor for a Node CLI, whose launcher stays byte for
+/// byte the same across releases while its `package.json` does not. `None`
+/// means nothing browsable is here — an unrecognised framework, or a name the
+/// dispatcher cannot resolve at all.
 pub fn program_and_format(path: &Path) -> Option<(InputFormat, PathBuf)> {
     // Introspect the program that actually runs. A multi-call dispatcher would
     // otherwise lend its own framework to every name it serves, and a name it
     // cannot resolve is dropped here rather than failing later at `--help`.
     let program = dispatcher::program_for(path)?;
-    let format = detect_format(&program)?;
-    Some((format, program))
+    if let Some(format) = detect_format(&program) {
+        return Some((format, program));
+    }
+    let package = OclifPackage::of(path.file_name()?, &program)?;
+    Some((InputFormat::OclifHelptext, package.manifest))
 }
 
 /// Go binaries are introspected via buildinfo (Cobra); Rust binaries via clap's

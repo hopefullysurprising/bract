@@ -1,7 +1,7 @@
 mod common;
 
 use bract::data::export::usage_specs;
-use common::{gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source};
+use common::{gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source, sf_dump_source};
 use helptext_parser::InputFormat;
 
 #[test]
@@ -123,4 +123,24 @@ fn a_tree_delivered_in_one_dump_survives_intact() {
         lint.flags.iter().any(|f| f.long.iter().any(|l| l == "format")),
         "a leaf keeps its own flags"
     );
+}
+
+// sf answers `commands --json` with every command in about three seconds, where
+// walking it costs a `--help` per command. Its source fails any `--help` fetch,
+// so this passes only if the dump was read instead.
+#[test]
+fn a_cli_listing_all_its_commands_is_read_from_that_list() {
+    let specs = usage_specs(vec![sf_dump_source()]);
+    let rendered = format!("{}", specs[0]);
+    let reparsed = helptext_parser::parse(InputFormat::UsageKdl, &rendered)
+        .unwrap_or_else(|e| panic!("emitted spec must parse: {e}\n---\n{rendered}"));
+
+    let org = &reparsed.cmd.subcommands["org"];
+    assert!(org.subcommand_required, "org is only a topic");
+    assert!(!org.subcommands["list"].subcommand_required, "org list runs itself");
+
+    let scratch = &org.subcommands["create"].subcommands["scratch"];
+    let edition = scratch.flags.iter().find(|f| f.long.iter().any(|l| l == "edition")).expect("--edition");
+    let choices = edition.arg.as_ref().and_then(|a| a.choices.as_ref()).expect("edition offers choices");
+    assert!(choices.choices.contains(&"developer".to_string()));
 }

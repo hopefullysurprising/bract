@@ -1,0 +1,26 @@
+Search shopify.dev for the most relevant content matching a query. Best for discovery — surfacing the relevant pieces of documentation for a topic, rather than retrieving a whole document. To download a full document verbatim, use `doc fetch`.
+
+USAGE
+  $ shopify search [query]
+
+FLAGS
+  --no-color
+      Disable color output.
+      [env: SHOPIFY_FLAG_NO_COLOR]
+
+  --verbose
+      Increase the verbosity of the output. May include sensitive data.
+      [env: SHOPIFY_FLAG_VERBOSE]
+
+DESCRIPTION
+  Search shopify.dev for the most relevant content matching a query. Best for discovery — surfacing the relevant pieces of documentation for a topic, rather than retrieving a whole document. To download a full document verbatim, use `doc fetch`.
+
+EXAMPLES
+  # open the search modal on Shopify.dev
+      shopify search
+      # search for a term on Shopify.dev
+      shopify search <query>
+      # search for a phrase on Shopify.dev
+      shopify search "<a search query separated by spaces>"
+    
+

@@ -1,14 +1,17 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use helptext_parser::{InputFormat, SpecCommand};
 use serde::Deserialize;
 
 use crate::data::node::{Children, Node, NodeKind};
 
+use super::node_introspect::OclifPackage;
+use super::usage_source::{CommandSpecProvider, SpecProvider, UsageSpecSource};
 use super::{
     classify, convert_args, convert_flags, fingerprint, help_cache, is_executable, usage_source,
-    HelpProvider, Loaded, Source,
+    HelpProvider, Loaded, Source, OCLIF_COLUMNS,
 };
 
 pub struct MiseHelpProvider;
@@ -23,7 +26,10 @@ impl HelpProvider for MiseHelpProvider {
         args.extend_from_slice(subcommand_path);
         args.push("--help");
 
-        let output = std::process::Command::new("mise").args(&args).output()?;
+        let output = std::process::Command::new("mise")
+            .args(&args)
+            .env(OCLIF_COLUMNS.0, OCLIF_COLUMNS.1)
+            .output()?;
         super::help_from_output(output)
     }
 }
@@ -115,7 +121,8 @@ pub fn discover_sources() -> Vec<Box<dyn Source>> {
                     // Scoped by the mise tool that led here: the same binary name
                     // can be reached through two tools whose bin dirs differ.
                     let tool_id = format!("{key}::{binary}");
-                    Some(Box::new(HelpToolSource::with_tool_id(tool_id, binary, format, provider))
+                    let runner = vec!["mise".into(), "exec".into(), "--".into(), binary.clone()];
+                    Some(Box::new(HelpToolSource::for_program(tool_id, binary, format, &program, provider, runner))
                         as Box<dyn Source>)
                 })
                 .collect();
@@ -134,6 +141,8 @@ pub struct HelpToolSource {
     binary: String,
     format: InputFormat,
     help_provider: Box<dyn HelpProvider>,
+    separator: String,
+    whole_tree: Option<(InputFormat, Arc<dyn SpecProvider>)>,
 }
 
 impl HelpToolSource {
@@ -153,24 +162,62 @@ impl HelpToolSource {
         format: InputFormat,
         help_provider: Box<dyn HelpProvider>,
     ) -> Self {
-        Self { tool_id, binary, format, help_provider }
+        Self { tool_id, binary, format, help_provider, separator: " ".into(), whole_tree: None }
+    }
+
+    /// The source for `program`, with what its framework's package adds: oclif's
+    /// separator, and `commands --json` where the CLI ships it. `runner` invokes
+    /// the binary — under `mise exec`, or as found on PATH.
+    pub(crate) fn for_program(
+        tool_id: String,
+        binary: String,
+        format: InputFormat,
+        program: &Path,
+        help_provider: Box<dyn HelpProvider>,
+        runner: Vec<String>,
+    ) -> Self {
+        let source = Self::with_tool_id(tool_id, binary, format, help_provider);
+        let Some(package) = (format == InputFormat::OclifHelptext).then(|| OclifPackage::read(program)).flatten() else {
+            return source;
+        };
+        let source = source.with_separator(&package.separator);
+        if !package.lists_commands {
+            return source;
+        }
+        let mut command = runner;
+        command.extend(["commands".into(), "--json".into()]);
+        source.with_whole_tree(InputFormat::OclifCommandsJson, Arc::new(CommandSpecProvider::new(command)))
+    }
+
+    /// How command names join when typed: `sf org list`, but `heroku apps:create`.
+    pub fn with_separator(mut self, separator: &str) -> Self {
+        self.separator = separator.into();
+        self
+    }
+
+    pub fn with_whole_tree(mut self, format: InputFormat, provider: Arc<dyn SpecProvider>) -> Self {
+        self.whole_tree = Some((format, provider));
+        self
+    }
+
+    /// The arguments naming the command at `command_path`, the way the form joins
+    /// them to run it.
+    fn invocation(&self, command_path: &[String]) -> Vec<String> {
+        command_path.join(&self.separator).split_whitespace().map(String::from).collect()
     }
 
     fn child_node(&self, command_path: &[String], name: &str, cmd: &SpecCommand) -> Node {
         let mut child_path = command_path.to_vec();
         child_path.push(name.to_string());
 
-        // Knack help declares whether a child needs a subcommand, so we know its
-        // expandability up front. Cobra help does not, so it stays Unknown until
-        // the child is loaded.
+        // Knack and oclif help say which children are pure groups, and Knack also
+        // which are leaves, so their expandability is known up front. The rest
+        // stay Unknown until loaded.
         let (kind, runnable) = match self.format {
-            InputFormat::KnackHelptext => {
-                if cmd.subcommand_required {
-                    (NodeKind::Branch, false)
-                } else {
-                    (NodeKind::Leaf, true)
-                }
+            InputFormat::KnackHelptext | InputFormat::OclifHelptext if cmd.subcommand_required => {
+                (NodeKind::Branch, false)
             }
+            InputFormat::KnackHelptext => (NodeKind::Leaf, true),
             _ => (NodeKind::Unknown, true),
         };
 
@@ -202,15 +249,40 @@ impl Source for HelpToolSource {
         vec![self.binary.clone()]
     }
 
+    fn tool_path_separator(&self) -> &str {
+        &self.separator
+    }
+
     fn cached(&self, command_path: &[String]) -> bool {
-        let path_refs: Vec<&str> = command_path.iter().map(String::as_str).collect();
+        let invocation = self.invocation(command_path);
+        let path_refs: Vec<&str> = invocation.iter().map(String::as_str).collect();
         self.help_provider.is_cached(&self.binary, &path_refs)
     }
 
+    fn whole_tree(&self) -> Option<Box<dyn Source>> {
+        let (format, provider) = self.whole_tree.clone()?;
+        Some(Box::new(UsageSpecSource::whole_tree(
+            &self.tool_id,
+            &self.binary,
+            self.tool_bin(),
+            &self.separator,
+            format,
+            provider,
+        )))
+    }
+
     fn load(&self, command_path: &[String]) -> Result<Loaded, Box<dyn std::error::Error>> {
-        let path_refs: Vec<&str> = command_path.iter().map(String::as_str).collect();
+        let invocation = self.invocation(command_path);
+        let path_refs: Vec<&str> = invocation.iter().map(String::as_str).collect();
         let content = self.help_provider.fetch_help(&self.binary, &path_refs)?;
         let spec = helptext_parser::parse(self.format, &content)?;
+
+        // oclif's `help` command answers `help theme --help` with theme's page. A
+        // page about another command says nothing about this one, and taking its
+        // children would grow the whole tree again beneath `help`.
+        if self.format == InputFormat::OclifHelptext && spec.cmd.full_cmd != invocation {
+            return Ok(Loaded { description: String::new(), runnable: true, flags: vec![], args: vec![], children: vec![] });
+        }
 
         let children = spec
             .cmd

@@ -4,6 +4,8 @@
 //! a usage spec carries the whole nested command tree, so the tree is built
 //! eagerly from a single parse (the same shape as Mise Tasks).
 
+use std::sync::Arc;
+
 use helptext_parser::{InputFormat, Spec, SpecCommand};
 
 use crate::data::node::{Children, Node, NodeKind};
@@ -19,6 +21,12 @@ pub trait SpecProvider: Send + Sync {
 /// Runs a command and returns its stdout as the spec.
 pub struct CommandSpecProvider {
     command: Vec<String>,
+}
+
+impl CommandSpecProvider {
+    pub fn new(command: Vec<String>) -> Self {
+        Self { command }
+    }
 }
 
 impl SpecProvider for CommandSpecProvider {
@@ -39,7 +47,8 @@ pub struct UsageSpecSource {
     tool_name: String,
     bin: Vec<String>,
     separator: String,
-    provider: Box<dyn SpecProvider>,
+    format: InputFormat,
+    provider: Arc<dyn SpecProvider>,
 }
 
 impl UsageSpecSource {
@@ -70,8 +79,22 @@ impl UsageSpecSource {
             tool_name: tool_name.into(),
             bin,
             separator: " ".into(),
-            provider: Box::new(CommandSpecProvider { command }),
+            format: InputFormat::UsageKdl,
+            provider: Arc::new(CommandSpecProvider { command }),
         }
+    }
+
+    /// A tool otherwise walked a level at a time, read from a dump of its whole
+    /// tree in `format` instead.
+    pub(crate) fn whole_tree(
+        tool_id: &str,
+        tool_name: &str,
+        bin: Vec<String>,
+        separator: &str,
+        format: InputFormat,
+        provider: Arc<dyn SpecProvider>,
+    ) -> Self {
+        Self { tool_id: tool_id.into(), tool_name: tool_name.into(), bin, separator: separator.into(), format, provider }
     }
 
     #[cfg(test)]
@@ -81,7 +104,8 @@ impl UsageSpecSource {
             tool_name: tool_id.into(),
             bin: vec![tool_id.into()],
             separator: " ".into(),
-            provider,
+            format: InputFormat::UsageKdl,
+            provider: Arc::from(provider),
         }
     }
 }
@@ -113,7 +137,7 @@ impl Source for UsageSpecSource {
             });
         }
         let content = self.provider.fetch_spec()?;
-        let spec = helptext_parser::parse(InputFormat::UsageKdl, &content)?;
+        let spec = helptext_parser::parse(self.format, &content)?;
         Ok(Loaded {
             description: spec.cmd.help.clone().unwrap_or_default(),
             runnable: false,
