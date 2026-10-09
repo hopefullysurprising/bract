@@ -122,6 +122,23 @@ fn metavar_name(token: &str) -> String {
         .to_string()
 }
 
+/// A custom template's `{name} {version}` line: `zoxide 0.9.9`, `zoxide-query 0.9.9`.
+fn names_its_version(line: &str) -> bool {
+    let mut words = line.split_whitespace();
+    let version = words.nth(1).map(|v| v.trim_start_matches('v'));
+    words.next().is_none()
+        && version.is_some_and(|v| v.starts_with(|c: char| c.is_ascii_digit()) && v.contains('.'))
+}
+
+/// Whether a line opens an argument or option entry. clap writes every entry two
+/// columns in, or six for an option with no short form (four spaces stand in for
+/// `-x, `); descriptions sit deeper — ten columns in on `--help` — and may hold
+/// lines of their own starting with `[` or `-`: an annotation paragraph such as
+/// `[default: .]`, or a `- name: help` possible value.
+fn is_entry(line: &str) -> bool {
+    line.len() - line.trim_start().len() <= 6
+}
+
 /// Append a wrapped/next-line continuation onto a running help string.
 fn append_help(help: &mut Option<String>, text: &str) {
     if text.is_empty() {
@@ -244,6 +261,17 @@ fn extract_possible_values_block(help: &str) -> Option<(String, Vec<String>, Opt
                 default = Some(name.to_string());
             }
             choices.push(name.to_string());
+        }
+    } else if after.starts_with("- ") {
+        // clap's own list (help_template.rs): `- name: help` per value, or `- name`
+        // for a value without help. The lines arrive joined, so an item is a lone
+        // `-` followed by a name that ends in `:` or stands alone.
+        let tokens: Vec<&str> = after.split_whitespace().collect();
+        for (i, token) in tokens.iter().enumerate() {
+            let Some(name) = tokens.get(i + 1).filter(|_| *token == "-") else { continue };
+            if name.ends_with(':') || matches!(tokens.get(i + 2), None | Some(&"-")) {
+                choices.push(name.trim_end_matches(':').to_string());
+            }
         }
     } else {
         // Inline comma list, e.g. "*auto*, never, always."
@@ -399,7 +427,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
                 if t.is_empty() {
                     continue;
                 }
-                if t.starts_with('<') || t.starts_with('[') {
+                if is_entry(line) && (t.starts_with('<') || t.starts_with('[')) {
                     let (def, desc) = split_def_and_description(t);
                     let token = def.split_whitespace().next().unwrap_or(&def);
                     let mut arg = SpecArg::builder().name(metavar_name(token)).build();
@@ -416,7 +444,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
                 if t.is_empty() {
                     continue;
                 }
-                if t.starts_with('-') {
+                if is_entry(line) && t.starts_with('-') {
                     let (def, desc) = split_def_and_description(t);
                     if let Some(mut flag) = parse_flag_def(&def) {
                         flag.help = desc;
@@ -479,11 +507,19 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
         })
         .collect();
 
-    // Clap's `{about}` sits at the end of the preamble, right before "Usage:" —
-    // even when a custom template prepends name/version/author (zoxide). Take the
-    // last non-empty preamble line as the short help.
+    // clap writes `{before-help}{about}` above the usage, and on `--help` the about is
+    // the long one: the whole doc comment, summary first, perhaps followed by more
+    // paragraphs (watchexec) or an ASCII-art logo (ast-grep). A custom template may
+    // lead with a `{name} {version}` paragraph (zoxide), which is skipped. A line with
+    // no letter or digit in it is decoration, not a summary.
     let preamble_nonempty: Vec<&String> = preamble.iter().filter(|l| !l.is_empty()).collect();
-    let help = preamble_nonempty.last().map(|l| l.to_string());
+    let paragraphs: Vec<&[String]> = preamble.split(|l| l.is_empty()).filter(|p| !p.is_empty()).collect();
+    let help = paragraphs
+        .iter()
+        .skip_while(|p| names_its_version(&p[0]))
+        .flat_map(|p| p.iter())
+        .find(|l| l.chars().any(|c| c.is_ascii_alphanumeric()))
+        .map(|l| l.to_string());
     let help_long = (preamble_nonempty.len() > 1).then(|| {
         preamble_nonempty
             .iter()

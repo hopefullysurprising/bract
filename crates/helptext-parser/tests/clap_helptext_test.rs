@@ -282,3 +282,50 @@ fn samply_0_13_1_optional_value_flag_keeps_a_clean_long_name() {
     assert_eq!(arg.name, "INCLUDE_ARGS");
     assert!(!arg.required, "the value is optional — clap wrote it in brackets");
 }
+
+// The cases below follow clap's help renderer (clap_builder 4.6.0,
+// output/help_template.rs), each confirmed on a real page.
+
+// clap writes `{before-help}{about}` above the usage, and on `--help` the about is
+// the long about: the whole doc comment, summary first. ast-grep follows its summary
+// with an ASCII-art logo and watchexec with paragraphs and examples, so the line
+// right before "Usage:" was a slice of the logo and an example command.
+#[test]
+fn the_summary_is_the_first_line_of_the_about() {
+    assert_eq!(
+        clap("ast-grep_0.45.3_root.txt").cmd.help.as_deref(),
+        Some("Search and Rewrite code at large scale using AST pattern."),
+    );
+    assert_eq!(
+        clap("watchexec_2.5.1_root.txt").cmd.help.as_deref(),
+        Some("Execute commands when watched files change."),
+    );
+    assert_eq!(clap("zoxide_0.9.9_root.txt").cmd.help.as_deref(), Some("A smarter cd command for your terminal"));
+    assert_eq!(clap("zoxide_0.9.9_query.txt").cmd.help.as_deref(), Some("Search for a directory in the database"));
+}
+
+// On `--help` every argument's description starts on the next line, ten columns in,
+// and clap sets its annotations apart as a paragraph of their own. `[default: .]`
+// there is PATHS's default, not an argument named `default:`.
+#[test]
+fn an_annotation_paragraph_belongs_to_its_argument() {
+    let run = clap("ast-grep_0.45.3_run.txt");
+    let names: Vec<&str> = run.cmd.args.iter().map(|a| a.name.as_str()).collect();
+    assert_eq!(names, ["PATHS"]);
+    assert_eq!(run.cmd.args[0].default, vec!["."]);
+    assert_eq!(
+        run.cmd.args[0].help.as_deref(),
+        Some("The paths to search. You can provide multiple paths separated by spaces"),
+    );
+}
+
+// When values carry their own help, clap lists them under "Possible values:" as
+// `- name: help` lines; started with `-`, they were taken for flags and dropped.
+#[test]
+fn clap_s_own_possible_values_list_offers_its_values() {
+    let run = clap("ast-grep_0.45.3_run.txt");
+    let strictness = run.cmd.flags.iter().find(|f| f.long == vec!["strictness"]).expect("--strictness");
+    let choices = &strictness.arg.as_ref().and_then(|a| a.choices.as_ref()).expect("strictness offers values").choices;
+    assert_eq!(choices, &["cst", "smart", "ast", "relaxed", "signature", "template"]);
+    assert!(!strictness.help.as_deref().unwrap_or_default().contains("Possible values"));
+}
