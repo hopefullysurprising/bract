@@ -14,6 +14,33 @@ run = "cargo install --path crates/tui --locked --force"
 description = "Run the workspace test suite"
 run = "cargo test"
 
+[tasks."spec:sweep"]
+description = "Cold --spec of each named tool, in parallel and time-bounded: seconds, commands, and whether it parses back as usage"
+usage = '''
+arg "<tool>" var=#true help="A tool on PATH in this repo's mise environment"
+flag "--seconds <n>" default="600" help="Give up on a tool after this long"
+'''
+# macOS has no `timeout`; perl's alarm bounds each walk instead. A walk that never ends
+# is the defect this exists to catch — oclif's `help` once grew the tree beneath itself.
+run = '''
+cargo build -q
+mkdir -p tmp/sweep && rm -f tmp/sweep/*.failed
+for tool in $usage_tool; do
+  (
+    rm -rf "$HOME/Library/Caches/bract/helptext/$tool" "${XDG_CACHE_HOME:-$HOME/.cache}/bract/helptext/$tool"
+    start=$(date +%s)
+    status=0
+    perl -e 'alarm shift; exec @ARGV' "$usage_seconds" target/debug/bract --tool "$tool" --spec > "tmp/sweep/$tool.kdl" 2> "tmp/sweep/$tool.err" || status=$?
+    target/debug/helptext-parser usage-kdl < "tmp/sweep/$tool.kdl" > /dev/null 2>&1 && parse=parses || parse="DOES NOT PARSE"
+    [ $status -eq 142 ] && status="timed out"
+    [ "$status" = 0 ] && [ "$parse" = parses ] || touch "tmp/sweep/$tool.failed"
+    echo "$tool: $(( $(date +%s) - start ))s, exit $status, $(grep -cE '^ *cmd ' "tmp/sweep/$tool.kdl") commands, $parse"
+  ) &
+done
+wait
+! ls tmp/sweep/*.failed > /dev/null 2>&1
+'''
+
 [tasks.demo]
 description = "Render the README demo GIFs from docs/*.tape (needs ttyd + ffmpeg on PATH)"
 run = '''
