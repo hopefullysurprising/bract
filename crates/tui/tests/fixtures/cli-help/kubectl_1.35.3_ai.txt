@@ -1,0 +1,37 @@
+kubectl-ai is a command-line tool that allows you to interact with your Kubernetes cluster using natural language queries. It leverages large language models to understand your intent and translate it into kubectl
+
+Usage:
+  kubectl-ai [flags]
+  kubectl-ai [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  version     Print the version number of kubectl-ai
+
+Flags:
+      --alsologtostderr                    log to standard error as well as files (no effect when -logtostderr=true)
+      --custom-tools-config stringArray    path to custom tools config file or directory (default [{CONFIG}/kubectl-ai/tools.yaml,{HOME}/.config/kubectl-ai/tools.yaml])
+      --enable-tool-use-shim               enable tool use shim
+      --external-tools                     in MCP server mode, discover and expose external MCP tools
+      --extra-prompt-paths stringArray     extra prompt template paths
+  -h, --help                               help for kubectl-ai
+      --kubeconfig string                  path to kubeconfig file
+      --llm-provider string                language model provider (default "gemini")
+      --max-iterations int                 maximum number of iterations agent will try before giving up (default 20)
+      --mcp-client                         enable MCP client mode to connect to external MCP servers
+      --mcp-server                         run in MCP server mode
+      --mcp-server-mode string             mode of the MCP server. Supported values: stdio, sse (default "stdio")
+      --model string                       language model e.g. gemini-2.0-flash-thinking-exp-01-21, gemini-2.0-flash (default "lightsail-general-ai")
+      --prompt-template-file-path string   path to custom prompt template file
+      --quiet                              run in non-interactive mode, requires a query to be provided as a positional argument
+      --remove-workdir                     remove the temporary working directory after execution
+      --skip-permissions                   (dangerous) skip asking for confirmation before executing kubectl commands that modify resources
+      --skip-verify-ssl                    skip verifying the SSL certificate of the LLM provider
+      --sse-endpoint-port int              port for the SSE endpoint in MCP server mode (only works with --mcp-server and --mcp-server-mode=sse) (default 9080)
+      --trace-path string                  path to the trace file (default "/var/folders/vt/rs7pp1ys4v5_7w3dpbns_cv40000gn/T/kubectl-ai-trace.txt")
+      --ui-listen-address string           address to listen for the HTML UI. (default "localhost:8888")
+      --ui-type UIType                     user interface type to use. Supported values: terminal, web, tui. (default terminal)
+  -v, --v Level                            number for the log level verbosity
+
+Use "kubectl-ai [command] --help" for more information about a command.

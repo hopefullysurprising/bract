@@ -15,13 +15,30 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Duration;
 
+use super::bounded::{output_within, HELP_LIMIT};
 use super::{classify, fingerprint, help_cache, is_executable, mise_tools::HelpToolSource};
 use super::{HelpProvider, Source};
 
 /// Runs a tool straight from PATH. `MiseHelpProvider` without the `mise exec`
 /// wrapper — same contract, so a tool's help is parsed identically in both modes.
-pub struct DirectHelpProvider;
+pub struct DirectHelpProvider {
+    limit: Duration,
+}
+
+impl DirectHelpProvider {
+    /// Gives up on a page after `limit` instead of the usual `HELP_LIMIT`.
+    pub fn within(limit: Duration) -> Self {
+        Self { limit }
+    }
+}
+
+impl Default for DirectHelpProvider {
+    fn default() -> Self {
+        Self::within(HELP_LIMIT)
+    }
+}
 
 impl HelpProvider for DirectHelpProvider {
     fn fetch_help(
@@ -29,12 +46,9 @@ impl HelpProvider for DirectHelpProvider {
         binary: &str,
         subcommand_path: &[&str],
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let output = Command::new(binary)
-            .args(subcommand_path)
-            .arg("--help")
-            .env(super::OCLIF_COLUMNS.0, super::OCLIF_COLUMNS.1)
-            .output()?;
-        super::help_from_output(output)
+        let mut command = Command::new(binary);
+        command.args(subcommand_path).arg("--help").env(super::OCLIF_COLUMNS.0, super::OCLIF_COLUMNS.1);
+        super::help_from_output(output_within(&mut command, self.limit)?)
     }
 }
 
@@ -76,11 +90,11 @@ fn one_source(arg: &str, cache_dir: Option<&Path>) -> Result<Box<dyn Source>, St
 
     let provider: Box<dyn HelpProvider> = match (cache_dir, fingerprint::of(&program)) {
         (Some(dir), Some(fingerprint)) => Box::new(help_cache::CachingHelpProvider::new(
-            Box::new(DirectHelpProvider),
+            Box::new(DirectHelpProvider::default()),
             dir.to_path_buf(),
             fingerprint,
         )),
-        _ => Box::new(DirectHelpProvider),
+        _ => Box::new(DirectHelpProvider::default()),
     };
 
     // Identified by where it was found, so naming two same-named tools at
@@ -163,7 +177,7 @@ mod tests {
     fn direct_help_runs_the_tool_itself() {
         let dir = tempfile::tempdir().unwrap();
         let path = executable(dir.path(), "greeter", "#!/bin/sh\necho \"help for $*\"\n");
-        let help = DirectHelpProvider
+        let help = DirectHelpProvider::default()
             .fetch_help(path.to_str().unwrap(), &["sub"])
             .expect("help is fetched");
         assert_eq!(help.trim(), "help for sub --help");
@@ -173,7 +187,7 @@ mod tests {
     fn a_failing_help_call_is_an_error_not_empty_help() {
         let dir = tempfile::tempdir().unwrap();
         let path = executable(dir.path(), "broken", "#!/bin/sh\necho 'boom' >&2\nexit 1\n");
-        let err = DirectHelpProvider
+        let err = DirectHelpProvider::default()
             .fetch_help(path.to_str().unwrap(), &[])
             .expect_err("a non-zero exit must not read as help");
         assert!(err.to_string().contains("boom"), "surfaces the tool's own message: {err}");
@@ -205,7 +219,7 @@ mod exit_status_tests {
             "devspace",
             "#!/bin/sh\necho 'Usage: devspace run'\necho 'run requires an argument' >&2\nexit 1\n",
         );
-        let help = DirectHelpProvider
+        let help = DirectHelpProvider::default()
             .fetch_help(path.to_str().unwrap(), &[])
             .expect("help on stdout is help, whatever the exit status");
         assert!(help.contains("Usage: devspace run"), "got: {help:?}");
@@ -216,7 +230,7 @@ mod exit_status_tests {
     fn a_failure_with_no_output_is_still_an_error() {
         let dir = tempfile::tempdir().unwrap();
         let path = executable(dir.path(), "broken", "#!/bin/sh\necho 'boom' >&2\nexit 1\n");
-        let err = DirectHelpProvider.fetch_help(path.to_str().unwrap(), &[]).expect_err("no help");
+        let err = DirectHelpProvider::default().fetch_help(path.to_str().unwrap(), &[]).expect_err("no help");
         assert!(err.to_string().contains("boom"), "surfaces the tool's message: {err}");
     }
 
@@ -229,7 +243,7 @@ mod exit_status_tests {
             "colourful",
             "#!/bin/sh\nprintf '\\033[1;31mfatal \\033[0mit broke\\n' >&2\nexit 1\n",
         );
-        let err = DirectHelpProvider
+        let err = DirectHelpProvider::default()
             .fetch_help(path.to_str().unwrap(), &[])
             .expect_err("no help")
             .to_string();

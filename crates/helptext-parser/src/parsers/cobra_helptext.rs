@@ -22,7 +22,8 @@ fn detect_section(line: &str) -> Option<Section> {
     // standard ("Available Commands:", "Flags:"), gh's uppercase ("CORE COMMANDS",
     // "USAGE"), kubectl's grouped Title Case ("Deploy Commands:"), and rclone's
     // lowercase ("Available commands:").
-    let header = line.trim_end().to_ascii_lowercase();
+    let original = line.trim_end();
+    let header = original.to_ascii_lowercase();
     match header.as_str() {
         "usage:" | "usage" => Some(Section::Usage),
         "aliases:" | "aliases" => Some(Section::Aliases),
@@ -37,9 +38,18 @@ fn detect_section(line: &str) -> Option<Section> {
         s if s.starts_with("flags ") || s.contains("(flag group") => Some(Section::Flags),
         // Any header naming a command group: "Available Commands:", "CORE COMMANDS",
         // and kubectl's grouped "Basic Commands (Beginner):" / "Deploy Commands:".
-        s if is_command_header(s) => Some(Section::Commands),
+        s if is_header_shaped(original) && is_command_header(s) => Some(Section::Commands),
         _ => None,
     }
+}
+
+/// Whether a column-0 line is shaped like a header rather than prose: it ends in a
+/// colon, as Cobra's own headers and kubectl's group titles do, or is all capitals,
+/// as gh's are. kluctl's description "GitOps sub-commands" and a line of rclone's
+/// prose ending "… commands" are neither, and read as headers they turned the lines
+/// below them into subcommands.
+fn is_header_shaped(line: &str) -> bool {
+    line.ends_with(':') || !line.chars().any(|c| c.is_ascii_lowercase())
 }
 
 /// Whether a (lowercased, column-0) header names a command group — it ends in the
@@ -272,6 +282,12 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
     let mut global_flags: Vec<SpecFlag> = Vec::new();
 
     for line in content.lines() {
+        // kluctl's template writes the usage on the header line: `Usage: kluctl gitops [command]`.
+        if let Some(usage) = line.strip_prefix("Usage:").map(str::trim).filter(|u| !u.is_empty()) {
+            section = Section::Usage;
+            usage_lines.push(usage.to_string());
+            continue;
+        }
         if let Some(new_section) = detect_section(line) {
             section = new_section;
             continue;
@@ -279,6 +295,12 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
 
         match section {
             Section::Preamble => {
+                preamble_lines.push(line.to_string());
+            }
+            // Usage lines are indented. Prose at column 0 after them is the description
+            // of a template that puts the usage first, as kluctl's does.
+            Section::Usage if !line.is_empty() && !line.starts_with(char::is_whitespace) => {
+                section = Section::Preamble;
                 preamble_lines.push(line.to_string());
             }
             Section::Usage => {

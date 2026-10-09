@@ -3,6 +3,8 @@ mod common;
 use bract::data::export::usage_specs;
 use common::{gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source, sf_dump_source};
 use helptext_parser::InputFormat;
+#[cfg(unix)]
+use std::time::{Duration, Instant};
 
 #[test]
 fn a_tools_whole_tree_is_emitted_not_just_its_root() {
@@ -123,6 +125,43 @@ fn a_tree_delivered_in_one_dump_survives_intact() {
         lint.flags.iter().any(|f| f.long.iter().any(|l| l == "format")),
         "a leaf keeps its own flags"
     );
+}
+
+// A tool that runs a subcommand instead of describing it — `watchexec run --help`
+// did, under an earlier parser — must cost the walk its time limit, not the walk
+// itself, and must not outlive it.
+#[cfg(unix)]
+#[test]
+fn a_subcommand_that_never_answers_does_not_hold_the_walk() {
+    use bract::data::source::direct::DirectHelpProvider;
+    use bract::data::source::mise_tools::HelpToolSource;
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = tempfile::tempdir().unwrap();
+    let tool = dir.path().join("tool");
+    std::fs::write(
+        &tool,
+        format!(
+            "#!/bin/sh\ncase \"$1\" in\n  --help) printf 'Runs a server\\n\\nUsage: tool [COMMAND]\\n\\nCommands:\\n  serve  Serve until stopped\\n\\nOptions:\\n  -h, --help  Print help\\n' ;;\n  serve) echo $$ > {}/serve; sleep 30 ;;\nesac\n",
+            dir.path().display()
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&tool, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let source = HelpToolSource::new(
+        tool.display().to_string(),
+        InputFormat::ClapHelptext,
+        Box::new(DirectHelpProvider::within(Duration::from_secs(2))),
+    );
+
+    let started = Instant::now();
+    let specs = usage_specs(vec![Box::new(source)]);
+    assert!(started.elapsed() < Duration::from_secs(10), "the walk ended at the limit: {:?}", started.elapsed());
+    assert!(specs[0].cmd.subcommands.contains_key("serve"), "serve is still listed, from its parent's page");
+
+    let pid = std::fs::read_to_string(dir.path().join("serve")).unwrap();
+    let alive = std::process::Command::new("kill").args(["-0", pid.trim()]).stderr(std::process::Stdio::null()).status().unwrap().success();
+    assert!(!alive, "serve was stopped with the walk");
 }
 
 // sf answers `commands --json` with every command in about three seconds, where

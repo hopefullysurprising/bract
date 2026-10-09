@@ -10,6 +10,7 @@ use helptext_parser::{InputFormat, Spec, SpecCommand};
 
 use crate::data::node::{Children, Node, NodeKind};
 
+use super::bounded::{output_within, DUMP_LIMIT};
 use super::{convert_args, convert_flags, Loaded, Source};
 
 /// Supplies a tool's Usage KDL spec. Abstracted so tests inject a fixture
@@ -32,7 +33,7 @@ impl CommandSpecProvider {
 impl SpecProvider for CommandSpecProvider {
     fn fetch_spec(&self) -> Result<String, Box<dyn std::error::Error>> {
         let (program, args) = self.command.split_first().ok_or("empty spec command")?;
-        let output = std::process::Command::new(program).args(args).output()?;
+        let output = output_within(std::process::Command::new(program).args(args), DUMP_LIMIT)?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(format!("{} failed: {stderr}", self.command.join(" ")).into());

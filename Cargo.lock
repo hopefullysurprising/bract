@@ -164,6 +164,7 @@ dependencies = [
  "goblin",
  "helptext-parser",
  "insta",
+ "libc",
  "ratatui",
  "redb",
  "serde",

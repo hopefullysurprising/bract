@@ -250,3 +250,31 @@ fn ordinary_first_line_descriptions_are_untouched() {
 fn devspace_6_3_20_list_help_of_pure_decoration_yields_no_description() {
     assert_eq!(cobra("devspace_6.3.20_list.txt").cmd.help, None);
 }
+
+// Prose that happens to end in "commands" is not a header. kluctl describes `gitops`
+// as "GitOps sub-commands", and rclone's `nfsmount` page quotes "… `touch -a`
+// commands"; read as headers, the lines after them became subcommands, each fetch
+// printed the same page again, and a `--spec` walk ran on without end. A real
+// header ends in a colon (Cobra's own `Available Commands:`, kubectl's groups) or
+// is all capitals (gh's `CORE COMMANDS`).
+#[test]
+fn prose_ending_in_commands_is_not_a_header() {
+    let gitops = cobra("kluctl_2.27.0_gitops.txt");
+    let names: Vec<&str> = gitops.cmd.subcommands.keys().map(String::as_str).collect();
+    assert_eq!(names, ["deploy", "diff", "logs", "prune", "reconcile", "resume", "suspend", "validate"]);
+
+    assert!(cobra("rclone_1.74.3_nfsmount.txt").cmd.subcommands.is_empty(), "nfsmount is a leaf");
+}
+
+// kluctl's template puts the usage on the `Usage:` line itself.
+#[test]
+fn a_usage_on_its_header_line_is_read() {
+    let gitops = cobra("kluctl_2.27.0_gitops.txt");
+    assert_eq!(gitops.bin, "kluctl");
+    assert!(gitops.cmd.subcommand_required, "`kluctl gitops [command]` only dispatches");
+    assert_eq!(gitops.cmd.help.as_deref(), Some("GitOps sub-commands"));
+
+    let deploy = cobra("kluctl_2.27.0_gitops-deploy.txt");
+    assert!(!deploy.cmd.subcommand_required);
+    assert_eq!(deploy.cmd.help.as_deref(), Some("Trigger a GitOps deployment"));
+}

@@ -1,0 +1,27 @@
+Usage: kluctl gitops [command]
+
+GitOps sub-commands
+
+Global arguments:
+      --cpu-profile string       Enable CPU profiling and write the result
+                                 to the given path
+      --debug                    Enable debug logging
+      --gops-agent               Start gops agent in the background
+      --gops-agent-addr string   Specify the address:port to use for the
+                                 gops agent (default "127.0.0.1:0")
+      --no-color                 Disable colored output
+      --no-update-check          Disable update check on startup
+      --use-system-python        Use the system Python instead of the
+                                 embedded Python.
+
+Commands:
+  deploy      Trigger a GitOps deployment
+  diff        Trigger a GitOps diff
+  logs        Show logs from controller
+  prune       Trigger a GitOps prune
+  reconcile   Trigger a GitOps reconciliation
+  resume      Resume a GitOps deployment
+  suspend     Suspend a GitOps deployment
+  validate    Trigger a GitOps validate
+
+Use "kluctl gitops [command] --help" for more information about a command.

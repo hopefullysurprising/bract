@@ -1,12 +1,15 @@
-use std::collections::BTreeMap;
+use std::collections::hash_map::DefaultHasher;
+use std::collections::{BTreeMap, HashMap};
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use helptext_parser::{InputFormat, SpecCommand};
 use serde::Deserialize;
 
 use crate::data::node::{Children, Node, NodeKind};
 
+use super::bounded::{output_within, HELP_LIMIT};
 use super::node_introspect::OclifPackage;
 use super::usage_source::{CommandSpecProvider, SpecProvider, UsageSpecSource};
 use super::{
@@ -26,11 +29,9 @@ impl HelpProvider for MiseHelpProvider {
         args.extend_from_slice(subcommand_path);
         args.push("--help");
 
-        let output = std::process::Command::new("mise")
-            .args(&args)
-            .env(OCLIF_COLUMNS.0, OCLIF_COLUMNS.1)
-            .output()?;
-        super::help_from_output(output)
+        let mut command = std::process::Command::new("mise");
+        command.args(&args).env(OCLIF_COLUMNS.0, OCLIF_COLUMNS.1);
+        super::help_from_output(output_within(&mut command, HELP_LIMIT)?)
     }
 }
 
@@ -143,6 +144,9 @@ pub struct HelpToolSource {
     help_provider: Box<dyn HelpProvider>,
     separator: String,
     whole_tree: Option<(InputFormat, Arc<dyn SpecProvider>)>,
+    /// Each page read this session, by command path, as a hash: what a child's page is
+    /// compared against.
+    pages: Mutex<HashMap<Vec<String>, u64>>,
 }
 
 impl HelpToolSource {
@@ -162,7 +166,15 @@ impl HelpToolSource {
         format: InputFormat,
         help_provider: Box<dyn HelpProvider>,
     ) -> Self {
-        Self { tool_id, binary, format, help_provider, separator: " ".into(), whole_tree: None }
+        Self {
+            tool_id,
+            binary,
+            format,
+            help_provider,
+            separator: " ".into(),
+            whole_tree: None,
+            pages: Mutex::new(HashMap::new()),
+        }
     }
 
     /// The source for `program`, with what its framework's package adds: oclif's
@@ -277,10 +289,19 @@ impl Source for HelpToolSource {
         let content = self.help_provider.fetch_help(&self.binary, &path_refs)?;
         let spec = helptext_parser::parse(self.format, &content)?;
 
-        // oclif's `help` command answers `help theme --help` with theme's page. A
-        // page about another command says nothing about this one, and taking its
-        // children would grow the whole tree again beneath `help`.
-        if self.format == InputFormat::OclifHelptext && spec.cmd.full_cmd != invocation {
+        // A child answered with its parent's page, byte for byte, is not a page about the
+        // child, and taking its children grows the tree again beneath it, level after
+        // level: oclif's `help` reprints the root, and Cobra answers a child it does not
+        // have — a misread flag, a line of prose — with the parent's own page. A plugin
+        // reached through its host (`kubectl ai`) prints a page of its own and passes.
+        let mut hasher = DefaultHasher::new();
+        content.hash(&mut hasher);
+        let page = hasher.finish();
+        let mut pages = self.pages.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let echoes_parent = command_path.split_last().is_some_and(|(_, parent)| pages.get(parent) == Some(&page));
+        pages.insert(command_path.to_vec(), page);
+        drop(pages);
+        if echoes_parent {
             return Ok(Loaded { description: String::new(), runnable: true, flags: vec![], args: vec![], children: vec![] });
         }
 
@@ -343,6 +364,52 @@ mod identity_tests {
         let from_shared_dir = shared_dir.child_node(&[], "sweep", &cmd);
         assert_ne!(from_backend.id, from_shared_dir.id, "child nodes collide too");
         assert_ne!(from_backend.tool_id, from_shared_dir.tool_id);
+    }
+}
+
+#[cfg(test)]
+mod page_guard_tests {
+    use super::*;
+
+    /// Serves real captured pages by command path.
+    struct Pages(Vec<(Vec<&'static str>, &'static str)>);
+    impl HelpProvider for Pages {
+        fn fetch_help(&self, _b: &str, path: &[&str]) -> Result<String, Box<dyn std::error::Error>> {
+            let (_, file) = self.0.iter().find(|(p, _)| p.as_slice() == path).ok_or("no page captured")?;
+            Ok(std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli-help").join(file))?)
+        }
+    }
+
+    fn path(words: &[&str]) -> Vec<String> {
+        words.iter().map(|w| w.to_string()).collect()
+    }
+
+    // `kluctl gitops --gops-agent --help` prints `gitops`'s own page, byte for byte.
+    // Taken as the page of `--gops-agent`, its eight subcommands grew beneath every
+    // misread child, level after level, and a `--spec` walk never ended.
+    #[test]
+    fn a_child_answered_with_its_parents_page_holds_no_children() {
+        let pages = Pages(vec![
+            (vec!["gitops"], "kluctl_2.27.0_gitops.txt"),
+            (vec!["gitops", "--gops-agent"], "kluctl_2.27.0_gitops_--gops-agent.txt"),
+        ]);
+        let source = HelpToolSource::new("kluctl".into(), InputFormat::CobraHelptext, Box::new(pages));
+
+        assert_eq!(source.load(&path(&["gitops"])).unwrap().children.len(), 8);
+        assert!(source.load(&path(&["gitops", "--gops-agent"])).unwrap().children.is_empty());
+    }
+
+    // `kubectl ai` runs the kubectl-ai plugin (0.0.20 here), whose page names its own
+    // binary — `kubectl-ai [command]` — and lists its own subcommands. It is not its
+    // host's page, and keeps them.
+    #[test]
+    fn a_plugin_reached_through_its_host_keeps_its_own_page() {
+        let pages = Pages(vec![(vec![], "kubectl_1.35.3_root.txt"), (vec!["ai"], "kubectl_1.35.3_ai.txt")]);
+        let source = HelpToolSource::new("kubectl".into(), InputFormat::CobraHelptext, Box::new(pages));
+
+        source.load(&[]).unwrap();
+        let ai = source.load(&path(&["ai"])).unwrap();
+        assert!(ai.children.iter().any(|c| c.name == "completion"), "{:?}", ai.children.iter().map(|c| &c.name).collect::<Vec<_>>());
     }
 }
 
