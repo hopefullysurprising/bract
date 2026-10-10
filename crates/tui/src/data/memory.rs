@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
-use redb::{ReadableTable, TableDefinition};
+use redb::{ReadableDatabase, ReadableTable, TableDefinition};
 
 const TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("field_memory");
 /// ASCII unit separator — cannot appear in a tool id, command, or field name.
@@ -55,7 +55,15 @@ impl RedbFormMemory {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let db = redb::Database::create(path)?;
+        // bract 0.6.1 and earlier wrote redb 2's format, which only redb 2.6 can
+        // rewrite into the one redb 4 reads.
+        let db = match redb::Database::create(path) {
+            Err(redb::DatabaseError::UpgradeRequired(_)) => {
+                redb2::Database::open(path)?.upgrade()?;
+                redb::Database::create(path)?
+            }
+            opened => opened?,
+        };
         // The values are plaintext, and the field/command names reveal usage —
         // keep the whole db owner-only on unix.
         restrict_to_owner(path);
@@ -224,6 +232,31 @@ mod tests {
         let stats = mem.stats("gh", "repo view");
         assert_eq!(stats["--json"].count, 1);
         assert_eq!(stats["--json"].last_value.as_deref(), Some("name"));
+    }
+
+    // bract 0.6.1 and earlier remembered fills in redb 2's file format, which redb 4
+    // cannot read. What they remembered is still there after the upgrade.
+    #[test]
+    fn values_remembered_by_bract_0_6_survive() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("mem.redb");
+        {
+            let db = redb2::Database::create(&path).unwrap();
+            let txn = db.begin_write().unwrap();
+            {
+                let mut table = txn.open_table(redb2::TableDefinition::<&str, &[u8]>::new("field_memory")).unwrap();
+                let mut value = 2u64.to_le_bytes().to_vec();
+                value.extend_from_slice(b"redis");
+                table.insert(RedbFormMemory::key("kubectl", "create deployment", "--image").as_str(), value.as_slice()).unwrap();
+            }
+            txn.commit().unwrap();
+        }
+
+        let mem = RedbFormMemory::open(&path).expect("the old file opens");
+        mem.record("kubectl", "create deployment", "--image", "nginx");
+        let stats = mem.stats("kubectl", "create deployment");
+        assert_eq!(stats["--image"].count, 3);
+        assert_eq!(stats["--image"].last_value.as_deref(), Some("nginx"));
     }
 
     #[cfg(unix)]

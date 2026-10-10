@@ -10,11 +10,13 @@ readme = "../../README.md"
 
 [dependencies]
 clap = { workspace = true }
-dirs = "6"
+dirs = "7"
 goblin = "0.10"
 helptext-parser = { path = "../helptext-parser" }
 ratatui = "0.30.0"
-redb = "2"
+redb = "4"
+# Only to upgrade form memory written by bract 0.6.1 and earlier.
+redb2 = { package = "redb", version = "2.6" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tui-tree-widget = "0.24.0"
@@ -23,7 +25,7 @@ tui-tree-widget = "0.24.0"
 libc = "0.2"
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.8"
 helptext-parser = { path = "../helptext-parser" }
 insta = "1.43"
 tempfile = "3"
