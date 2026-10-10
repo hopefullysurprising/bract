@@ -115,6 +115,43 @@ fn knack_leaf_runs_with_full_command_path() {
     assert_eq!(spec.args, vec!["account", "list"]);
 }
 
+// --- A load that succeeds with something to say ------------------------------
+
+/// A source whose tree loads, left short of what its spec described.
+struct LeftShort;
+
+impl bract::data::source::Source for LeftShort {
+    fn tool_id(&self) -> &str {
+        "mise"
+    }
+    fn tool_name(&self) -> &str {
+        "Mise"
+    }
+    fn tool_bin(&self) -> Vec<String> {
+        vec!["mise".into()]
+    }
+    fn load(&self, _path: &[String]) -> Result<bract::data::source::Loaded, Box<dyn std::error::Error>> {
+        Ok(bract::data::source::Loaded {
+            description: String::new(),
+            runnable: false,
+            flags: vec![],
+            args: vec![],
+            children: vec![],
+            notice: Some("read without unknown_flags (newer than bract's usage-lib)".into()),
+        })
+    }
+}
+
+// A spec read without what this usage-lib does not know is not an error — the tree
+// is there — but the user is told, not left to wonder why a flag is missing.
+#[test]
+fn a_load_with_a_notice_says_so_in_the_status_line() {
+    let mut session = Session::new(vec![Box::new(LeftShort)], 120, 20);
+    session.navigate(&["Mise"]);
+    session.pump();
+    assert!(session.screen().contains("Mise: read without unknown_flags"), "{}", session.screen());
+}
+
 // --- oclif: topics, commands that are both, and the CLI's own separator ------
 
 #[test]

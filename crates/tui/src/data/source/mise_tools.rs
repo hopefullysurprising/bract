@@ -302,7 +302,7 @@ impl Source for HelpToolSource {
         pages.insert(command_path.to_vec(), page);
         drop(pages);
         if echoes_parent {
-            return Ok(Loaded { description: String::new(), runnable: true, flags: vec![], args: vec![], children: vec![] });
+            return Ok(Loaded { description: String::new(), runnable: true, flags: vec![], args: vec![], children: vec![], notice: None });
         }
 
         let children = spec
@@ -320,6 +320,7 @@ impl Source for HelpToolSource {
             flags: convert_flags(&spec.cmd.flags),
             args: convert_args(&spec.cmd.args),
             children,
+            notice: None,
         })
     }
 }

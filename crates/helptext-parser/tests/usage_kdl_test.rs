@@ -39,3 +39,27 @@ fn usage_3_5_0_nested_subcommands() {
         "lint is a leaf with no subcommands"
     );
 }
+
+fn read_fixture(name: &str) -> helptext_parser::Parsed {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/usage-kdl").join(name);
+    helptext_parser::read(InputFormat::UsageKdl, &std::fs::read_to_string(path).unwrap()).expect("the spec reads")
+}
+
+// mise 2026.9.7 describes itself with features from usage 6 and later —
+// `unknown_flags` first among them. A usage-lib older than the tool rejected the
+// whole spec, and mise's own CLI went missing from every project. What this
+// usage-lib does not know is left out and named; the commands, flags and arguments
+// it does know still read.
+#[test]
+fn a_spec_newer_than_this_usage_lib_reads_without_what_it_does_not_know() {
+    let parsed = read_fixture("mise_2026.9.7_usage.kdl");
+
+    for command in ["run", "use", "install", "tasks"] {
+        assert!(parsed.spec.cmd.subcommands.contains_key(command), "mise {command} is there");
+    }
+    assert!(!parsed.spec.cmd.subcommands["use"].flags.is_empty(), "mise use keeps its flags");
+    assert!(parsed.skipped.contains(&"unknown_flags".to_string()), "{:?}", parsed.skipped);
+    for structural in ["cmd", "flag", "arg"] {
+        assert!(!parsed.skipped.contains(&structural.to_string()), "{structural} is never left out: {:?}", parsed.skipped);
+    }
+}

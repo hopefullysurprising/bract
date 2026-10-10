@@ -135,16 +135,19 @@ impl Source for UsageSpecSource {
                 flags: vec![],
                 args: vec![],
                 children: vec![],
+                notice: None,
             });
         }
         let content = self.provider.fetch_spec()?;
-        let spec = helptext_parser::parse(self.format, &content)?;
+        let parsed = helptext_parser::read(self.format, &content)?;
+        let spec = parsed.spec;
         Ok(Loaded {
             description: spec.cmd.help.clone().unwrap_or_default(),
             runnable: false,
             flags: convert_flags(&spec.cmd.flags),
             args: convert_args(&spec.cmd.args),
             children: nodes_from_nested_spec(&spec, &self.tool_id),
+            notice: super::left_out(&parsed.skipped),
         })
     }
 }
@@ -239,5 +242,20 @@ mod tests {
         let src = UsageSpecSource::with_provider("usage", Box::new(StaticSpecProvider(usage_fixture())));
         let loaded = src.load(&["generate".to_string()]).unwrap();
         assert!(loaded.children.is_empty(), "non-root loads are no-ops; the tree is eager");
+    }
+
+    // mise 2026.9.7's own spec used to fail whole, leaving mise's CLI out of every
+    // project with "Invalid usage config". It loads now, and says what it left out.
+    #[test]
+    fn mise_s_own_spec_loads_and_says_what_it_left_out() {
+        let spec = std::fs::read_to_string(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/usage-kdl/mise_2026.9.7_usage.kdl"),
+        )
+        .unwrap();
+        let loaded = UsageSpecSource::with_provider("mise", Box::new(StaticSpecProvider(spec))).load(&[]).unwrap();
+
+        assert!(find(&loaded.children, "run").is_some(), "mise run is there");
+        let notice = loaded.notice.expect("a notice says what was left out");
+        assert!(notice.contains("unknown_flags"), "{notice}");
     }
 }

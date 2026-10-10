@@ -29,7 +29,7 @@ impl Source for MiseTasksSource {
     // tree is built eagerly and returned fully loaded — no per-level fetches.
     fn load(&self, command_path: &[String]) -> Result<Loaded, Box<dyn std::error::Error>> {
         if !command_path.is_empty() {
-            return Ok(Loaded { description: String::new(), runnable: false, flags: vec![], args: vec![], children: vec![] });
+            return Ok(Loaded { description: String::new(), runnable: false, flags: vec![], args: vec![], children: vec![], notice: None });
         }
 
         let output = std::process::Command::new("mise")
@@ -41,14 +41,15 @@ impl Source for MiseTasksSource {
         }
 
         let content = String::from_utf8(output.stdout)?;
-        let spec = helptext_parser::parse(InputFormat::UsageKdl, &content)?;
+        let parsed = helptext_parser::read(InputFormat::UsageKdl, &content)?;
 
         Ok(Loaded {
             description: String::new(),
             runnable: false,
             flags: vec![],
             args: vec![],
-            children: nodes_from_spec(&spec, self.tool_id()),
+            children: nodes_from_spec(&parsed.spec, self.tool_id()),
+            notice: super::left_out(&parsed.skipped),
         })
     }
 }

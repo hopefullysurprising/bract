@@ -48,6 +48,8 @@ pub struct MillerView {
     pending: HashMap<String, Priority>,
     spinner: usize,
     error: Option<String>,
+    /// What a successful load had to say, shown while there is no error.
+    notice: Option<String>,
     /// Type-ahead filter on the active column (`None` = not filtering).
     filter: Option<String>,
     /// Remembers form fills for frequency-sorting and value recall.
@@ -130,6 +132,7 @@ impl MillerView {
             pending: HashMap::new(),
             spinner: 0,
             error: None,
+            notice: None,
             filter: None,
             memory,
             env,
@@ -257,6 +260,9 @@ impl MillerView {
         let Some(node) = Self::find_mut(&mut self.roots, node_id) else { return };
         match loaded {
             Ok(loaded) => {
+                if let Some(notice) = loaded.notice {
+                    self.notice = Some(format!("{}: {notice}", node.name));
+                }
                 if !loaded.description.is_empty() {
                     node.description = loaded.description;
                 }
@@ -619,6 +625,10 @@ impl MillerView {
             let trimmed: String = error.lines().next().unwrap_or_default().chars().take(60).collect();
             spans.push(sep());
             spans.push(Span::styled(format!("⚠ {trimmed}"), Style::new().fg(Color::Red)));
+        } else if let Some(notice) = &self.notice {
+            let trimmed: String = notice.chars().take(60).collect();
+            spans.push(sep());
+            spans.push(Span::styled(format!("ⓘ {trimmed}"), Style::new().fg(Color::Yellow)));
         }
 
         Line::from(spans)

@@ -26,6 +26,15 @@ pub struct Loaded {
     pub flags: Vec<Flag>,
     pub args: Vec<Arg>,
     pub children: Vec<Node>,
+    /// Something the user should know about a load that still succeeded — a spec
+    /// read without the parts this usage-lib does not support.
+    pub notice: Option<String>,
+}
+
+/// The notice for a spec read without `skipped`: written for a newer usage than the
+/// usage-lib Bract was built with.
+pub(crate) fn left_out(skipped: &[String]) -> Option<String> {
+    (!skipped.is_empty()).then(|| format!("read without {} (newer than bract's usage-lib)", skipped.join(", ")))
 }
 
 /// A discovered tool. Sources are lazy: nothing is fetched until

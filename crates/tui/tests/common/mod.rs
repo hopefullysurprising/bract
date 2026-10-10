@@ -77,7 +77,7 @@ impl Source for StaticSource {
     }
     fn load(&self, command_path: &[String]) -> Result<Loaded, Box<dyn std::error::Error>> {
         let children = if command_path.is_empty() { self.roots.clone() } else { vec![] };
-        Ok(Loaded { description: String::new(), runnable: false, flags: vec![], args: vec![], children })
+        Ok(Loaded { description: String::new(), runnable: false, flags: vec![], args: vec![], children, notice: None })
     }
 }
 
