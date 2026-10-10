@@ -110,8 +110,10 @@ mod tests {
         let tool = script(dir.path(), &format!("echo $$ > {pids}/shell; sleep 30 & echo $! > {pids}/child; wait"));
 
         let started = Instant::now();
-        let error = output_within(&mut Command::new(&tool), Duration::from_secs(2)).expect_err("never answers");
-        assert!(started.elapsed() < Duration::from_secs(6), "stopped at the limit, not at the end of the sleep");
+        // Long enough for the script to have started its child even on a loaded
+        // machine; well short of the sleep it would otherwise finish.
+        let error = output_within(&mut Command::new(&tool), Duration::from_secs(5)).expect_err("never answers");
+        assert!(started.elapsed() < Duration::from_secs(15), "stopped at the limit, not at the end of the sleep");
         assert!(error.to_string().contains("no answer"));
 
         std::thread::sleep(Duration::from_millis(100));
