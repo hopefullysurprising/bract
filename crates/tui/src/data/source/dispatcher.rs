@@ -145,12 +145,30 @@ mod installed_rustup_tests {
         );
     }
 
+    /// The proxies whose component a toolchain may go without, and that component.
+    const OPTIONAL: &[(&str, &str)] = &[
+        ("rust-analyzer", "rust-analyzer"),
+        ("cargo-clippy", "clippy"),
+        ("clippy-driver", "clippy"),
+        ("rustfmt", "rustfmt"),
+        ("cargo-fmt", "rustfmt"),
+        ("cargo-miri", "miri"),
+        ("rls", "rls"),
+    ];
+
+    /// A proxy whose component rustup does not list as installed here, or `None`
+    /// when every one is.
+    fn uninstalled_proxy() -> Option<PathBuf> {
+        let output = Command::new(cargo_bin("rustup")).args(["component", "list", "--installed"]).output().ok()?;
+        output.status.success().then_some(())?;
+        let installed = String::from_utf8(output.stdout).ok()?;
+        let has = |component: &str| installed.lines().any(|l| l == component || l.starts_with(&format!("{component}-")));
+        OPTIONAL.iter().filter(|(_, component)| !has(component)).map(|(proxy, _)| cargo_bin(proxy)).find(|p| p.exists())
+    }
+
     #[test]
     fn a_proxy_for_an_uninstalled_component_resolves_to_nothing() {
-        let path = cargo_bin("rust-analyzer");
-        if !path.exists() {
-            return;
-        }
-        assert_eq!(program_for(&path), None);
+        let Some(path) = uninstalled_proxy() else { return };
+        assert_eq!(program_for(&path), None, "{} has no component behind it", path.display());
     }
 }
