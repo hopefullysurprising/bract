@@ -4,6 +4,23 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.7.0] - 2026-10-10
+
+### Added
+
+- **oclif-based CLIs.** A fifth parser alongside Cobra, Clap, Knack and Usage brings in the Node CLIs built on oclif — Salesforce's `sf`, Heroku's and Shopify's among them — detected from the package that owns the launcher, with no per-tool configuration. Where the CLI ships `@oclif/plugin-commands`, `--spec` reads the whole tree in one call: `sf`'s 381 commands in 3.6s instead of 57s. A plugin added with `<cli> plugins install` shows up once the CLI's own version changes.
+- **A Usage spec newer than bract still reads.** Whatever bract's usage-lib does not know yet is left out and named in the status line in yellow (`ⓘ read without …`), instead of the whole tool disappearing behind "Invalid usage config".
+
+### Changed
+
+- **Remembered form values move to a newer storage format.** The first launch rewrites the form-memory file in place; every count and last value is kept.
+
+### Fixed
+
+- **Mise's own CLI is back.** mise 2026.9 describes itself with newer Usage features, so opening bract anywhere showed "⚠ invalid input: Invalid usage config" and Mise was missing from the tree. It now reads in full, choices included — `mise activate --shell` offers its shells.
+- **Every command tree finishes.** `bract --spec` never ended for kluctl or rclone, and the TUI listed their flags and prose as subcommands. A page that repeats its parent's stops the walk, and every help fetch now runs within a time limit, killing a tool that hangs along with whatever it started.
+- **Clap CLIs read the way clap writes them.** ast-grep no longer shows the last line of its ASCII-art logo as its description or offers an argument named `default:`; watchexec, atlassian-cli and pitchfork commands get their summaries instead of examples and fragments; and clap's own possible-values lists become choices, such as ast-grep's `--strictness`.
+
 ## [0.6.1] - 2026-08-18
 
 ### Changed
