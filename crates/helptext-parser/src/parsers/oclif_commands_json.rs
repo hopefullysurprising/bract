@@ -66,7 +66,7 @@ fn defaults(value: Option<Value>) -> Vec<String> {
 }
 
 fn choices(options: Option<Vec<String>>) -> Option<SpecChoices> {
-    options.map(|choices| SpecChoices { choices })
+    options.map(SpecChoices::new)
 }
 
 fn spec_flag(flag: Flag) -> SpecFlag {

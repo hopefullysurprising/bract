@@ -245,9 +245,9 @@ mod tests {
     }
 
     // mise 2026.9.7's own spec used to fail whole, leaving mise's CLI out of every
-    // project with "Invalid usage config". It loads now, and says what it left out.
+    // project with "Invalid usage config". It loads now, in full.
     #[test]
-    fn mise_s_own_spec_loads_and_says_what_it_left_out() {
+    fn mise_s_own_spec_loads_in_full() {
         let spec = std::fs::read_to_string(
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/usage-kdl/mise_2026.9.7_usage.kdl"),
         )
@@ -255,7 +255,20 @@ mod tests {
         let loaded = UsageSpecSource::with_provider("mise", Box::new(StaticSpecProvider(spec))).load(&[]).unwrap();
 
         assert!(find(&loaded.children, "run").is_some(), "mise run is there");
-        let notice = loaded.notice.expect("a notice says what was left out");
-        assert!(notice.contains("unknown_flags"), "{notice}");
+        assert_eq!(loaded.notice, None, "nothing was left out");
+    }
+
+    // Left short of its spec, a source says so: the status line carries it.
+    #[test]
+    fn a_spec_read_without_part_of_it_says_what() {
+        let spec = std::fs::read_to_string(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/usage-kdl/mise_2026.9.7_usage.kdl"),
+        )
+        .unwrap()
+            + "from_the_future \"a key no usage-lib knows\"\n";
+        let loaded = UsageSpecSource::with_provider("mise", Box::new(StaticSpecProvider(spec))).load(&[]).unwrap();
+
+        assert!(find(&loaded.children, "run").is_some(), "mise run is still there");
+        assert!(loaded.notice.as_deref().unwrap_or_default().contains("from_the_future"), "{:?}", loaded.notice);
     }
 }

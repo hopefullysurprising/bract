@@ -46,20 +46,33 @@ fn read_fixture(name: &str) -> helptext_parser::Parsed {
 }
 
 // mise 2026.9.7 describes itself with features from usage 6 and later —
-// `unknown_flags` first among them. A usage-lib older than the tool rejected the
-// whole spec, and mise's own CLI went missing from every project. What this
-// usage-lib does not know is left out and named; the commands, flags and arguments
-// it does know still read.
+// `unknown_flags`, a flag's `conflicts=` and `overrides`, `choices` written as a
+// block among them. It reads in full: nothing left out, and `mise activate
+// --shell` offers the choices its block lists.
 #[test]
-fn a_spec_newer_than_this_usage_lib_reads_without_what_it_does_not_know() {
+fn todays_mise_spec_reads_in_full() {
     let parsed = read_fixture("mise_2026.9.7_usage.kdl");
 
+    assert!(parsed.skipped.is_empty(), "{:?}", parsed.skipped);
+    let activate = &parsed.spec.cmd.subcommands["activate"];
+    let shell = activate.flags.iter().find(|f| f.long == vec!["shell"]).expect("--shell");
+    let choices = &shell.arg.as_ref().and_then(|a| a.choices.as_ref()).expect("shell offers choices").choices;
+    assert!(choices.contains(&"bash".to_string()));
+}
+
+// A tool newer than this usage-lib used to cost its whole spec: mise 2026.9.7's own
+// went missing from every project until usage-lib caught up. What usage-lib does not
+// know is left out and named; the rest reads. `from_the_future` is invented — no
+// released usage has a key this usage-lib rejects, which is the situation this
+// guards.
+#[test]
+fn a_spec_newer_than_this_usage_lib_reads_without_what_it_does_not_know() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/usage-kdl/mise_2026.9.7_usage.kdl");
+    let spec = std::fs::read_to_string(path).unwrap() + "from_the_future \"a key no usage-lib knows\"\n";
+
+    let parsed = helptext_parser::read(InputFormat::UsageKdl, &spec).expect("the spec reads");
+    assert_eq!(parsed.skipped, ["from_the_future"]);
     for command in ["run", "use", "install", "tasks"] {
         assert!(parsed.spec.cmd.subcommands.contains_key(command), "mise {command} is there");
-    }
-    assert!(!parsed.spec.cmd.subcommands["use"].flags.is_empty(), "mise use keeps its flags");
-    assert!(parsed.skipped.contains(&"unknown_flags".to_string()), "{:?}", parsed.skipped);
-    for structural in ["cmd", "flag", "arg"] {
-        assert!(!parsed.skipped.contains(&structural.to_string()), "{structural} is never left out: {:?}", parsed.skipped);
     }
 }

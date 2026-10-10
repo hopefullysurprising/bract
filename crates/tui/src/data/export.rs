@@ -273,7 +273,7 @@ fn spec_flag(flag: &Flag) -> SpecFlag {
     if let FlagKind::Value { arg_name, default, choices } = &flag.kind {
         let mut arg = SpecArg::builder().name(arg_name.clone()).build();
         if !choices.is_empty() {
-            arg.choices = Some(SpecChoices { choices: choices.clone() });
+            arg.choices = Some(SpecChoices::new(choices.clone()));
         }
         spec.arg = Some(arg);
         if !default.is_empty() {
@@ -293,7 +293,7 @@ fn spec_arg(arg: &Arg) -> SpecArg {
         spec.default = vec![arg.default.clone()];
     }
     if !arg.choices.is_empty() {
-        spec.choices = Some(SpecChoices { choices: arg.choices.clone() });
+        spec.choices = Some(SpecChoices::new(arg.choices.clone()));
     }
     spec
 }

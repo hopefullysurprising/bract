@@ -144,7 +144,7 @@ fn child_name<'a>(entry: &'a str, parent: &str) -> &'a str {
 }
 
 fn choices(list: &str) -> SpecChoices {
-    SpecChoices { choices: list.split('|').map(String::from).collect() }
+    SpecChoices::new(list.split('|'))
 }
 
 /// What oclif writes ahead of a description, in the order it does: an

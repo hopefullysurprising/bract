@@ -126,7 +126,7 @@ fn enrich_flag(flag: &mut SpecFlag) {
     let Some(help) = flag.help.clone() else { return };
     if let Some(choices) = extract_allowed_values(&help)
         && let Some(arg) = flag.arg.as_mut() {
-            arg.choices = Some(usage::SpecChoices { choices });
+            arg.choices = Some(usage::SpecChoices::new(choices));
         }
     if let Some(default) = extract_default(&help) {
         flag.default = vec![default];

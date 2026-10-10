@@ -80,7 +80,7 @@ fn ann_choices(anns: &[(String, String)]) -> Option<SpecChoices> {
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect();
-    (!choices.is_empty()).then_some(SpecChoices { choices })
+    (!choices.is_empty()).then(|| SpecChoices::new(choices))
 }
 
 fn ann_aliases(anns: &[(String, String)]) -> Vec<String> {
@@ -303,7 +303,7 @@ fn enrich_flag(flag: &mut SpecFlag) {
         && let Some((cleaned, values, default)) = extract_possible_values_block(&help)
     {
         help = cleaned;
-        choices = Some(SpecChoices { choices: values });
+        choices = Some(SpecChoices::new(values));
         if flag.default.is_empty()
             && let Some(d) = default
         {
@@ -326,7 +326,7 @@ fn enrich_arg(arg: &mut SpecArg) {
         && let Some((cleaned, values, default)) = extract_possible_values_block(&help)
     {
         help = cleaned;
-        choices = Some(SpecChoices { choices: values });
+        choices = Some(SpecChoices::new(values));
         if arg.default.is_empty()
             && let Some(d) = default
         {
