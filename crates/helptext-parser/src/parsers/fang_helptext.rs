@@ -74,11 +74,8 @@ fn usage_arg(token: &str, has_subcommands: bool) -> Option<SpecArg> {
     };
     let alternatives: Vec<&str> =
         inner.trim_end_matches("...").split('|').map(str::trim).filter(|a| !a.starts_with('-')).collect();
-    let placeholders = alternatives.iter().any(|a| a.starts_with('<'));
-    let names: Vec<String> = alternatives
-        .iter()
-        .map(|a| a.trim_start_matches('<').trim_end_matches("...").trim_end_matches('>').to_string())
-        .collect();
+    let placeholders = alternatives.iter().any(|a| a.contains('<'));
+    let names: Vec<String> = alternatives.iter().map(|a| super::placeholder_name(a)).collect();
     let name = names.join("|");
     let reserved = name == "--flags" || has_subcommands && matches!(name.as_str(), "command" | "subcommand");
     if name.is_empty() || reserved {

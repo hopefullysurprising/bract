@@ -113,15 +113,6 @@ fn split_def_and_description(line: &str) -> (String, Option<String>) {
     (line.to_string(), None)
 }
 
-/// Strip the surrounding `<>`/`[]` brackets and any variadic `...` marker from a
-/// metavar token, yielding the bare placeholder name.
-fn metavar_name(token: &str) -> String {
-    token
-        .replace("...", "")
-        .trim_matches(|c| matches!(c, '<' | '>' | '[' | ']'))
-        .to_string()
-}
-
 /// A custom template's `{name} {version}` line: `zoxide 0.9.9`, `zoxide-query 0.9.9`.
 fn names_its_version(line: &str) -> bool {
     let mut words = line.split_whitespace();
@@ -169,7 +160,7 @@ fn parse_flag_def(def: &str) -> Option<SpecFlag> {
                 None => (rest, None),
             };
             if let Some(value) = optional_value {
-                let mut a = SpecArg::builder().name(metavar_name(value)).build();
+                let mut a = SpecArg::builder().name(super::placeholder_name(value)).build();
                 a.required = false;
                 a.var = value.contains("...");
                 arg = Some(a);
@@ -200,7 +191,7 @@ fn parse_flag_def(def: &str) -> Option<SpecFlag> {
             }
         } else if token.starts_with('<') || token.starts_with('[') {
             // A metavar after the flag names marks a value-taking option.
-            let mut a = SpecArg::builder().name(metavar_name(token)).build();
+            let mut a = SpecArg::builder().name(super::placeholder_name(token)).build();
             a.var = token.contains("...");
             arg = Some(a);
         }
@@ -430,7 +421,7 @@ pub fn parse(content: &str) -> Result<Spec, ParseError> {
                 if is_entry(line) && (t.starts_with('<') || t.starts_with('[')) {
                     let (def, desc) = split_def_and_description(t);
                     let token = def.split_whitespace().next().unwrap_or(&def);
-                    let mut arg = SpecArg::builder().name(metavar_name(token)).build();
+                    let mut arg = SpecArg::builder().name(super::placeholder_name(token)).build();
                     arg.required = token.starts_with('<');
                     arg.var = token.contains("...");
                     arg.help = desc;

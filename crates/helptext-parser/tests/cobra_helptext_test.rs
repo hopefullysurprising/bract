@@ -278,3 +278,21 @@ fn a_usage_on_its_header_line_is_read() {
     assert!(!deploy.cmd.subcommand_required);
     assert_eq!(deploy.cmd.help.as_deref(), Some("Trigger a GitOps deployment"));
 }
+
+fn positionals(spec: &helptext_parser::Spec) -> Vec<(&str, bool)> {
+    spec.cmd.args.iter().map(|a| (a.name.as_str(), a.required)).collect()
+}
+
+// A positional is named by its placeholder alone. A flag written into the usage line
+// (`[-e] [-r]`) is that flag, not a positional, and `<sources>...` is still a positional.
+#[test]
+fn gh_2_92_0_codespace_cp_names_positionals_without_usage_syntax() {
+    assert_eq!(positionals(&cobra("gh_2.92.0_codespace_cp.txt")), [("sources", true), ("dest", true)]);
+}
+
+#[test]
+fn gh_2_92_0_placeholders_lose_their_brackets() {
+    assert_eq!(positionals(&cobra("gh_2.92.0_repo_view.txt")), [("repository", false)]);
+    assert_eq!(positionals(&cobra("gh_2.92.0_skill_install.txt")), [("repository", true), ("skill@version", false)]);
+    assert_eq!(positionals(&cobra("ipsw_3.1.737_macho_bbl.txt")), [("MACHO", true)]);
+}

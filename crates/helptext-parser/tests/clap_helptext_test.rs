@@ -329,3 +329,14 @@ fn clap_s_own_possible_values_list_offers_its_values() {
     assert_eq!(choices, &["cst", "smart", "ast", "relaxed", "signature", "template"]);
     assert!(!strictness.help.as_deref().unwrap_or_default().contains("Possible values"));
 }
+
+// A placeholder with an optional part inside (`[CRATE[@<VER>]]...`) is named without
+// the brackets, rather than cut at the first closing one.
+#[test]
+fn cargo_1_99_0_install_names_its_crate_without_usage_syntax() {
+    let spec = clap("cargo_1.99.0_install.txt");
+    let krate = &spec.cmd.args[0];
+    assert_eq!(krate.name, "CRATE@VER");
+    assert!(!krate.required);
+    assert!(krate.var);
+}

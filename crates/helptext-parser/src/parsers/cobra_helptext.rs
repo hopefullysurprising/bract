@@ -205,6 +205,7 @@ fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
     usage_line
         .split_whitespace()
         .filter_map(|token| {
+            let token = token.trim_end_matches("...");
             let (raw, required) = if let Some(inner) = token.strip_prefix('<').and_then(|s| s.strip_suffix('>')) {
                 (inner, true)
             } else if let Some(inner) = token.strip_prefix('[').and_then(|s| s.strip_suffix(']')) {
@@ -216,12 +217,13 @@ fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
             } else {
                 return None;
             };
-            // Strip a variadic marker so `FILE...` / `[args...]` read cleanly.
-            let name = raw.trim_end_matches("...");
-            if name.is_empty() || reserved.contains(&name.to_lowercase().as_str()) {
+            // A flag written into the usage line (`gh codespace cp [-e] [-r]`) is listed
+            // with the flags, not offered as a positional.
+            let name = super::placeholder_name(raw);
+            if name.is_empty() || name.starts_with('-') || reserved.contains(&name.to_lowercase().as_str()) {
                 return None;
             }
-            let mut arg = SpecArg::builder().name(name.to_string()).build();
+            let mut arg = SpecArg::builder().name(name).build();
             arg.required = required;
             Some(arg)
         })

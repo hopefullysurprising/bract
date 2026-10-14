@@ -15,7 +15,7 @@ description = "Run the workspace test suite"
 run = "cargo test"
 
 [tasks."spec:sweep"]
-description = "Cold --spec of each named tool, in parallel and time-bounded: seconds, commands, and whether it parses back as usage"
+description = "Cold --spec of each named tool, in parallel and time-bounded: seconds, commands, whether it parses back as usage, and any positional it misread"
 usage = '''
 arg "<tool>" var=#true help="A tool on PATH in this repo's mise environment"
 flag "--seconds <n>" default="600" help="Give up on a tool after this long"
@@ -32,9 +32,15 @@ for tool in $usage_tool; do
     status=0
     perl -e 'alarm shift; exec @ARGV' "$usage_seconds" target/debug/bract --tool "$tool" --spec > "tmp/sweep/$tool.kdl" 2> "tmp/sweep/$tool.err" || status=$?
     target/debug/helptext-parser usage-kdl < "tmp/sweep/$tool.kdl" > /dev/null 2>&1 && parse=parses || parse="DOES NOT PARSE"
+    # Parsing back proves the shape, not the reading. A positional named in usage syntax
+    # (`repo|-g <group`) is a misread usage line. Commands without a summary are only
+    # counted: a parser that drops summaries still parses back.
+    positionals=$(perl -ne '$f = 1 if /^\s*flag\s.*\{\s*$/; $f = 0 if $f && /^\s*\}\s*$/; print "$1\n" if !$f && /^\s*arg\s+"[<\[](.*)[>\]](?:\.\.\.)?"/' "tmp/sweep/$tool.kdl")
+    misread=$(printf '%s\n' "$positionals" | { grep -E '[][<>=]|^-' || true; } | sort -u | paste -sd ' ' -)
+    bare=$(grep -E '^ *cmd ' "tmp/sweep/$tool.kdl" | { grep -vc 'help=' || true; })
     [ $status -eq 142 ] && status="timed out"
-    [ "$status" = 0 ] && [ "$parse" = parses ] || touch "tmp/sweep/$tool.failed"
-    echo "$tool: $(( $(date +%s) - start ))s, exit $status, $(grep -cE '^ *cmd ' "tmp/sweep/$tool.kdl") commands, $parse"
+    [ "$status" = 0 ] && [ "$parse" = parses ] && [ -z "$misread" ] || touch "tmp/sweep/$tool.failed"
+    echo "$tool: $(( $(date +%s) - start ))s, exit $status, $(grep -cE '^ *cmd ' "tmp/sweep/$tool.kdl") commands ($bare without a summary), $(printf '%s' "$positionals" | grep -c .) positionals, $parse${misread:+, MISREAD: $misread}"
   ) &
 done
 wait

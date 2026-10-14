@@ -109,6 +109,14 @@ fn glab_1_120_0_repo_clone_keeps_only_positional_alternatives() {
 }
 
 #[test]
+fn glab_1_120_0_repo_delete_names_a_placeholder_with_an_optional_prefix() {
+    let spec = fixture("glab_1.120.0_repo_delete.txt");
+
+    let names: Vec<(&str, bool)> = spec.cmd.args.iter().map(|a| (a.name.as_str(), a.required)).collect();
+    assert_eq!(names, [("NAMESPACE/NAME", false)]);
+}
+
+#[test]
 fn glab_1_120_0_securefile_download_names_its_positional_alternative() {
     let spec = fixture("glab_1.120.0_securefile_download.txt");
 
