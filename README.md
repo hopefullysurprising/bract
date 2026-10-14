@@ -98,7 +98,7 @@ BRACT_GH_REPO_VIEW__JSON=name    # --json for `gh repo view` only
 - **Lazy Miller columns** over your toolchain — a subtree's `--help` is fetched
   only when you open it, on a background thread, then cached against a fingerprint
   of the binary itself, so revisits are immediate and replacing a tool re-reads it.
-- **Parsers per framework, not per tool.** One [Cobra](https://github.com/spf13/cobra) parser covers any Cobra CLI; [Clap](https://docs.rs/clap) covers Rust CLIs; [Knack](https://github.com/microsoft/knack) covers Azure CLI; [oclif](https://oclif.io) covers Node CLIs such as Salesforce's and Heroku's; [Usage](https://usage.jdx.dev) covers mise and usage-based CLIs. New frameworks are added once and light up every tool built on them.
+- **Parsers per framework, not per tool.** One [Cobra](https://github.com/spf13/cobra) parser covers any Cobra CLI, and a [fang](https://github.com/charmbracelet/fang) parser the Cobra CLIs restyled by charm's fang; [Clap](https://docs.rs/clap) covers Rust CLIs; [Knack](https://github.com/microsoft/knack) covers Azure CLI; [oclif](https://oclif.io) covers Node CLIs such as Salesforce's and Heroku's; [Usage](https://usage.jdx.dev) covers mise and usage-based CLIs. New frameworks are added once and light up every tool built on them.
 - **The framework is read from the program**, not guessed from its name — from the binary itself, a Python tool's virtualenv, or the `package.json` that ships a Node CLI — following a multi-call proxy (the `rustup` shims in `~/.cargo/bin`) through to the program that actually runs.
 - **mise is the backbone** for tool versions, task definitions, and environment —
   when you use it.
@@ -122,6 +122,7 @@ end-to-end against the real specs of:
 
 - **Cobra** — `kubectl`, `helm`, `hugo`, `rclone`, `gh`, `devspace`, `mani`, and
   [hundreds more](https://github.com/spf13/cobra/blob/main/site/content/projects_using_cobra.md).
+- **fang** — `glab`, `crush`, `goreleaser`, `nfpm`, `sesh`, `skate`, and `container-use`. fang's help doesn't say which flags are switches, so every flag takes a value: type `true` to turn one on.
 - **Clap** — `cargo`, `bat`, `fd`, `hyperfine`, `zoxide`, `starship`, `samply`,
   `atlassian-cli`, and most of the Rust CLI ecosystem.
 - **Knack** — `az` (Azure CLI).

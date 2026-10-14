@@ -1,0 +1,14 @@
+
+  Clone a git repo and connect to it as a session                                                                       
+         
+  USAGE  
+         
+    sesh clone <repo> [-- <extra git flags>] [--flags]  
+         
+  FLAGS  
+         
+    -c --cmdDir  The directory to run the git command in
+    -C --config  Path to config file
+    -d --dir     The name of the directory that git is creating
+    -h --help    Help for clone
+

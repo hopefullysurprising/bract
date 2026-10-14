@@ -132,6 +132,16 @@ pub fn heroku_source() -> Box<dyn Source> {
     Box::new(HelpToolSource::new("heroku".to_string(), InputFormat::OclifHelptext, Box::new(provider)).with_separator(":"))
 }
 
+pub fn glab_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "glab_1.120.0");
+    Box::new(HelpToolSource::new("glab".to_string(), InputFormat::FangHelptext, Box::new(provider)))
+}
+
+pub fn container_use_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "container-use_0.4.2");
+    Box::new(HelpToolSource::new("container-use".to_string(), InputFormat::FangHelptext, Box::new(provider)))
+}
+
 /// Serves a whole-tree dump from a fixture.
 pub struct FixtureSpecProvider(pub PathBuf);
 

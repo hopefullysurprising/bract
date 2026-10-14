@@ -1,0 +1,30 @@
+
+  Container Use creates isolated development environments for AI agents.                                                
+  Each environment runs in its own container with dedicated git branches.                                               
+         
+  USAGE  
+         
+    container-use [command] [--flags]  
+            
+  COMMANDS  
+            
+    apply [<env>] [--flags]                                    Apply an environment's work as staged changes to your branch
+    checkout [<env>] [--flags]                                 Switch to an environment's branch locally
+    completion [command] [bash|zsh|fish|powershell] [--flags]  Generate the autocompletion script for the specified shell
+    config [command]                                           Manage environment configuration
+    delete [<env>...] [--flags]                                Delete environments and start fresh
+    diff [<env>]                                               Show what files an agent changed
+    help [command]                                             Help about any command
+    list [--flags]                                             List all environments
+    log [<env>] [--flags]                                      View what an agent did step-by-step
+    merge [<env>] [--flags]                                    Accept an environment's work into your branch
+    stdio [--flags]                                            Start MCP server for agent integration
+    terminal [<env>]                                           Get a shell inside an environment's container
+    version [--flags]                                          Print version information
+    watch                                                      Watch environment activity in real-time
+         
+  FLAGS  
+         
+    -h --help                                                  Help for container-use
+    -v --version                                               Version for container-use
+

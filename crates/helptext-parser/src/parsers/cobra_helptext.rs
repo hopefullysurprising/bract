@@ -184,7 +184,7 @@ fn parse_flag_line(line: &str) -> Option<SpecFlag> {
 /// A bare UPPERCASE token (e.g. `NAME`, `TYPE`, `FILE`) — Cobra's convention for
 /// a positional placeholder. Requires at least one uppercase letter so `--` and
 /// short flags don't qualify; allows `_`/`-` and a trailing `...`.
-fn is_metavar(token: &str) -> bool {
+pub(crate) fn is_metavar(token: &str) -> bool {
     let core = token.trim_end_matches("...");
     core.len() >= 2
         && core.chars().any(|c| c.is_ascii_uppercase())
@@ -228,7 +228,7 @@ fn parse_usage_args(usage_line: &str, has_subcommands: bool) -> Vec<SpecArg> {
         .collect()
 }
 
-fn split_flag_and_description(line: &str) -> (String, Option<String>) {
+pub(crate) fn split_flag_and_description(line: &str) -> (String, Option<String>) {
     let bytes = line.as_bytes();
     let mut i = 0;
     while i < bytes.len() {

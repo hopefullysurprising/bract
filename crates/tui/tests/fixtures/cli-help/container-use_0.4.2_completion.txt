@@ -1,0 +1,22 @@
+
+  Generate the autocompletion script for container-use for the specified shell.                                         
+  See each sub-command's help for details on how to use the generated script.                                           
+                                                                                                                        
+  Use --command-name to generate completions for a different command name (e.g., 'cu').                                 
+         
+  USAGE  
+         
+    container-use completion [command] [bash|zsh|fish|powershell] [--flags]  
+            
+  COMMANDS  
+            
+    bash            Generate the autocompletion script for bash
+    fish            Generate the autocompletion script for fish
+    powershell      Generate the autocompletion script for powershell
+    zsh             Generate the autocompletion script for zsh
+         
+  FLAGS  
+         
+    --command-name  Command name to use in completions (container-use)
+    -h --help       Help for completion
+

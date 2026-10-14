@@ -1,0 +1,17 @@
+
+  Set a value for a key with an optional @ db. If VALUE is omitted, read value from the standard input.                 
+         
+  USAGE  
+         
+    skate set KEY [@DB] [VALUE] [--flags]  
+            
+  EXAMPLES  
+            
+    skate set foo bar                      
+    skate set foo <./bar.txt               
+         
+  FLAGS  
+         
+    -h --help  Help for set
+    --store    Path to the Skate store (defaults to SKATE_STORE or the user data directory)
+

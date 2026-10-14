@@ -144,9 +144,12 @@ impl Walk {
 
         if let Ok(loaded) = outcome.loaded {
             let mut cmd = SpecCommand::builder().name(node.name).build();
-            if !loaded.description.is_empty() {
-                cmd.help = Some(loaded.description);
-            }
+            // As in the tree: a page without a summary of its own keeps its listing's.
+            cmd.help = if loaded.description.is_empty() {
+                self.stubs[node.tool].get(&node.path).and_then(|stub| stub.help.clone())
+            } else {
+                Some(loaded.description)
+            };
             cmd.flags = loaded.flags.iter().map(spec_flag).collect();
             cmd.args = loaded.args.iter().map(spec_arg).collect();
             cmd.subcommand_required = !loaded.runnable;

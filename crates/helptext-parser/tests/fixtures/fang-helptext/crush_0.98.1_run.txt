@@ -1,0 +1,55 @@
+
+  Run a single prompt in non-interactive mode and exit.                                                                 
+  The prompt can be provided as arguments or piped from stdin.                                                          
+         
+  USAGE  
+         
+    crush run [prompt...] [--flags]                                        
+            
+  EXAMPLES  
+            
+    # Run a simple prompt                                                  
+    crush run "Guess my 5 favorite Pokémon"                                
+                                                                           
+    # Pipe input from stdin                                                
+    curl https://charm.land | crush run "Summarize this website"           
+                                                                           
+    # Read from a file                                                     
+    crush run "What is this code doing?" <<< prrr.go                       
+                                                                           
+    # Redirect output to a file                                            
+    crush run "Generate a hot README for this project" > MY_HOT_README.md  
+                                                                           
+    # Run in quiet mode (hide the spinner)                                 
+    crush run --quiet "Generate a README for this project"                 
+                                                                           
+    # Run in verbose mode (show logs)                                      
+    crush run --verbose "Generate a README for this project"               
+                                                                           
+    # Use a specific reasoning effort                                      
+    # Levels depend on the model, unsupported values are rejected          
+    # with the accepted values listed                                      
+    crush run --reasoning-effort high "What is the meaning of life?"       
+                                                                           
+    # Continue a previous session                                          
+    crush run --session {session-id} "Follow up on your last response"     
+                                                                           
+    # Continue the most recent session                                     
+    crush run --continue "Follow up on your last response"                 
+                                                                           
+         
+  FLAGS  
+         
+    -C --continue       Continue the most recent session
+    -c --cwd            Current working directory
+    -D --data-dir       Custom crush data directory
+    -d --debug          Debug
+    -h --help           Help for run
+    -H --host           Connect to a specific crush server host (for advanced users) (unix:///var/folders/vt/rs7pp1ys4v5_7w3dpbns_cv40000gn/T/crush-501.sock)
+    -m --model          Model to use. Accepts 'model' or 'provider/model' to disambiguate models with the same name across providers
+    -q --quiet          Hide spinner
+    --reasoning-effort  Reasoning effort for the model (e.g. low, medium, high). Levels depend on the model; unsupported values are rejected with the accepted values listed
+    -s --session        Continue a previous session by ID
+    --small-model       Small model to use. If not provided, uses the default small model for the provider
+    -v --verbose        Show logs
+

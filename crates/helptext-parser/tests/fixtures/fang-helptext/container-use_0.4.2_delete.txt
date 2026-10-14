@@ -1,0 +1,27 @@
+
+  Delete one or more environments and their associated resources.                                                       
+  This permanently removes the environment's branch and container state.                                                
+  Use this when starting over with a different approach.                                                                
+                                                                                                                        
+  Use --all to delete all environments at once.                                                                         
+         
+  USAGE  
+         
+    container-use delete [<env>...] [--flags]  
+            
+  EXAMPLES  
+            
+    # Delete a single environment              
+    container-use delete fancy-mallard         
+                                               
+    # Delete multiple environments at once     
+    container-use delete env1 env2 env3        
+                                               
+    # Delete all environments                  
+    container-use delete --all                 
+         
+  FLAGS  
+         
+    --all      Delete all environments
+    -h --help  Help for delete
+

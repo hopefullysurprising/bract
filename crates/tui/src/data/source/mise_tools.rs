@@ -2,7 +2,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use helptext_parser::{InputFormat, SpecCommand};
 use serde::Deserialize;
@@ -141,6 +141,8 @@ pub struct HelpToolSource {
     tool_id: String,
     binary: String,
     format: InputFormat,
+    /// `format` as the root page bore it out, settled the first time any page loads.
+    confirmed: OnceLock<InputFormat>,
     help_provider: Box<dyn HelpProvider>,
     separator: String,
     whole_tree: Option<(InputFormat, Arc<dyn SpecProvider>)>,
@@ -170,6 +172,7 @@ impl HelpToolSource {
             tool_id,
             binary,
             format,
+            confirmed: OnceLock::new(),
             help_provider,
             separator: " ".into(),
             whole_tree: None,
@@ -287,7 +290,13 @@ impl Source for HelpToolSource {
         let invocation = self.invocation(command_path);
         let path_refs: Vec<&str> = invocation.iter().map(String::as_str).collect();
         let content = self.help_provider.fetch_help(&self.binary, &path_refs)?;
-        let spec = helptext_parser::parse(self.format, &content)?;
+        let format = *self.confirmed.get_or_init(|| {
+            self.format.confirm(|| match command_path {
+                [] => Some(content.clone()),
+                _ => self.help_provider.fetch_help(&self.binary, &[]).ok(),
+            })
+        });
+        let spec = helptext_parser::parse(format, &content)?;
 
         // A child answered with its parent's page, byte for byte, is not a page about the
         // child, and taking its children grows the tree again beneath it, level after
@@ -411,6 +420,26 @@ mod page_guard_tests {
         source.load(&[]).unwrap();
         let ai = source.load(&path(&["ai"])).unwrap();
         assert!(ai.children.iter().any(|c| c.name == "completion"), "{:?}", ai.children.iter().map(|c| &c.name).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn a_tool_linking_fang_is_read_as_fang_when_its_root_page_is_fangs() {
+        let source = HelpToolSource::new("glab".into(), InputFormat::FangHelptext, Box::new(Pages(vec![(vec![], "glab_1.120.0_root.txt")])));
+        assert_eq!(source.load(&[]).unwrap().children.len(), 48);
+    }
+
+    // A binary can link fang without its help going through it. The root page settles
+    // the reading for every page, even when a deeper one is asked for first.
+    #[test]
+    fn a_tool_linking_fang_whose_root_page_is_cobras_own_is_read_as_cobra() {
+        let pages = || Pages(vec![(vec![], "mani_0.32.0_root.txt"), (vec!["run"], "mani_0.32.0_run.txt")]);
+
+        let root_first = HelpToolSource::new("mani".into(), InputFormat::FangHelptext, Box::new(pages()));
+        assert_eq!(root_first.load(&[]).unwrap().children.len(), 5);
+        assert!(!root_first.load(&path(&["run"])).unwrap().flags.is_empty());
+
+        let child_first = HelpToolSource::new("mani".into(), InputFormat::FangHelptext, Box::new(pages()));
+        assert!(!child_first.load(&path(&["run"])).unwrap().flags.is_empty());
     }
 }
 

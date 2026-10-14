@@ -1,7 +1,7 @@
 mod common;
 
 use bract::data::export::usage_specs;
-use common::{gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source, sf_dump_source};
+use common::{container_use_source, glab_source, gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source, sf_dump_source};
 use helptext_parser::InputFormat;
 #[cfg(unix)]
 use std::time::{Duration, Instant};
@@ -182,4 +182,30 @@ fn a_cli_listing_all_its_commands_is_read_from_that_list() {
     let edition = scratch.flags.iter().find(|f| f.long.iter().any(|l| l == "edition")).expect("--edition");
     let choices = edition.arg.as_ref().and_then(|a| a.choices.as_ref()).expect("edition offers choices");
     assert!(choices.choices.contains(&"developer".to_string()));
+}
+
+fn round_trip(source: Box<dyn bract::data::source::Source>) -> helptext_parser::Spec {
+    let rendered = format!("{}", usage_specs(vec![source])[0]);
+    helptext_parser::parse(InputFormat::UsageKdl, &rendered).unwrap_or_else(|e| panic!("emitted spec must parse: {e}\n---\n{rendered}"))
+}
+
+// A fang page offers no summary of its own command — it prints the long description
+// when there is one — so the summary is the one its parent's listing gave.
+#[test]
+fn a_command_whose_page_has_no_summary_keeps_its_listings() {
+    let spec = round_trip(glab_source());
+
+    let mr = &spec.cmd.subcommands["mr"];
+    assert_eq!(mr.help.as_deref(), Some("Create, view, and manage merge requests."));
+    assert_eq!(mr.subcommands["approve"].help.as_deref(), Some("Approve merge requests."));
+    assert!(mr.subcommands["approve"].args.iter().any(|a| a.name == "id|branch"), "one of two placeholders keeps a name usage reads");
+}
+
+#[test]
+fn a_positional_argument_keeps_its_choices() {
+    let spec = round_trip(container_use_source());
+
+    let shell = &spec.cmd.subcommands["completion"].args[0];
+    let choices = shell.choices.as_ref().expect("completion offers its shells");
+    assert_eq!(choices.choices, ["bash", "zsh", "fish", "powershell"]);
 }
