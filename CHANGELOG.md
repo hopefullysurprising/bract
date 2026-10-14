@@ -4,6 +4,12 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.8.0] - 2026-10-14
+
+### Added
+
+- **CLIs built with charm's fang.** glab showed only its root node, because fang restyles Cobra's help in a layout the Cobra parser could not read. A sixth parser now reads it. bract picks it when the binary links fang and confirms that against the tool's first help page. glab shows all 307 commands, and crush, goreleaser, nfpm, sesh, skate and container-use read in full too. fang prints no flag types, so every flag takes a value: type `true` to turn a switch on.
+
 ## [0.7.0] - 2026-10-10
 
 ### Added
