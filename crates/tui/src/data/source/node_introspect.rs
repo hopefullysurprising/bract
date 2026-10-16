@@ -78,6 +78,45 @@ fn owning_manifest(invoked: &OsStr, program: &Path) -> Option<PathBuf> {
         .find(|manifest| read_json(manifest).is_some_and(|p| declares_bin(&p, invoked)))
 }
 
+/// npm's names for the host, as platform packages declare them in `os` and `cpu`.
+fn host_platform() -> (&'static str, &'static str) {
+    let os = match std::env::consts::OS {
+        "macos" => "darwin",
+        "windows" => "win32",
+        other => other,
+    };
+    let cpu = match std::env::consts::ARCH {
+        "aarch64" => "arm64",
+        "x86_64" => "x64",
+        other => other,
+    };
+    (os, cpu)
+}
+
+fn declares_host(package: &Value, field: &str, host: &str) -> bool {
+    package.get(field).and_then(Value::as_array).is_some_and(|values| values.iter().any(|v| v == host))
+}
+
+/// The native binary a launcher script hands over to. Such a package ships one
+/// optional dependency per platform, each declaring the `os` and `cpu` it runs
+/// on; the one matching this host holds the binary under the launcher's own name.
+pub fn native_binary(invoked: &OsStr, program: &Path) -> Option<PathBuf> {
+    let manifest = owning_manifest(invoked, program)?;
+    let root = manifest.parent()?;
+    let (os, cpu) = host_platform();
+    let name = invoked.to_str()?;
+    read_json(&manifest)?
+        .get("optionalDependencies")?
+        .as_object()?
+        .keys()
+        .filter_map(|dependency| {
+            root.ancestors().map(|dir| dir.join("node_modules").join(dependency)).find(|dir| dir.join("package.json").is_file())
+        })
+        .filter(|dir| read_json(&dir.join("package.json")).is_some_and(|p| declares_host(&p, "os", os) && declares_host(&p, "cpu", cpu)))
+        .flat_map(|dir| [dir.join("bin").join(name), dir.join(name), dir.join("bin").join(format!("{name}.exe")), dir.join(format!("{name}.exe"))])
+        .find(|candidate| candidate.is_file())
+}
+
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
@@ -143,6 +182,48 @@ mod tests {
         executable(&dir.path().join("node_modules/.bin/shopify"), "#!/bin/sh\nexec node \"$basedir/../@shopify/cli/bin/run.js\" \"$@\"\n");
 
         assert!(detect(&dir.path().join("node_modules/.bin/shopify")).is_some());
+    }
+
+    const CLAP: &str = "padding clap_builder-4.6.0 padding";
+
+    fn platform_package(root: &Path, name: &str, os: &str, cpu: &str, binary: &str) {
+        write(&root.join("node_modules").join(name).join("package.json"), &format!(r#"{{"name":"{name}","os":["{os}"],"cpu":["{cpu}"]}}"#));
+        executable(&root.join("node_modules").join(name).join("bin").join(binary), CLAP);
+    }
+
+    fn native_launcher(root: &Path) -> PathBuf {
+        write(
+            &root.join("package.json"),
+            r#"{"name":"search-cli","bin":{"sx":"bin/sx.js"},"optionalDependencies":{"search-cli-plan9":"1","search-cli-host":"1"}}"#,
+        );
+        executable(&root.join("bin/sx.js"), "#!/usr/bin/env node\n");
+        symlink(root.join("bin/sx.js"), root.join("bin/sx")).unwrap();
+        root.join("bin/sx")
+    }
+
+    // bx, esbuild, biome: the launcher spawns a native binary shipped by whichever
+    // optional dependency matches the host. The framework is the binary's.
+    #[test]
+    fn a_launcher_for_a_native_binary_is_classified_from_the_binary() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = native_launcher(dir.path());
+        let (os, cpu) = host_platform();
+        platform_package(dir.path(), "search-cli-plan9", "plan9", "mips", "sx");
+        platform_package(dir.path(), "search-cli-host", os, cpu, "sx");
+
+        let (format, program) = classify::program_and_format(&launcher).expect("the binary behind the launcher is clap");
+        assert_eq!(format, InputFormat::ClapHelptext);
+        assert_eq!(program, dir.path().join("node_modules/search-cli-host/bin/sx").canonicalize().unwrap());
+    }
+
+    // A platform package for another machine holds a binary that cannot run here.
+    #[test]
+    fn a_launcher_whose_only_binary_is_for_another_platform_is_not_claimed() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = native_launcher(dir.path());
+        platform_package(dir.path(), "search-cli-plan9", "plan9", "mips", "sx");
+
+        assert!(classify::program_and_format(&launcher).is_none());
     }
 
     #[test]

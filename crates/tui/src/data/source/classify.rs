@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use helptext_parser::InputFormat;
 
-use super::node_introspect::OclifPackage;
+use super::node_introspect::{self, OclifPackage};
 use super::{dispatcher, go_buildinfo, python_introspect, rust_clap_introspect};
 
 /// The framework of the program at `path`, together with the file the framework
@@ -27,8 +27,12 @@ pub fn program_and_format(path: &Path) -> Option<(InputFormat, PathBuf)> {
     if let Some(format) = detect_format(&program) {
         return Some((format, program));
     }
-    let package = OclifPackage::of(path.file_name()?, &program)?;
-    Some((InputFormat::OclifHelptext, package.manifest))
+    let invoked = path.file_name()?;
+    if let Some(package) = OclifPackage::of(invoked, &program) {
+        return Some((InputFormat::OclifHelptext, package.manifest));
+    }
+    let native = node_introspect::native_binary(invoked, &program)?;
+    Some((detect_format(&native)?, native))
 }
 
 /// Go binaries are introspected via buildinfo (Cobra, styled by fang where it is
