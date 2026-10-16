@@ -28,15 +28,26 @@ consult it at all.
 ## Install
 
 ```sh
+brew install hopefullysurprising/tap/bract   # Homebrew (macOS, Linux)
 mise use "github:hopefullysurprising/bract@latest"
+cargo install bract --locked                  # compiles from source
 ```
 
-Or grab a binary for your platform from the
-[Releases](https://github.com/hopefullysurprising/bract/releases) page — macOS,
-Linux and Windows, on both Arm and x86-64.
+Or use the installer script — macOS and Linux:
 
-Either way bract is a single self-contained executable: no toolchain, no runtime,
-nothing to install alongside it.
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/hopefullysurprising/bract/releases/latest/download/bract-installer.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/hopefullysurprising/bract/releases/latest/download/bract-installer.ps1 | iex"
+```
+
+Or grab a binary for your platform from the [Releases](https://github.com/hopefullysurprising/bract/releases) page — macOS, Linux and Windows, on both Arm and x86-64.
+
+Every way gives you a single self-contained executable: no runtime, nothing to install alongside it. Only `cargo install` needs a Rust toolchain, since it builds bract on your machine.
 
 ## Use
 
