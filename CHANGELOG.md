@@ -4,6 +4,18 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.9.0] - 2026-10-16
+
+### Added
+
+- **Install with Homebrew, a shell installer or cargo.** `brew install hopefullysurprising/tap/bract` installs from the new tap, `curl … | sh` (or the PowerShell equivalent on Windows) from the installer attached to each release, and `cargo install bract` builds from crates.io. `helptext-parser` is now published there too, as a dependency of bract.
+- **Node launchers for native CLIs.** bx, the Brave Search CLI, was refused because its npm package is a thin script that hands over to a native binary, and bract read the script. When the launcher is not oclif, bract now finds the optional dependency built for this machine and reads the framework from the binary inside it. esbuild and biome ship the same way.
+
+### Fixed
+
+- **The cursor comes back after bract runs a command.** It stayed hidden in the shell afterwards, because the terminal was never given the chance to show it again. It now reappears before the command starts.
+- **Positional names no longer carry usage syntax.** gh, ipsw, cargo and glab showed names like `<repository>`, `[-e]` or `CRATE[@<VER`; they now read `repository`, `CRATE@VER` and `NAMESPACE/NAME`, and a variadic `<sources>...` is no longer dropped. A renamed positional loses its remembered form value once, since memory is keyed by field name.
+
 ## [0.8.0] - 2026-10-14
 
 ### Added
