@@ -51,6 +51,7 @@ pub fn run_main(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut terminal = ratatui::init();
     let result = run_loop(&mut app, &mut terminal);
+    let _ = terminal.show_cursor();
     ratatui::restore();
 
     match result? {
