@@ -1,0 +1,46 @@
+name: Check published crates
+
+# Nothing is released until this passes. publish-crates skips a version crates.io already
+# has, so that version's sources in the tree must be the ones crates.io serves — or bract
+# would publish against a stale copy of its own parser.
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+jobs:
+  check-crates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Every version already on crates.io matches the tree
+        shell: bash
+        run: |
+          agent="bract-release (github.com/hopefullysurprising/bract)"
+          work=$(mktemp -d)
+          for crate in helptext-parser bract; do
+            version=$(cargo metadata --no-deps --format-version 1 | jq -r --arg c "$crate" '.packages[] | select(.name == $c) | .version')
+            status=$(curl -s -o /dev/null -w '%{http_code}' -A "$agent" "https://crates.io/api/v1/crates/$crate/$version")
+            case $status in
+              404) echo "$crate $version is not on crates.io yet"; continue ;;
+              200) ;;
+              *) echo "::error::crates.io answered $status for $crate $version"; exit 1 ;;
+            esac
+            curl -sfL -A "$agent" -o "$work/$crate.crate" "https://crates.io/api/v1/crates/$crate/$version/download"
+            cargo package -p "$crate" --no-verify --allow-dirty --quiet
+            mkdir "$work/published-$crate" "$work/local-$crate"
+            tar -xzf "$work/$crate.crate" -C "$work/published-$crate"
+            tar -xzf "target/package/$crate-$version.crate" -C "$work/local-$crate"
+            # cargo rewrites Cargo.toml and resolves Cargo.lock afresh; Cargo.toml.orig is the
+            # manifest as written.
+            if ! diff -r -x .cargo_vcs_info.json -x Cargo.toml -x Cargo.lock "$work/published-$crate" "$work/local-$crate"; then
+              echo "::error::$crate $version is already on crates.io with other sources: bump its version"
+              exit 1
+            fi
+            echo "$crate $version on crates.io matches the tree"
+          done

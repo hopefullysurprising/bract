@@ -136,7 +136,4 @@ Cargo workspace with crates in `crates/`. Current crates:
 
 ## Releasing
 
-Run `/release <patch|minor|major>`. It bumps `crates/tui/Cargo.toml`, refreshes
-`Cargo.lock`, adds the `## [X.Y.Z]` section that dist publishes as the GitHub
-Release body, commits as `chore: release X.Y.Z`, then tags `vX.Y.Z` and pushes.
-The tag push is what triggers the build.
+Run `/release <patch|minor|major>`. It bumps `crates/tui/Cargo.toml` — and `helptext-parser` when that crate changed since the last tag — refreshes `Cargo.lock`, and adds the `## [X.Y.Z]` section that dist publishes as the GitHub Release body. It then stops for review in crit; on approval it commits as `chore: release X.Y.Z`, tags `vX.Y.Z` and pushes. The tag push is what triggers the build.

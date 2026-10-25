@@ -11,5 +11,8 @@ ci = "github"
 installers = ["shell", "powershell", "homebrew"]
 tap = "hopefullysurprising/homebrew-tap"
 publish-jobs = ["homebrew", "./publish-crates"]
+# A global-artifacts job, not a plan job: `host` runs over skipped builds, so only a failure
+# here keeps the release, the formula and the crates from going out.
+global-artifacts-jobs = ["./check-crates"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "aarch64-pc-windows-msvc", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
