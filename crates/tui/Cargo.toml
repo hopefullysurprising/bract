@@ -1,6 +1,6 @@
 [package]
 name = "bract"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2024"
 rust-version = "1.95"
 license = "GPL-3.0-only"
@@ -13,7 +13,7 @@ readme = "../../README.md"
 clap = { workspace = true }
 dirs = "7"
 goblin = "0.10"
-helptext-parser = { path = "../helptext-parser", version = "0.1.0" }
+helptext-parser = { path = "../helptext-parser", version = "0.2.0" }
 ratatui = "0.30.0"
 redb = "4"
 # Only to upgrade form memory written by bract 0.6.1 and earlier.
@@ -27,7 +27,7 @@ libc = "0.2"
 
 [dev-dependencies]
 criterion = "0.8"
-helptext-parser = { path = "../helptext-parser", version = "0.1.0" }
+helptext-parser = { path = "../helptext-parser", version = "0.2.0" }
 insta = "1.43"
 tempfile = "3"
 

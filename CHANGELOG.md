@@ -4,6 +4,16 @@ Notable changes to bract. This file is the source of GitHub Release notes —
 [dist](https://opensource.axo.dev/cargo-dist/) parses the section whose heading
 matches the released version.
 
+## [0.10.0] - 2026-10-25
+
+### Added
+
+- **CLIs built on HashiCorp's cli: OpenTofu, Terraform, Vault, Consul, Nomad and Packer.** A seventh parser now reads them, picked when the binary actually runs that framework. All six read in full — nomad's 231 commands, consul's 142, vault's 141, terraform's 70, tofu's 40 and packer's 15 — with their flags, positionals, and choices where the help lists them. Flags show with two dashes, `--lock` for `-lock`: Go reads both the same.
+
+### Fixed
+
+- **Packer is no longer mistaken for a Cobra CLI.** Its binary lists Cobra among the modules it links without ever calling it, so bract read Packer's help as Cobra's and showed no subcommands. bract now goes by the framework a binary actually runs, and Packer opens with all its commands.
+
 ## [0.9.0] - 2026-10-16
 
 ### Added
