@@ -15,6 +15,21 @@ pub fn read_deps(binary_path: &Path) -> Option<Vec<GoDep>> {
     parse_buildinfo(section_data)
 }
 
+/// Whether the program links `function`, named in full: `github.com/spf13/cobra.(*Command).ExecuteC`.
+/// The linker drops every function nothing calls and keeps the name of each one it
+/// links, stripped binary or not — so it tells a module the program runs apart from
+/// one it merely lists in buildinfo.
+pub fn links_function(binary_path: &Path, function: &str) -> bool {
+    std::fs::read(binary_path).is_ok_and(|data| names_function(&data, function))
+}
+
+/// Function names sit NUL-terminated in the pclntab, so `(*CLI).Run` must not match
+/// `(*CLI).RunResult`.
+fn names_function(data: &[u8], function: &str) -> bool {
+    let needle = [function.as_bytes(), b"\0"].concat();
+    data.windows(needle.len()).any(|window| window == needle)
+}
+
 fn find_buildinfo_section(data: &[u8]) -> Option<&[u8]> {
     let object = Object::parse(data).ok()?;
     match object {
@@ -206,6 +221,25 @@ mod tests {
         let deps = read_deps(&path).expect("should parse buildinfo");
         assert!(has_dep(&deps, "github.com/urfave/cli"));
         assert!(!has_dep(&deps, "github.com/spf13/cobra"));
+    }
+
+    #[test]
+    fn a_function_matches_only_by_its_whole_name() {
+        let data = b"\0github.com/mitchellh/cli.(*CLI).RunResult\0github.com/mitchellh/cli.(*CLI).IsHelp\0";
+        assert!(!names_function(data, "github.com/mitchellh/cli.(*CLI).Run"));
+        assert!(names_function(data, "github.com/mitchellh/cli.(*CLI).IsHelp"));
+    }
+
+    // Packer's buildinfo lists Cobra, yet only mitchellh/cli's dispatcher survived linking.
+    #[test]
+    fn packer_lists_cobra_but_links_mitchellh_clis_dispatcher() {
+        let path = mise_install_path("packer/1.16.2/packer");
+        if !path.exists() {
+            return;
+        }
+        assert!(has_dep(&read_deps(&path).expect("should parse buildinfo"), "github.com/spf13/cobra"));
+        assert!(links_function(&path, "github.com/mitchellh/cli.(*CLI).Run"));
+        assert!(!links_function(&path, "github.com/spf13/cobra.(*Command).ExecuteC"));
     }
 
     #[test]

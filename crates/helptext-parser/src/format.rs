@@ -14,6 +14,7 @@ pub enum InputFormat {
     OclifHelptext,
     OclifCommandsJson,
     FangHelptext,
+    HashicorpCliHelptext,
 }
 
 impl InputFormat {
@@ -35,6 +36,7 @@ impl InputFormat {
             InputFormat::UsageKdl => parsers::usage_kdl::parse(content),
             InputFormat::CobraHelptext => parsers::cobra_helptext::parse(content),
             InputFormat::FangHelptext => parsers::fang_helptext::parse(content),
+            InputFormat::HashicorpCliHelptext => parsers::hashicorp_cli_helptext::parse(content),
             InputFormat::KnackHelptext => parsers::knack_helptext::parse(content),
             InputFormat::ClapHelptext => parsers::clap_helptext::parse(content),
             InputFormat::OclifHelptext => parsers::oclif_helptext::parse(content),
@@ -58,7 +60,7 @@ mod tests {
             .collect();
         assert_eq!(
             values,
-            ["usage-kdl", "cobra-helptext", "knack-helptext", "clap-helptext", "oclif-helptext", "oclif-commands-json", "fang-helptext"]
+            ["usage-kdl", "cobra-helptext", "knack-helptext", "clap-helptext", "oclif-helptext", "oclif-commands-json", "fang-helptext", "hashicorp-cli-helptext"]
         );
     }
 }

@@ -167,7 +167,9 @@ pub(crate) fn is_executable(path: &std::path::Path) -> bool {
 pub(crate) fn convert_flags(spec_flags: &[SpecFlag]) -> Vec<Flag> {
     spec_flags
         .iter()
-        .filter(|f| !f.hide && !f.global && f.name != "help" && f.name != "version")
+        // A framework's own `--help` and `--version` are switches; `vault kv get
+        // -version=<int>` takes a value and is the command's.
+        .filter(|f| !f.hide && !f.global && !(f.arg.is_none() && matches!(f.name.as_str(), "help" | "version")))
         .map(|f| {
             let display_name = f
                 .long

@@ -117,6 +117,7 @@ Cargo workspace with crates in `crates/`. Current crates:
 - Cobra parser: positional args are extracted from the usage line (`<required>`, `[optional]`), not from flag definitions — reserved tokens (`flags`, `command`) are filtered out
 - Go buildinfo: the mod_info blob contains 16-byte binary sentinels (start/end) that are NOT valid UTF-8 — strip them before converting to `str`
 - Go buildinfo: only supports the inline format (`flagsVersionInl`, Go ≥1.18) — pre-1.18 binaries use pointer-based format which requires virtual address resolution
+- Go buildinfo lists modules a binary links, not the framework it runs: packer lists Cobra but dispatches with mitchellh/cli. Confirm the dispatcher survived linking with `go_buildinfo::links_function`
 - `goblin` Mach-O: `segment.sections()` returns `Result<Vec<(Section, SectionData)>>` — use `.ok()?` not `?` inside `Option`-returning functions
 
 ## Useful commands

@@ -1,0 +1,6 @@
+This command is accessed by using one of the subcommands below.
+
+Subcommands:
+    get-config    Returns the configuration of the autopilot subsystem under integrated storage
+    set-config    Modify the configuration of the autopilot subsystem under integrated storage
+    state         Displays the state of the raft cluster under integrated storage as seen by autopilot

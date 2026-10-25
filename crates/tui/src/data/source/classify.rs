@@ -35,15 +35,24 @@ pub fn program_and_format(path: &Path) -> Option<(InputFormat, PathBuf)> {
     Some((detect_format(&native)?, native))
 }
 
-/// Go binaries are introspected via buildinfo (Cobra, styled by fang where it is
-/// linked); Rust binaries via clap's embedded registry-path strings (Clap); Python
-/// entry points via their virtualenv's installed packages.
+/// mitchellh/cli lives on as hashicorp/cli, the same code under a new module path.
+const HASHICORP_CLI: [&str; 2] = ["github.com/mitchellh/cli", "github.com/hashicorp/cli"];
+
+/// Go binaries are introspected via buildinfo (HashiCorp's cli, or Cobra styled by
+/// fang where it is linked); Rust binaries via clap's embedded registry-path strings
+/// (Clap); Python entry points via their virtualenv's installed packages.
 fn detect_format(program: &Path) -> Option<InputFormat> {
-    if let Some(deps) = go_buildinfo::read_deps(program)
-        && deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
+    if let Some(deps) = go_buildinfo::read_deps(program) {
+        // packer lists Cobra in its buildinfo without ever calling it: a module is the
+        // framework only where its dispatcher survived linking.
+        if deps.iter().any(|d| HASHICORP_CLI.contains(&d.path.as_str()) && go_buildinfo::links_function(program, &format!("{}.(*CLI).Run", d.path))) {
+            return Some(InputFormat::HashicorpCliHelptext);
+        }
+        if deps.iter().any(|d| d.path == "github.com/spf13/cobra") {
             let fang = deps.iter().any(|d| is_fang(&d.path));
             return Some(if fang { InputFormat::FangHelptext } else { InputFormat::CobraHelptext });
         }
+    }
     if rust_clap_introspect::detect_clap_version(program).is_some() {
         return Some(InputFormat::ClapHelptext);
     }
@@ -140,6 +149,16 @@ mod tests {
     fn a_cobra_cli_not_linking_fang_stays_cobra() {
         if let Some(program) = mise_install("github-blacktop-ipsw/3.1.737/ipsw") {
             assert_eq!(detect_format(&program), Some(InputFormat::CobraHelptext));
+        }
+    }
+
+    // Each of the framework's two homes, and packer, whose buildinfo also lists Cobra.
+    #[test]
+    fn a_cli_dispatching_with_hashicorps_cli_is_read_as_such() {
+        for path in ["opentofu/1.12.6/tofu", "vault/2.2.1/vault", "packer/1.16.2/packer"] {
+            if let Some(program) = mise_install(path) {
+                assert_eq!(detect_format(&program), Some(InputFormat::HashicorpCliHelptext), "{path}");
+            }
         }
     }
 }

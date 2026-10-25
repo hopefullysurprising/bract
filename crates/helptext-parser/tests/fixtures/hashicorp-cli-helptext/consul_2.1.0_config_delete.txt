@@ -1,0 +1,8 @@
+Usage: consul config delete [options] ([-kind <config kind> -name <config name>] | [-f FILENAME])
+
+  Deletes the configuration entry specified by the kind and name.
+
+  Example:
+
+    $ consul config delete -kind service-defaults -name web
+    $ consul config delete -filename service-defaults-web.hcl

@@ -1,7 +1,7 @@
 mod common;
 
 use bract::data::export::usage_specs;
-use common::{container_use_source, glab_source, gomplate_source, kubectl_source, mani_source, mise_self_source, samply_source, sf_dump_source};
+use common::{container_use_source, glab_source, gomplate_source, kubectl_source, mani_source, mise_self_source, nomad_source, samply_source, sf_dump_source, vault_source};
 use helptext_parser::InputFormat;
 #[cfg(unix)]
 use std::time::{Duration, Instant};
@@ -208,4 +208,34 @@ fn a_positional_argument_keeps_its_choices() {
     let shell = &spec.cmd.subcommands["completion"].args[0];
     let choices = shell.choices.as_ref().expect("completion offers its shells");
     assert_eq!(choices.choices, ["bash", "zsh", "fish", "powershell"]);
+}
+
+// A HashiCorp command page prints its long help, never its synopsis, and only its
+// usage line tells a pure group from a command that also runs.
+#[test]
+fn a_hashicorp_cli_keeps_its_listings_summaries_and_groups() {
+    let spec = round_trip(vault_source());
+
+    let kv = &spec.cmd.subcommands["kv"];
+    assert_eq!(kv.help.as_deref(), Some("Interact with Vault's Key-Value storage"));
+    assert!(kv.subcommand_required);
+    assert!(!spec.cmd.subcommands["agent"].subcommand_required, "`vault agent` runs, and has a subcommand");
+
+    let get = &kv.subcommands["get"];
+    assert_eq!(get.help.as_deref(), Some("Retrieves data from the KV store"));
+    assert!(get.args.iter().any(|a| a.name == "KEY" && a.required));
+    let version = get.flags.iter().find(|f| f.long == ["version"]).expect("a -version taking a value is the command's own");
+    assert!(version.arg.is_some());
+    let header = get.flags.iter().find(|f| f.long == ["header"]).expect("-header");
+    assert_eq!(header.arg.as_ref().unwrap().name, "key=value");
+}
+
+#[test]
+fn a_hashicorp_cli_keeps_spaced_names_and_choices() {
+    let spec = round_trip(nomad_source());
+
+    let put = &spec.cmd.subcommands["var"].subcommands["put"];
+    assert!(put.args.iter().any(|a| a.name == "variable spec file reference" && a.required), "{:?}", put.args);
+    let input = put.flags.iter().find(|f| f.long == ["in"]).expect("-in");
+    assert_eq!(input.arg.as_ref().and_then(|a| a.choices.as_ref()).unwrap().choices, ["hcl", "json"]);
 }

@@ -1,6 +1,7 @@
 pub mod clap_helptext;
 pub mod cobra_helptext;
 pub mod fang_helptext;
+pub mod hashicorp_cli_helptext;
 pub mod knack_helptext;
 pub mod oclif_commands_json;
 pub mod oclif_helptext;

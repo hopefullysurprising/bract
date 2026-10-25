@@ -1,0 +1,20 @@
+Usage: terraform stacks [global options] deployment-step show <options>
+
+   Show the details of a single deployment step, including its deployment steps.
+
+Options:
+
+ -deployment-step-id      The ID of the deployment step to show. (required)
+
+ -json                   Output results in JSON format instead of the default
+                         human-readable text format.
+Global Options:
+
+ -chdir             Overwrite the current directory as the target for the 
+                    root configuration.
+
+ -plugin-cache-dir  Override the default directory where the stack plugin binary is cached.
+
+ -stacks-version    An alias for the "version" subcommand.
+ 
+ -no-color=BOOL     Disable color output. Must be explicitly set to true or false.

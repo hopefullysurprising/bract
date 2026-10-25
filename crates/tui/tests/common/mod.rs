@@ -142,6 +142,16 @@ pub fn container_use_source() -> Box<dyn Source> {
     Box::new(HelpToolSource::new("container-use".to_string(), InputFormat::FangHelptext, Box::new(provider)))
 }
 
+pub fn vault_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "vault_2.2.1");
+    Box::new(HelpToolSource::new("vault".to_string(), InputFormat::HashicorpCliHelptext, Box::new(provider)))
+}
+
+pub fn nomad_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "nomad_2.0.7");
+    Box::new(HelpToolSource::new("nomad".to_string(), InputFormat::HashicorpCliHelptext, Box::new(provider)))
+}
+
 /// Serves a whole-tree dump from a fixture.
 pub struct FixtureSpecProvider(pub PathBuf);
 

@@ -1,0 +1,119 @@
+Usage:
+nomad var put [options] <variable spec file reference> [<key>=<value>]...
+nomad var put [options] <path to store variable> [<variable spec file reference>] [<key>=<value>]...
+
+  The 'var put' command is used to create or update an existing variable.
+  Variable metadata and items can be supplied using a variable specification,
+  by using command arguments, or by a combination of the two techniques.
+
+  An entire variable specification can be provided to the command via standard
+  input (stdin) by setting the first argument to "-" or from a file by using an
+  @-prefixed path to a variable specification file. When providing variable
+  data via stdin, you must provide the "-in" flag with the format of the
+  specification, either "hcl" or "json"
+
+  Items to be stored in the variable can be supplied using the specification,
+  as a series of key-value pairs, or both. The value for a key-value pair can
+  be a string, an @-prefixed file reference, or a '-' to get the value from
+  stdin. Item values provided from file references or stdin are consumed as-is
+  with no additional processing and do not require the input format to be
+  specified.
+
+  Values supplied as command line arguments supersede values provided in
+  any variable specification piped into the command or loaded from file.
+
+  If ACLs are enabled, this command requires the 'variables:write' capability
+  for the destination namespace and path.
+
+General Options:
+
+  -address=<addr>
+    The address of the Nomad server.
+    Overrides the NOMAD_ADDR environment variable if set.
+    Default = http://127.0.0.1:4646
+
+  -region=<region>
+    The region of the Nomad servers to forward commands to.
+    Overrides the NOMAD_REGION environment variable if set.
+    Defaults to the Agent's local region.
+
+  -namespace=<namespace>
+    The target namespace for queries and actions bound to a namespace.
+    Overrides the NOMAD_NAMESPACE environment variable if set.
+    If set to '*', subcommands which support this functionality query
+    all namespaces authorized to user.
+    Defaults to the "default" namespace.
+
+  -no-color
+    Disables colored command output. Alternatively, NOMAD_CLI_NO_COLOR may be
+    set. This option takes precedence over -force-color.
+
+  -force-color
+    Forces colored command output. This can be used in cases where the usual
+    terminal detection fails. Alternatively, NOMAD_CLI_FORCE_COLOR may be set.
+    This option has no effect if -no-color is also used.
+
+  -ca-cert=<path>
+    Path to a PEM encoded CA cert file to use to verify the
+    Nomad server SSL certificate. Overrides the NOMAD_CACERT
+    environment variable if set.
+
+  -ca-path=<path>
+    Path to a directory of PEM encoded CA cert files to verify
+    the Nomad server SSL certificate. If both -ca-cert and
+    -ca-path are specified, -ca-cert is used. Overrides the
+    NOMAD_CAPATH environment variable if set.
+
+  -client-cert=<path>
+    Path to a PEM encoded client certificate for TLS authentication
+    to the Nomad server. Must also specify -client-key. Overrides
+    the NOMAD_CLIENT_CERT environment variable if set.
+
+  -client-key=<path>
+    Path to an unencrypted PEM encoded private key matching the
+    client certificate from -client-cert. Overrides the
+    NOMAD_CLIENT_KEY environment variable if set.
+
+  -tls-server-name=<value>
+    The server name to use as the SNI host when connecting via
+    TLS. Overrides the NOMAD_TLS_SERVER_NAME environment variable if set.
+
+  -tls-skip-verify
+    Do not verify TLS certificate. This is highly not recommended. Verification
+    will also be skipped if NOMAD_SKIP_VERIFY is set.
+
+  -token
+    The SecretID of an ACL token to use to authenticate API requests with.
+    Overrides the NOMAD_TOKEN environment variable if set.
+
+Var put Options:
+
+  -check-index
+     If set, the variable is only acted upon if the server-side version's index
+     matches the provided value. When a variable specification contains
+     a modify index, that modify index is used as the check-index for the
+     check-and-set operation and can be overridden using this flag.
+
+  -force
+     Perform this operation regardless of the state or index of the variable
+     on the server-side.
+
+  -in (hcl | json)
+     Parser to use for data supplied via standard input or when the variable
+     specification's type can not be known using the file extension. Defaults
+     to "json".
+
+  -out (go-template | hcl | json | none | table)
+     Format to render created or updated variable. Defaults to "none" when
+     stdout is a terminal and "json" when the output is redirected.
+
+  -template
+     Template to render output with. Required when format is "go-template",
+     invalid for other formats.
+
+  -verbose
+     Provides additional information via standard error to preserve standard
+     output (stdout) for redirected output.
+
+  -ui
+    Open the variable page in the browser.
