@@ -1,7 +1,7 @@
 mod common;
 
 use bract::data::export::usage_specs;
-use common::{container_use_source, glab_source, gomplate_source, kubectl_source, mani_source, mise_self_source, nomad_source, samply_source, sf_dump_source, vault_source};
+use common::{ansible_galaxy_source, container_use_source, glab_source, gomplate_source, kubectl_source, mani_source, mise_self_source, nomad_source, samply_source, sf_dump_source, vault_source};
 use helptext_parser::InputFormat;
 #[cfg(unix)]
 use std::time::{Duration, Instant};
@@ -238,4 +238,21 @@ fn a_hashicorp_cli_keeps_spaced_names_and_choices() {
     assert!(put.args.iter().any(|a| a.name == "variable spec file reference" && a.required), "{:?}", put.args);
     let input = put.flags.iter().find(|f| f.long == ["in"]).expect("-in");
     assert_eq!(input.arg.as_ref().and_then(|a| a.choices.as_ref()).unwrap().choices, ["hcl", "json"]);
+}
+
+// An argparse page carries its command's long description; the listing above it keeps
+// the summary. Ansible names a role `role_name[,version]`, brackets and all.
+#[test]
+fn an_argparse_cli_keeps_its_listings_summaries_and_bracketed_names() {
+    let spec = round_trip(ansible_galaxy_source());
+
+    let collection = &spec.cmd.subcommands["collection"];
+    assert!(collection.subcommand_required);
+    let install = &collection.subcommands["install"];
+    assert_eq!(install.help.as_deref(), Some("Install collection(s) from file(s), URL(s) or Ansible Galaxy"));
+    let codes = install.flags.iter().find(|f| f.long == ["ignore-signature-status-code"]).expect("--ignore-signature-status-code");
+    assert_eq!(codes.arg.as_ref().and_then(|a| a.choices.as_ref()).unwrap().choices.len(), 16);
+
+    let info = &spec.cmd.subcommands["role"].subcommands["info"];
+    assert!(info.args.iter().any(|a| a.name == "role_name,version" && a.required), "{:?}", info.args);
 }

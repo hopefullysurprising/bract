@@ -1,0 +1,38 @@
+usage: ansible-galaxy collection download [-h] [-s API_SERVER]
+                                          [--token API_KEY] [-c]
+                                          [--timeout TIMEOUT] [-v]
+                                          [--clear-response-cache]
+                                          [--no-cache] [-n] [-p DOWNLOAD_PATH]
+                                          [-r REQUIREMENTS] [--pre]
+                                          [collection ...]
+
+positional arguments:
+  collection            Collection(s)
+
+options:
+  -h, --help            show this help message and exit
+  -s, --server API_SERVER
+                        The Galaxy API server URL
+  --token, --api-key API_KEY
+                        The Ansible Galaxy API key which can be found at
+                        https://galaxy.ansible.com/ui/token.
+  -c, --ignore-certs    Ignore SSL certificate validation errors.
+  --timeout TIMEOUT     The time to wait for operations against the galaxy
+                        server, defaults to 60s.
+  -v, --verbose         Causes Ansible to print more debug messages. Adding
+                        multiple -v will increase the verbosity, the builtin
+                        plugins currently evaluate up to -vvvvvv. A reasonable
+                        level to start is -vvv, connection debugging might
+                        require -vvvv. This argument may be specified multiple
+                        times.
+  --clear-response-cache
+                        Clear the existing server response cache.
+  --no-cache            Do not use the server response cache.
+  -n, --no-deps         Don't download collection(s) listed as dependencies.
+  -p, --download-path DOWNLOAD_PATH
+                        The directory to download the collections to.
+  -r, --requirements-file REQUIREMENTS
+                        A file containing a list of collections to be
+                        downloaded.
+  --pre                 Include pre-release versions. Semantic versioning pre-
+                        releases are ignored by default

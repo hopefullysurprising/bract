@@ -1,3 +1,4 @@
+pub mod argparse_helptext;
 pub mod clap_helptext;
 pub mod cobra_helptext;
 pub mod fang_helptext;

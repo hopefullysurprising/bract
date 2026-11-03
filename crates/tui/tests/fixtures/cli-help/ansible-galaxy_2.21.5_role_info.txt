@@ -1,0 +1,31 @@
+usage: ansible-galaxy role info [-h] [-s API_SERVER] [--token API_KEY] [-c]
+                                [--timeout TIMEOUT] [-v] [-p ROLES_PATH]
+                                [--offline]
+                                role_name[,version] [role_name[,version] ...]
+
+positional arguments:
+  role_name[,version]   role
+
+options:
+  -h, --help            show this help message and exit
+  -s, --server API_SERVER
+                        The Galaxy API server URL
+  --token, --api-key API_KEY
+                        The Ansible Galaxy API key which can be found at
+                        https://galaxy.ansible.com/ui/token.
+  -c, --ignore-certs    Ignore SSL certificate validation errors.
+  --timeout TIMEOUT     The time to wait for operations against the galaxy
+                        server, defaults to 60s.
+  -v, --verbose         Causes Ansible to print more debug messages. Adding
+                        multiple -v will increase the verbosity, the builtin
+                        plugins currently evaluate up to -vvvvvv. A reasonable
+                        level to start is -vvv, connection debugging might
+                        require -vvvv. This argument may be specified multiple
+                        times.
+  -p, --roles-path ROLES_PATH
+                        The path to the directory containing your roles. The
+                        default is the first writable one configured via
+                        DEFAULT_ROLES_PATH: {{ ANSIBLE_HOME ~
+                        "/roles:/usr/share/ansible/roles:/etc/ansible/roles"
+                        }} . This argument may be specified multiple times.
+  --offline             Don't query the galaxy API when creating roles

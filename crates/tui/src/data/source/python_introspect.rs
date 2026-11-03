@@ -4,6 +4,8 @@
 //! follow the shebang to the interpreter, locate its virtualenv `site-packages`,
 //! and look for a known CLI framework package. Azure CLI (`az`) ships `knack`
 //! (github.com/microsoft/knack), so its presence classifies the tool as Knack.
+//! argparse ships with Python itself, so no package marks it: the tool's own entry
+//! module has to be read for it.
 
 use std::fs;
 use std::io::{BufRead, BufReader};
@@ -17,7 +19,83 @@ pub fn detect_format(binary_path: &Path) -> Option<InputFormat> {
     if site_packages.join("knack").is_dir() {
         return Some(InputFormat::KnackHelptext);
     }
-    None
+    let module = entry_module(binary_path)?;
+    reaches_argparse(&site_packages, &module).then_some(InputFormat::ArgparseHelptext)
+}
+
+/// The module a generated entry point imports its function from: pip, uv and
+/// Homebrew all write `from ansible.cli.galaxy import main`.
+fn entry_module(binary_path: &Path) -> Option<String> {
+    let file = fs::File::open(binary_path).ok()?;
+    BufReader::new(file).lines().take(WRAPPER_LINES).map_while(Result::ok).find_map(|line| {
+        let (module, _) = line.trim().strip_prefix("from ")?.split_once(" import ")?;
+        (module != "__future__").then(|| module.trim().to_string())
+    })
+}
+
+/// Help from these is not argparse's, even where argparse is imported beside them.
+const OTHER_FRAMEWORKS: [&str; 4] = ["click", "typer", "cleo", "docopt"];
+
+/// How many imports away from the entry module argparse may sit: ansible's entry
+/// modules reach it through `ansible.cli.arguments.option_helpers`, one away.
+const IMPORT_HOPS: usize = 2;
+
+/// Whether the entry module, or a module of its own package that it imports, imports
+/// argparse while none of them imports another framework. Only what the entry module
+/// reaches counts: a package can carry an argparse script beside a Click CLI.
+fn reaches_argparse(site_packages: &Path, entry: &str) -> bool {
+    let package = entry.split('.').next().unwrap_or(entry);
+    let mut seen = vec![entry.to_string()];
+    let mut frontier = vec![entry.to_string()];
+    let mut argparse = false;
+    for _ in 0..=IMPORT_HOPS {
+        let mut next = Vec::new();
+        for module in &frontier {
+            let Some(source) = module_source(site_packages, module) else { continue };
+            for imported in imports(&source) {
+                let root = imported.split('.').next().unwrap_or(&imported);
+                if OTHER_FRAMEWORKS.contains(&root) {
+                    return false;
+                }
+                argparse |= root == "argparse";
+                if root == package && !seen.contains(&imported) {
+                    seen.push(imported.clone());
+                    next.push(imported);
+                }
+            }
+        }
+        if argparse {
+            return true;
+        }
+        frontier = next;
+    }
+    false
+}
+
+fn module_source(site_packages: &Path, module: &str) -> Option<String> {
+    let path = module.split('.').fold(site_packages.to_path_buf(), |path, part| path.join(part));
+    fs::read_to_string(path.with_extension("py")).or_else(|_| fs::read_to_string(path.join("__init__.py"))).ok()
+}
+
+/// Every module an import statement names, wherever it stands — argparse is often
+/// imported inside `main`. `from a.b import c` names `a.b`, and `a.b.c` in case `c` is
+/// a submodule; relative imports are not followed.
+fn imports(source: &str) -> Vec<String> {
+    let mut modules = Vec::new();
+    for line in source.lines().map(str::trim) {
+        if let Some(rest) = line.strip_prefix("import ") {
+            modules.extend(rest.split(',').filter_map(|m| m.split_whitespace().next()).map(String::from));
+        } else if let Some((module, names)) = line.strip_prefix("from ").and_then(|rest| rest.split_once(" import ")) {
+            let module = module.trim();
+            if module.starts_with('.') {
+                continue;
+            }
+            modules.push(module.to_string());
+            let names = names.trim_matches(|c: char| c == '(' || c == ')' || c.is_whitespace());
+            modules.extend(names.split(',').filter_map(|n| n.split_whitespace().next()).map(|n| format!("{module}.{n}")));
+        }
+    }
+    modules
 }
 
 /// How far into a script to look for an interpreter. Entry points are tiny —
@@ -98,6 +176,63 @@ mod tests {
 
     fn detect(dir: &tempfile::TempDir, entry_point: &str) -> Option<InputFormat> {
         detect_format(&dir.path().join("bin").join(entry_point))
+    }
+
+    /// An install whose entry point is the script pip writes, importing `main` from
+    /// `entry`, with each module's source in site-packages.
+    fn generated(entry: &str, modules: &[(&str, &str)]) -> tempfile::TempDir {
+        let script = format!("#!{{venv}}/bin/python\n# -*- coding: utf-8 -*-\nimport re\nimport sys\nfrom {entry} import main\n");
+        let dir = install("tool", &script, &[]);
+        let site = dir.path().join("libexec/lib/python3.13/site-packages");
+        for (module, source) in modules {
+            let path = site.join(module);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, source).unwrap();
+        }
+        dir
+    }
+
+    // pre-commit and yq import argparse in the module their entry point names.
+    #[test]
+    fn an_entry_module_importing_argparse_is_argparse() {
+        let dir = generated("tool.main", &[("tool/__init__.py", ""), ("tool/main.py", "from __future__ import annotations\n\nimport argparse\n")]);
+        assert_eq!(detect(&dir, "tool"), Some(InputFormat::ArgparseHelptext));
+    }
+
+    // ansible-playbook's module imports `ansible.cli.arguments.option_helpers`, and only
+    // that module imports argparse.
+    #[test]
+    fn argparse_one_import_away_within_the_package_is_argparse() {
+        let dir = generated(
+            "tool.cli.playbook",
+            &[
+                ("tool/cli/playbook.py", "from tool.cli.arguments import option_helpers as opt_help\n"),
+                ("tool/cli/arguments/__init__.py", ""),
+                ("tool/cli/arguments/option_helpers.py", "import copy\nimport argparse\n"),
+            ],
+        );
+        assert_eq!(detect(&dir, "tool"), Some(InputFormat::ArgparseHelptext));
+    }
+
+    // Click pages are not argparse's, however much argparse a Click tool imports.
+    #[test]
+    fn an_entry_module_importing_click_is_not_claimed() {
+        let dir = generated("tool.cli", &[("tool/cli.py", "import argparse\nimport click\n")]);
+        assert_eq!(detect(&dir, "tool"), None);
+    }
+
+    // A package can carry an argparse script beside a CLI built on something else.
+    #[test]
+    fn argparse_the_entry_module_never_reaches_is_not_claimed() {
+        let dir = generated("tool.cli", &[("tool/cli.py", "import sys\n"), ("tool/devscript.py", "import argparse\n")]);
+        assert_eq!(detect(&dir, "tool"), None);
+    }
+
+    // `az` imports argparse through knack, and its pages are Knack's.
+    #[test]
+    fn knack_installed_beside_the_tool_wins_over_argparse() {
+        let dir = generated("tool.cli", &[("tool/cli.py", "import argparse\n"), ("knack/__init__.py", "")]);
+        assert_eq!(detect(&dir, "tool"), Some(InputFormat::KnackHelptext));
     }
 
     // pipx and venv rewrite the shebang to their own interpreter.

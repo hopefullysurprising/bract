@@ -37,9 +37,9 @@ for tool in $usage_tool; do
     # counted: a parser that drops summaries still parses back.
     positionals=$(perl -ne '$f = 1 if /^\s*flag\s.*\{\s*$/; $f = 0 if $f && /^\s*\}\s*$/; print "$1\n" if !$f && /^\s*arg\s+"[<\[](.*)[>\]](?:\.\.\.)?"/' "tmp/sweep/$tool.kdl")
     misread=$(printf '%s\n' "$positionals" | { grep -E '[][<>=]|^-' || true; } | sort -u | paste -sd ' ' -)
-    bare=$(grep -E '^ *cmd ' "tmp/sweep/$tool.kdl" | { grep -vc 'help=' || true; })
     [ $status -eq 142 ] && status="timed out"
     [ "$status" = 0 ] && [ "$parse" = parses ] && [ -z "$misread" ] || touch "tmp/sweep/$tool.failed"
+    bare=$(allows 1 -- grep -E '^ *cmd ' "tmp/sweep/$tool.kdl" | allows 1 -- grep -vc 'help=')
     echo "$tool: $(( $(date +%s) - start ))s, exit $status, $(grep -cE '^ *cmd ' "tmp/sweep/$tool.kdl") commands ($bare without a summary), $(printf '%s' "$positionals" | grep -c .) positionals, $parse${misread:+, MISREAD: $misread}"
   ) &
 done

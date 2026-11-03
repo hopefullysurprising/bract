@@ -152,6 +152,11 @@ pub fn nomad_source() -> Box<dyn Source> {
     Box::new(HelpToolSource::new("nomad".to_string(), InputFormat::HashicorpCliHelptext, Box::new(provider)))
 }
 
+pub fn ansible_galaxy_source() -> Box<dyn Source> {
+    let provider = FixtureHelpProvider::new(fixtures_dir().join("cli-help"), "ansible-galaxy_2.21.5");
+    Box::new(HelpToolSource::new("ansible-galaxy".to_string(), InputFormat::ArgparseHelptext, Box::new(provider)))
+}
+
 /// Serves a whole-tree dump from a fixture.
 pub struct FixtureSpecProvider(pub PathBuf);
 

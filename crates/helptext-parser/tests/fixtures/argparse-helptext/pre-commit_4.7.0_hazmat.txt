@@ -1,0 +1,13 @@
+usage: pre-commit hazmat [-h] [--color {auto,always,never}]
+                         {cd,ignore-exit-code,n1} ...
+
+positional arguments:
+  {cd,ignore-exit-code,n1}
+    cd                  cd to a subdir and run the command
+    ignore-exit-code    run the command but ignore the exit code
+    n1                  run the command once per filename
+
+options:
+  -h, --help            show this help message and exit
+  --color {auto,always,never}
+                        Whether to use color in output. Defaults to `auto`.
